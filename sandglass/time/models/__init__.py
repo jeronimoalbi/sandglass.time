@@ -6,6 +6,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import Index
 from sqlalchemy.types import Integer
 
 
@@ -38,6 +39,22 @@ def execute(sql, **kwargs):
     result = DBSESSION.execute(sql, kwargs)
 
     return result
+
+
+def create_index(cls, *fields, **kwargs):
+    """
+    Create a new index for the given BaseModel class field(s).
+
+    First field name is used when keywords suffix is not given.
+    By default suffix is the first field name.
+
+    Return an Index.
+
+    """
+    suffix = kwargs.get('suffix', fields[0])
+    table_name = cls.__tablename__
+    index_name = 'idx_{0}_{1}'.format(table_name, suffix)
+    return Index(index_name, *fields)
 
 
 class DeclarativeBaseModel(object):
