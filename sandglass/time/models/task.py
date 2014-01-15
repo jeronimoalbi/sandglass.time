@@ -10,17 +10,16 @@ from sandglass.time.models import BaseModel
 from sandglass.time.models import create_index
 
 
-class Project(BaseModel):
+class Task(BaseModel):
     """
     TODO
 
     """
     name = Column(UnicodeText(255), nullable=False)
     short_name = Column(Unicode(16))
-    client_id = Column(Integer, ForeignKey('client.id'))
-    parent_id = Column(Integer, ForeignKey('project.id'))
-    tasks = relationship("Task", backref="project")
-    sub_projects = relationship("Project", backref="parent")
+    parent_id = Column(Integer, ForeignKey('task.id'))
+    project_id = Column(Integer, ForeignKey('project.id'))
+    sub_tasks = relationship("Task", backref="parent")
 
     @declared_attr
     def __table_args__(cls):
@@ -29,13 +28,3 @@ class Project(BaseModel):
             create_index(cls, 'name'),
             create_index(cls, 'short_name'),
         )
-
-    @property
-    def is_internal(self):
-        """
-        Check if project is a company internal projects.
-
-        Return a Boolean.
-
-        """
-        return (self.client is None)
