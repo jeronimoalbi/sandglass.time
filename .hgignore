@@ -10,4 +10,5 @@ coverage
 *.egg
 *.EGG
 *.EGG-INFO
+*.db
 .coverage

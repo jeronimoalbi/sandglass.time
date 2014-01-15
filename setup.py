@@ -14,6 +14,7 @@ setup(
         'pyramid==1.4.3',
         'cornice==0.16.2',
         'waitress==0.8.8',
+        'sqlalchemy==0.9.1',
     ],
     entry_points={
         'paste.app_factory': [
