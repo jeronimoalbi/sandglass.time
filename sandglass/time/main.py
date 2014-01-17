@@ -21,6 +21,8 @@ def run_wsgi(global_config, **settings):
     """
     config = Configurator(settings=settings)
     prepare_database(config, settings)
+    config.include('pyramid_tm')
+    config.include('pyramid_mailer')
     config.include("cornice")
     config.scan("sandglass.time.views")
     config.scan("sandglass.time.api.resources")
