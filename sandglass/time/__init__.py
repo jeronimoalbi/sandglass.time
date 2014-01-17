@@ -1,21 +1,29 @@
-VERSION_INFO = {
-    'major': 0,
-    'minor': 1,
-    'micro': 0,
-}
+from pyramid.i18n import TranslationStringFactory
+from pyramid.threadlocal import get_current_registry
 
 
-def get_version(short=False):
+# String translation function for "sandglass.time" app domain
+_ = TranslationStringFactory('sandglass.time')
+
+
+def get_settings():
     """
-    Concatenates ``VERSION_INFO`` to dotted version string.
+    Get application settings.
+
+    Application settings are customized in the ".ini" file.
+
+    Return a Dictionary.
 
     """
-    version = "{major!s}.{minor!s}".format(**VERSION_INFO)
-    # append micro version only if not short and micro != 0
-    if not short and VERSION_INFO['micro']:
-        version += ".{micro!s}".format(**VERSION_INFO)
-
-    return version
+    return get_current_registry().settings
 
 
-__version__ = get_version()
+def get_available_languages():
+    """
+    Get a list with available application languages.
+
+    Return a List of string.
+
+    """
+    settings = get_settings()
+    return settings['available_languages'].split()

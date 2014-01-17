@@ -14,17 +14,26 @@ def prepare_database(config, settings):
     initialize_database(engine)
 
 
+def prepare_application(config):
+    """
+    TODO
+
+    """
+    config.include("cornice")
+    config.add_translation_dirs('sandglass.time:locales/')
+    config.scan("sandglass.time.views")
+    config.scan("sandglass.time.api.resources")
+
+
 def run_wsgi(global_config, **settings):
     """
     Main Sandglass time application entry point.
 
     """
     config = Configurator(settings=settings)
-    prepare_database(config, settings)
     config.include('pyramid_tm')
     config.include('pyramid_mailer')
-    config.include("cornice")
-    config.scan("sandglass.time.views")
-    config.scan("sandglass.time.api.resources")
+    prepare_database(config, settings)
+    prepare_application(config)
 
     return config.make_wsgi_app()
