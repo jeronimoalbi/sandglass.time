@@ -25,6 +25,8 @@ setup(
         # Translations extraction support
         'Babel',
         'lingua',
+        # Documentation support
+        'Sphinx',
     ],
     entry_points={
         'paste.app_factory': [
