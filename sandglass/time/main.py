@@ -23,5 +23,6 @@ def run_wsgi(global_config, **settings):
     prepare_database(config, settings)
     config.include("cornice")
     config.scan("sandglass.time.views")
+    config.scan("sandglass.time.api.resources")
 
     return config.make_wsgi_app()
