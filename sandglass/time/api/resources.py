@@ -4,6 +4,7 @@
 from cornice.resource import resource
 from cornice.resource import view
 
+from sandglass.time.api import BaseAPIResource
 # from sandglass.time.models.activity import Activity
 from sandglass.time.models.client import Client
 from sandglass.time.models.project import Project
@@ -20,25 +21,17 @@ _DB = {
     'tasks': {},
     }
 
-class BaseResource(object):
-    """BaseResource class"""
 
-    def __init__(self, request):
-        self.request = request
-
-
-@resource(collection_path='/activities', path='/activities/{id}')
-class ActivityResource(BaseResource):
+@resource(path='/activity/{id}', collection_path='/activities')
+class ActivityResource(BaseAPIResource):
 
     def collection_get(self):
         """Return a list of activities"""
         return {'activities': _DB['activities'].keys()}
 
-    @view(renderer='json')
     def get(self):
         return _DB['activities'].get(int(self.request.matchdict['id']))
 
-    @self.post()
     def post(self):
         key = self.request.matchdict['activities']
         try:
@@ -50,7 +43,7 @@ class ActivityResource(BaseResource):
 
 
 @resource(collection_path='/clients', path='/clients/{id}')
-class ClientResource(BaseResource):
+class ClientResource(BaseAPIResource):
 
     def collection_get(self):
         return {'clients': _DB['clients'].keys()}
@@ -65,7 +58,7 @@ class ClientResource(BaseResource):
 
 
 @resource(collection_path='/projects', path='/project/{id}')
-class ProjectResource(BaseResource):
+class ProjectResource(BaseAPIResource):
 
     def collection_get(self):
         return {'projects': _DB['projects'].keys()}
@@ -80,7 +73,7 @@ class ProjectResource(BaseResource):
 
 
 @resource(collection_path='/tags', path='/tag/{id}')
-class TagResource(BaseResource):
+class TagResource(BaseAPIResource):
 
     def collection_get(self):
         return {'tags': _DB['tags'].keys()}
@@ -95,7 +88,7 @@ class TagResource(BaseResource):
 
 
 @resource(collection_path='/tasks', path='/tasks/{id}')
-class TaskResource(BaseResource):
+class TaskResource(BaseAPIResource):
 
     def collection_get(self):
         """Return a list of tasks"""
