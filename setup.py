@@ -16,11 +16,15 @@ setup(
         'cornice==0.16.2',
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
-        # Request unittest support
+        # Unittest support
+        'nose',
+        'nose-selecttests',
+        'coverage',
+        'virtualenv',
         'WebTest==2.0.11',
         # Translations extraction support
-        'Babel==1.3',
-        'lingua==1.3',
+        'Babel',
+        'lingua',
     ],
     entry_points={
         'paste.app_factory': [
@@ -31,7 +35,9 @@ setup(
     message_extractors={
         'sandglass/time': [
             ('**.py', 'lingua_python', None),
+            ('tests/**', 'ignore', None),
             ('locales/**', 'ignore', None),
         ],
     },
+    test_suite='sandglass.time.tests',
 )
