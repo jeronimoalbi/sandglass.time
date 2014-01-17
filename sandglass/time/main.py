@@ -21,8 +21,7 @@ def prepare_application(config):
     """
     config.include("cornice")
     config.add_translation_dirs('sandglass.time:locales/')
-    config.scan("sandglass.time.views")
-    config.scan("sandglass.time.api.resources")
+    config.scan("sandglass.time.api")
 
 
 def run_wsgi(global_config, **settings):
