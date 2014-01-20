@@ -38,10 +38,10 @@ class Tag(BaseModel):
         Integer,
         ForeignKey('tag.id'),
         doc=u"If current tag is an alias this is the ID of the original tag")
-    # TODO: CHeck how to link to a Pyramid (or sandglass model) user
-    owner_code = Column(
-        UnicodeText(),
-        doc=u"Code to identify the user that created the tag")
+    user_id = Column(
+        Integer,
+        ForeignKey('user.id'),
+        doc=u"User that created the tag")
     tag_aliases = relationship("Tag", backref="aliased_tag")
 
     @declared_attr
@@ -51,5 +51,4 @@ class Tag(BaseModel):
             create_index(cls, 'name'),
             create_index(cls, 'short_name'),
             create_index(cls, 'tag_type'),
-            create_index(cls, 'owner_code'),
         )
