@@ -16,6 +16,9 @@ setup(
         'cornice==0.16.2',
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
+        # Forms/data handling
+        'colander',
+        'deform',
         # Unittest support
         'nose',
         'nose-selecttests',
