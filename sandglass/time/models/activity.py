@@ -1,4 +1,4 @@
-from datetime.datetime import now
+from datetime import datetime
 from sqlalchemy import Column
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import DateTime
@@ -45,7 +45,7 @@ class Activity(BaseModel):
     start = Column(
         DateTime(timezone=True),
         nullable=False,
-        default=now)
+        default=datetime.now)
     end = Column(
         DateTime(timezone=True))
     activity_type = Column(
