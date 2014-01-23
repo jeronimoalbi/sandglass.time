@@ -1,5 +1,5 @@
 
-Copyright (c) 2012, Sandglass project founders team
+Copyright (c) 2012, Sandglass project founders team & WIENFLUSS
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
