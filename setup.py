@@ -13,7 +13,6 @@ setup(
         'pyramid==1.4.3',
         'pyramid_tm==0.7',
         'pyramid_mailer==0.13',
-        'cornice==0.16.2',
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
         # Forms/data handling

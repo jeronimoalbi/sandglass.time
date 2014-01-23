@@ -1,6 +1,7 @@
 from pyramid.config import Configurator
 from sqlalchemy import engine_from_config
 
+from sandglass.time.directives import add_api_resource
 from sandglass.time.models import initialize_database
 
 
@@ -19,9 +20,9 @@ def prepare_application(config):
     TODO
 
     """
-    config.include("cornice")
     config.add_translation_dirs('sandglass.time:locales/')
-    config.scan("sandglass.time.api")
+    config.add_directive('add_api_resource', add_api_resource)
+    config.include("sandglass.time.api.load_resources", route_prefix='time')
 
 
 def run_wsgi(global_config, **settings):
