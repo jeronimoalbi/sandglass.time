@@ -95,6 +95,9 @@ class DeclarativeBaseModel(object):
         # Call unicode to get value and encode str as UTF8
         return unicode(self).encode('utf8')
 
+    def __json__(self):
+        return dict(self)
+
     @staticmethod
     def new_session():
         """Create a new Session

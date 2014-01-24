@@ -42,7 +42,7 @@ class Tag(BaseModel):
         Integer,
         ForeignKey('user.id'),
         doc=u"User that created the tag")
-    tag_aliases = relationship("Tag", backref="aliased_tag")
+    tag_aliases = relationship("Tag")
 
     @declared_attr
     def __table_args__(cls):
