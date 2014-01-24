@@ -1,3 +1,19 @@
+from pyramid.exceptions import NotFound
+
+
+def rpc(permissions=None):
+    """
+    Mark decorated method to be accesible by RPC calls.
+
+    """
+    def rpc_wrapper(func):
+        # TODO: Implement permissions
+        func.__rpc__ = {}
+        return func
+
+    return rpc_wrapper
+
+
 class BaseResource(object):
     """
     Base class for Sandglass time API resources.
@@ -22,6 +38,24 @@ class BaseResource(object):
 
     def __init__(self, request):
         self.request = request
+
+    def handle_rpc_call(self):
+        """
+        Main entry point for API RPC calls.
+
+        API RPC calls are triggered when a request has the `call` parameter
+        available in the request.
+
+        To publish a method to be accesible as RCP call decorate it using
+        the `@rpc` decorator.
+
+        """
+        call_name = self.request.params.get('call')
+        rpc_handler = (getattr(self, call_name, None) if call_name else None)
+        if not hasattr(rpc_handler, '__rpc__'):
+            raise NotFound()
+
+        return rpc_handler()
 
 
 def load_api_v1(config):
