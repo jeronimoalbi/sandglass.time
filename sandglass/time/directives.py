@@ -73,4 +73,5 @@ def add_rest_resource(config, cls_or_dotted):
                             attr=rpc_attr_name,
                             route_name=route_name,
                             request_param='call',
+                            renderer='json',
                             request_method=('GET', 'POST'))
