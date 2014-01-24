@@ -20,7 +20,6 @@ class Project(BaseModel):
     client_id = Column(Integer, ForeignKey('client.id'))
     parent_id = Column(Integer, ForeignKey('project.id'))
     tasks = relationship("Task", backref="project")
-    sub_projects = relationship("Project", backref="parent")
 
     @declared_attr
     def __table_args__(cls):

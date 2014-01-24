@@ -1,6 +1,5 @@
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Integer
 from sqlalchemy.types import Unicode
@@ -19,7 +18,6 @@ class Task(BaseModel):
     short_name = Column(Unicode(16))
     parent_id = Column(Integer, ForeignKey('task.id'))
     project_id = Column(Integer, ForeignKey('project.id'))
-    sub_tasks = relationship("Task", backref="parent")
 
     @declared_attr
     def __table_args__(cls):
