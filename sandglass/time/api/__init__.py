@@ -4,30 +4,24 @@ class BaseResource(object):
 
     """
     # Name used as prefix for this resource URLs
+    # NOTE: For REST APIs it is recommended to be in plural form
     name = None
 
     @classmethod
     def get_route_prefix(cls):
         """
-        """
-        name = cls.name
-        # When no name is assigned use class name as resource name
-        if name is None:
-            name = cls.__name__.replace('Resource', '')
+        Get prefix to be used for current resource URL path.
 
-        return name.lower()
+        Returns a String.
+
+        """
+        if not cls.name:
+            raise Exception("Resource name can't be empty")
+
+        return cls.name.lower()
 
     def __init__(self, request):
         self.request = request
-
-
-class RestResource(BaseResource):
-    """
-    Base REST API resource class.
-
-    """
-    def get_all(self, *args, **kwargs):
-        return {}
 
 
 def load_api_v1(config):
@@ -35,23 +29,16 @@ def load_api_v1(config):
     Load API version 1 resources.
 
     """
-    # TODO: Resolve and load classes dinamically from a dotted string
-    from sandglass.time.api.v1.user import UserResource
+    resources = (
+        'user.UserResource',
+    )
+    for name in resources:
+        config.add_rest_resource('sandglass.time.api.v1.' + name)
 
-    config.add_api_resource(UserResource)
 
-
-def load_api_versions(config):
+def init_api_versions(config):
     """
-    TODO
+    Initialize all supported API versions.
 
     """
     config.include(load_api_v1, route_prefix='v1')
-
-
-def load_resources(config):
-    """
-    TODO
-
-    """
-    config.include(load_api_versions, route_prefix='api')

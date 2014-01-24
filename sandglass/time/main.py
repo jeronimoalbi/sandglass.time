@@ -1,28 +1,38 @@
 from pyramid.config import Configurator
 from sqlalchemy import engine_from_config
 
-from sandglass.time.directives import add_api_resource
+from sandglass.time.directives import add_rest_resource
 from sandglass.time.models import initialize_database
 
 
-def prepare_database(config, settings):
+def init_database(settings):
     """
-    TODO
+    Create/update database with all sandglass models.
+
+    Models has to be registered before calling this function.
 
     """
-    config.scan('sandglass.time.models')
     engine = engine_from_config(settings, prefix='database.')
     initialize_database(engine)
 
 
+def init_app_modules(config):
+    """
+    Initialize application modules.
+
+    """
+    config.scan('sandglass.time.models')
+    config.include("sandglass.time.api.init_api_versions", route_prefix='api')
+
+
 def prepare_application(config):
     """
-    TODO
+    Prepare sandglass.time application.
 
     """
     config.add_translation_dirs('sandglass.time:locales/')
-    config.add_directive('add_api_resource', add_api_resource)
-    config.include("sandglass.time.api.load_resources", route_prefix='time')
+    config.add_directive('add_rest_resource', add_rest_resource)
+    config.include(init_app_modules, route_prefix='time')
 
 
 def run_wsgi(global_config, **settings):
@@ -33,7 +43,7 @@ def run_wsgi(global_config, **settings):
     config = Configurator(settings=settings)
     config.include('pyramid_tm')
     config.include('pyramid_mailer')
-    prepare_database(config, settings)
     prepare_application(config)
+    init_database(settings)
 
     return config.make_wsgi_app()
