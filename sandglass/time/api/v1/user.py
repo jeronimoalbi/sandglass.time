@@ -1,12 +1,11 @@
-from sandglass.time.api import BaseResource
+from sandglass.time.api.model import ModelResource
+from sandglass.time.models.user import User
 
 
-class UserResource(BaseResource):
+class UserResource(ModelResource):
     """
     REST API resource for User model.
 
     """
     name = 'users'
-
-    def get_all(self):
-        return {}
+    model = User
