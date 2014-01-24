@@ -1,3 +1,4 @@
+from colander import drop
 from colander import Integer
 from colander import MappingSchema
 from colander import SchemaNode
@@ -12,7 +13,7 @@ class BaseModelSchema(MappingSchema):
     that Models define.
 
     """
-    id = SchemaNode(Integer())
+    id = SchemaNode(Integer(), missing=drop)
 
 
 class IDListSchema(SequenceSchema):
