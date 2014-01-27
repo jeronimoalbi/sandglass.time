@@ -53,7 +53,7 @@ class User(BaseModel):
 
         """
         sha_obj = hashlib.sha1(os.urandom(48))
-        self.salt = sha_obj.hexdigest()
+        self.salt = unicode(sha_obj.hexdigest())
         return self.salt
 
     def generate_key(self):
@@ -66,6 +66,6 @@ class User(BaseModel):
 
         """
         salt = (self.salt or self.generate_salt())
-        sha_obj = hashlib.sha256(os.urandom(48) + salt)
-        self.key = sha_obj.hexdigest()
+        sha_obj = hashlib.sha256(os.urandom(48) + salt.encode('utf8'))
+        self.key = unicode(sha_obj.hexdigest())
         return self.key

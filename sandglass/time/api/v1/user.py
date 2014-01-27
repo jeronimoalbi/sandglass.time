@@ -1,7 +1,7 @@
 from sandglass.time.api.model import ModelResource
 from sandglass.time.models.user import User
+from sandglass.time.forms.user import UserListSchema
 from sandglass.time.forms.user import UserSchema
-from sandglass.time.forms.user import Users
 
 
 class UserResource(ModelResource):
@@ -12,44 +12,7 @@ class UserResource(ModelResource):
     name = 'users'
     model = User
     schema = UserSchema
-    # list_schema = 'sandglass.time.forms.user.UserListSchema'
-    list_schema = Users
+    list_schema = UserListSchema
 
-    def post_all(self):
-        """post list of users."""
-        session = self.model.new_session()
-
-        # Deserialize + validate
-        cstruct = self.request.json_body
-        deserialized = self.list_schema().deserialize(cstruct)
-        users = deserialized.get('users', None)
-
-        for user in users:
-            user = User(**user)
-            user.generate_key()
-            session.add(user)
-
-        # TODO: return created users
-        return "Successfully added %d users." % len(users)
-
-    def put(self):
-        """Update a user."""
-        session = self.model.new_session()
-
-        cstruct = self.request.json_body
-        deserialized = self.schema().deserialize(cstruct)
-
-        email = deserialized.get('email', "")
-        query = session.query(self.model).filter_by(email=email)
-        query.update(deserialized)
-
-        return query.first()
-
-    def delete(self):
-        session = self.model.new_session()
-
-        pk = self.request.matchdict.get('pk')
-        user = session.query(self.model).get(pk)
-        session.delete(user)
-
-        return u"Successfully deleted user with pk %s " % pk
+    def before_session_add(self, user):
+        user.generate_key()

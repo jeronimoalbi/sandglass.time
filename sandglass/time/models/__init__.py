@@ -45,6 +45,20 @@ def execute(sql, **kwargs):
     return result
 
 
+def transactional(func):
+    """
+    Decorator to add implicit session support to a method.
+
+    Wrapped method will receive an extra argument with a new database session.
+
+    """
+    def transactional_wrap(self):
+        session = DBSESSION()
+        return func(self, session)
+
+    return transactional_wrap
+
+
 def create_index(cls, *fields, **kwargs):
     """
     Create a new index for the given BaseModel class field(s).

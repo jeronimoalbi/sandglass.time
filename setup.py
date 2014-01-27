@@ -18,7 +18,6 @@ setup(
         'zope.sqlalchemy',
         # Forms/data handling
         'colander',
-        'deform',
         # Unittest support
         'nose',
         'nose-selecttests',

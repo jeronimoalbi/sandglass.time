@@ -25,11 +25,3 @@ class UserSchema(BaseModelSchema):
 
 class UserListSchema(SequenceSchema):
     user = UserSchema()
-
-
-class Users(BaseModelSchema):
-    """
-    Kind of a proxy schema to access the UserListSchema
-    TODO: maybe this can be prevented somehow?
-    """
-    users = UserListSchema()
