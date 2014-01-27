@@ -31,3 +31,25 @@ class UserResource(ModelResource):
 
         # TODO: return created users
         return "Successfully added %d users." % len(users)
+
+    def put(self):
+        """Update a user."""
+        session = self.model.new_session()
+
+        cstruct = self.request.json_body
+        deserialized = self.schema().deserialize(cstruct)
+
+        email = deserialized.get('email', "")
+        query = session.query(self.model).filter_by(email=email)
+        query.update(deserialized)
+
+        return query.first()
+
+    def delete(self):
+        session = self.model.new_session()
+
+        pk = self.request.matchdict.get('pk')
+        user = session.query(self.model).get(pk)
+        session.delete(user)
+
+        return u"Successfully deleted user with pk %s " % pk
