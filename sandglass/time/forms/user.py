@@ -28,4 +28,8 @@ class UserListSchema(SequenceSchema):
 
 
 class Users(BaseModelSchema):
+    """
+    Kind of a proxy schema to access the UserListSchema
+    TODO: maybe this can be prevented somehow?
+    """
     users = UserListSchema()

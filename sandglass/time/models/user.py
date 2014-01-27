@@ -1,3 +1,6 @@
+import hashlib
+import os
+
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import Unicode
