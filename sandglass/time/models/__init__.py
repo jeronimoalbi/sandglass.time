@@ -8,11 +8,15 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Index
 from sqlalchemy.types import Integer
+from zope.sqlalchemy import ZopeTransactionExtension
 
 
 META = MetaData()
 
-DBSESSION = scoped_session(sessionmaker())
+DBSESSION = scoped_session(
+    # Integrate transaction manager with SQLAlchemy
+    sessionmaker(extension=ZopeTransactionExtension())
+)
 
 
 def initialize_database(engine):

@@ -15,6 +15,7 @@ setup(
         'pyramid_mailer==0.13',
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
+        'zope.sqlalchemy',
         # Forms/data handling
         'colander',
         'deform',

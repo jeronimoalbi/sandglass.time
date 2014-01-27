@@ -1,5 +1,3 @@
-from sqlalchemy.exc import IntegrityError
-
 from sandglass.time.api.model import ModelResource
 from sandglass.time.models.user import User
 from sandglass.time.forms.user import UserSchema
@@ -30,12 +28,6 @@ class UserResource(ModelResource):
             user = User(**user)
             user.generate_key()
             session.add(user)
-
-        try:
-            session.commit()
-        except IntegrityError as ie:
-            session.rollback()
-            return "IntegrityError while posting users: %s " % str(ie)
 
         # TODO: return created users
         return "Successfully added %d users." % len(users)
