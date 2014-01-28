@@ -59,11 +59,11 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         Tests creation of multiple users
         """
 
-        create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 [self.user_list[1],
-                                                  self.user_list[2]],
-                                                 status=200)
-        json = create_response.json
+        (created_id, json) = self._create(
+            '/time/api/v1/users/',
+            [self.user_list[1],
+             self.user_list[2]])
+
         self.failUnless(len(json) == 2,
                         'Not enough entries in response, expected 2')
 
@@ -88,10 +88,9 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         Test deleting a user
         """
         # Create a user
-        create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 [self.user_list[3]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/users/',
+            [self.user_list[3]])
 
         # Delete that user again
         self.testapp.delete_json(
@@ -104,10 +103,9 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test updating a user
         """
-        create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 [self.user_list[4]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/users/',
+            [self.user_list[4]])
 
         update = {
             "email": "strangecase@wienfluss.net",
@@ -138,10 +136,9 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         Test fetching a user by ID
         """
 
-        create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 [self.user_list[5]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/users/',
+            [self.user_list[5]])
 
         get_response = self.testapp.get(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
@@ -149,8 +146,8 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         json = get_response.json
 
         self.assertTrue(json['email'] == 'specialhell@serenity.org',
-                        'Expected email to be "specialhell@serenity.org", was "{}"'
-            .format(json['email']))
+                        'Expected email to be "{}", was "{}"'
+            .format(self.user_list[5]['email'], json['email']))
         self.assertTrue(json['first_name'] == 'Shepherd',
                         'Expected first_name to be "Shepherd", was "{}"'
             .format(json['first_name']))

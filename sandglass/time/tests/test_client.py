@@ -19,12 +19,9 @@ class ClientTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test creation of a client
         """
-        create_response = self.testapp.post_json('/time/api/v1/clients/',
-                                                 [self.client_list[0]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
-        json = create_response.json
-
+        (created_id, json) = self._create(
+            '/time/api/v1/clients/',
+            [self.client_list[0]])
         self.failUnless(created_id.__class__ == int)
 
         self.assertTrue(json[0]['name'] == self.client_list[0]['name'],
@@ -35,11 +32,11 @@ class ClientTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test creation of multiple activities
         """
-        create_response = self.testapp.post_json('/time/api/v1/clients/',
-                                                 [self.client_list[1],
-                                                  self.client_list[2]],
-                                                 status=200)
-        json = create_response.json
+        (created_id, json) = self._create(
+            '/time/api/v1/clients/',
+            [self.client_list[1],
+             self.client_list[2]])
+
         self.failUnless(len(json) == 2,
                         'Not enough entries in response, expected 2')
 
@@ -57,10 +54,9 @@ class ClientTest(sandglass.time.tests.BaseFunctionalTest):
         Test deletion of a client
         """
         # Create a user
-        create_response = self.testapp.post_json('/time/api/v1/clients/',
-                                                 [self.client_list[3]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/clients/',
+            [self.client_list[3]])
 
         # Delete that user again
         self.testapp.delete_json(
@@ -73,10 +69,9 @@ class ClientTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test updating of a client
         """
-        create_response = self.testapp.post_json('/time/api/v1/clients/',
-                                                 [self.client_list[4]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/clients/',
+            [self.client_list[4]])
 
         update = {
             "name": "Irene Adler",
@@ -101,10 +96,9 @@ class ClientTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test getting of a client
         """
-        create_response = self.testapp.post_json('/time/api/v1/clients/',
-                                                 [self.client_list[5]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
+        (created_id, json) = self._create(
+            '/time/api/v1/clients/',
+            [self.client_list[5]])
 
         get_response = self.testapp.get(
             '/time/api/v1/clients/{}/'.format(created_id), status=200)
