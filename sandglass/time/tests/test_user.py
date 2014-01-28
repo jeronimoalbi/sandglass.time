@@ -41,11 +41,9 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         """
         Test creation of a single user
         """
-        create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 [self.user_list[0]],
-                                                 status=200)
-        created_id = create_response.json[0]['id']
-        json = create_response.json
+        (created_id, json) = self._create(
+            '/time/api/v1/users/',
+            [self.user_list[0]])
 
         self.failUnless(created_id.__class__ == int)
 

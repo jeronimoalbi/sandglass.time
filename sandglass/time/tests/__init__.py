@@ -49,3 +49,10 @@ class BaseFunctionalTest(unittest.TestCase):
         # Delete all clients
         self.testapp.delete_json(
             '/time/api/v1/clients/', status=200)
+
+    def _create(self, path, content=None, status=200):
+        create_response = self.testapp.post_json(path, content, status=status)
+        created_id = create_response.json[0]['id']
+        json = create_response.json
+
+        return (created_id, json)
