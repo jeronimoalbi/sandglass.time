@@ -5,20 +5,44 @@ import sandglass.time
 
 class UserTest(sandglass.time.tests.BaseFunctionalTest):
 
+    user_list = []
+    user_list.append({
+        "email": "timeywimey@wienfluss.net",
+        "first_name": "Dr",
+        "last_name": "Who"
+    })
+    user_list.append({
+        "email": "humpdydumpdy@wienfluss.net",
+        "first_name": "James William",
+        "last_name": "Elliot"
+    })
+    user_list.append({
+        "email": "ruggedlyhandsome@wienfluss.net",
+        "first_name": "Rick",
+        "last_name": "Castle"
+    })
+    user_list.append({
+        "email": "wibblywobbly@wienfluss.net",
+        "first_name": "The",
+        "last_name": "Tardis"
+    })
+    user_list.append({
+        "email": "strangecase@wienfluss.net",
+        "first_name": "Dr.",
+        "last_name": "Jekyll"
+    })
+    user_list.append({
+        "email": "specialhell@serenity.org",
+        "first_name": "Shepherd",
+        "last_name": "Book"
+    })
+
     def test_user_create(self):
         """
         Test creation of a single user
         """
-        # Create a user
-        userlist = []
-        userlist.append({
-            "email": "timeywimey@wienfluss.net",
-            "first_name": "Dr",
-            "last_name": "Who"
-        })
-
         create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 userlist,
+                                                 [self.user_list[0]],
                                                  status=200)
         created_id = create_response.json[0]['id']
         json = create_response.json
@@ -37,20 +61,9 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         Tests creation of multiple users
         """
 
-        userlist = []
-        userlist.append({
-            "email": "humpdydumpdy@wienfluss.net",
-            "first_name": "James William",
-            "last_name": "Elliot"
-        })
-        userlist.append({
-            "email": "ruggedlyhandsome@wienfluss.net",
-            "first_name": "Rick",
-            "last_name": "Castle"
-        })
-
         create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 userlist,
+                                                 [self.user_list[1],
+                                                  self.user_list[2]],
                                                  status=200)
         json = create_response.json
         self.failUnless(len(json) == 2,
@@ -77,42 +90,82 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         Test deleting a user
         """
         # Create a user
-        userlist = []
-        userlist.append({
-            "email": "wibblywobbly@wienfluss.net",
-            "first_name": "The",
-            "last_name": "Tardis"
-        })
-
         create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 userlist,
+                                                 [self.user_list[3]],
                                                  status=200)
         created_id = create_response.json[0]['id']
 
         # Delete that user again
-        delete_response = self.testapp.delete_json(
+        self.testapp.delete_json(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
 
         self.testapp.get(
             '/time/api/v1/users/{}/'.format(created_id), status=404)
+
+    def test_user_update(self):
+        """
+        Test updating a user
+        """
+        create_response = self.testapp.post_json('/time/api/v1/users/',
+                                                 [self.user_list[4]],
+                                                 status=200)
+        created_id = create_response.json[0]['id']
+
+        update = {
+            "email": "strangecase@wienfluss.net",
+            "first_name": "Mr.",
+            "last_name": "Hyde"
+        }
+
+        # Update that user
+        self.testapp.put_json(
+            '/time/api/v1/users/{}/'.format(created_id),
+            update,
+            status=200
+        )
+
+        get_response = self.testapp.get(
+            '/time/api/v1/users/{}/'.format(created_id), status=200)
+
+        json = get_response.json
+        self.assertTrue(json['first_name'] == 'Mr.',
+                        'Expected first_name to be "Mr.", was "{}"'
+            .format(json['first_name']))
+        self.assertTrue(json['last_name'] == 'Hyde',
+                        'Expected last_name to be "Hyde", was "{}"'
+            .format(json['last_name']))
 
     def test_get_user(self):
         """
         Test fetching a user by ID
         """
 
-        # Create a third user
-        userlist = []
-        userlist.append({
-            "email": "ittybitty@wienfluss.net",
-            "first_name": "Amilia",
-            "last_name": "Pond"
-        })
-
         create_response = self.testapp.post_json('/time/api/v1/users/',
-                                                 userlist,
+                                                 [self.user_list[5]],
                                                  status=200)
         created_id = create_response.json[0]['id']
 
         get_response = self.testapp.get(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
+
+        json = get_response.json
+
+        self.assertTrue(json['email'] == 'specialhell@serenity.org',
+            'Expected email to be "specialhell@serenity.org", was "{}"'
+            .format(json['email']))
+        self.assertTrue(json['first_name'] == 'Shepherd',
+            'Expected first_name to be "Shepherd", was "{}"'
+            .format(json['first_name']))
+        self.assertTrue(json['last_name'] == 'Book',
+            'Expected last_name to be "Book", was "{}"'
+            .format(json['last_name']))
+
+
+
+
+
+
+
+
+
+
