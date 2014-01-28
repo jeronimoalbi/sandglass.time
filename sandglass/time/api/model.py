@@ -7,7 +7,6 @@ from pyramid.exceptions import NotFound
 from sandglass.time.api import BaseResource
 from sandglass.time.models import transactional
 
-
 class ModelResource(BaseResource):
     """
     Base class for REST resources that use a Model to get data.

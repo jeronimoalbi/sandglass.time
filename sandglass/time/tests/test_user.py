@@ -114,11 +114,11 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         update = {
             "email": "strangecase@wienfluss.net",
             "first_name": "Mr.",
-            "last_name": "Hyde"
+            "last_name": "Hyde",
         }
 
         # Update that user
-        self.testapp.put_json(
+        update_response = self.testapp.put_json(
             '/time/api/v1/users/{}/'.format(created_id),
             update,
             status=200
@@ -135,7 +135,7 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
                         'Expected last_name to be "Hyde", was "{}"'
             .format(json['last_name']))
 
-    def test_get_user(self):
+    def test_user_get(self):
         """
         Test fetching a user by ID
         """
@@ -151,21 +151,11 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         json = get_response.json
 
         self.assertTrue(json['email'] == 'specialhell@serenity.org',
-            'Expected email to be "specialhell@serenity.org", was "{}"'
+                        'Expected email to be "specialhell@serenity.org", was "{}"'
             .format(json['email']))
         self.assertTrue(json['first_name'] == 'Shepherd',
-            'Expected first_name to be "Shepherd", was "{}"'
+                        'Expected first_name to be "Shepherd", was "{}"'
             .format(json['first_name']))
         self.assertTrue(json['last_name'] == 'Book',
-            'Expected last_name to be "Book", was "{}"'
+                        'Expected last_name to be "Book", was "{}"'
             .format(json['last_name']))
-
-
-
-
-
-
-
-
-
-
