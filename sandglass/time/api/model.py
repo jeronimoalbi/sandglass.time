@@ -34,7 +34,7 @@ class ModelResource(BaseResource):
 
         return pk_value
 
-    def get_object(self, check=True):
+    def get_object(self, check=True, session=None):
         """
         Get object for current request.
 
@@ -48,7 +48,7 @@ class ModelResource(BaseResource):
             raise Exception('No model assigned to class')
 
         pk_value = self.get_pk_value()
-        obj = self.model.get(pk_value)
+        obj = self.model.get(pk_value, session=session)
         if check and not obj:
             raise NotFound()
 
@@ -131,7 +131,7 @@ class ModelResource(BaseResource):
         Update object data.
 
         """
-        obj = self.get_object()
+        obj = self.get_object(session=session)
         schema = self.schema()
         try:
             user_data = schema.deserialize(self.request.json_body)
@@ -162,12 +162,12 @@ class ModelResource(BaseResource):
         Delete current object from database.
 
         """
-        obj = self.get_object()
+        obj = self.get_object(session=session)
         query = obj.query(session=session)
         count = query.delete()
-        
+
         if count != 1:
-            # TODO:  Return a proper Error Response 
+            # TODO:  Return a proper Error Response
             return count
         else:
             # TODO:  Return a proper Response instance
