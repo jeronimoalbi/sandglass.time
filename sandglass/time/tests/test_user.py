@@ -2,10 +2,13 @@ import sandglass.time
 
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
+
 class UserTest(sandglass.time.tests.BaseFunctionalTest):
 
     def test_user_create(self):
-
+        """
+        Test creation of a single user
+        """
         # Create a user
         userlist = []
         userlist.append({
@@ -20,7 +23,6 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         created_id = create_response.json[0]['id']
         json = create_response.json
 
-
         self.failUnless(created_id.__class__ == int)
 
         self.assertTrue(json[0]['first_name'] == 'Dr',
@@ -31,8 +33,10 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
                         'Email should have been "timeywimey@wienfluss.net"')
 
     def test_user_create_multiple(self):
+        """
+        Tests creation of multiple users
+        """
 
-        # Create a user
         userlist = []
         userlist.append({
             "email": "humpdydumpdy@wienfluss.net",
@@ -44,7 +48,7 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
             "first_name": "Rick",
             "last_name": "Castle"
         })
-        
+
         create_response = self.testapp.post_json('/time/api/v1/users/',
                                                  userlist,
                                                  status=200)
@@ -52,6 +56,7 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         self.failUnless(len(json) == 2,
                         'Not enough entries in response, expected 2')
 
+        # Assert creation of first user
         self.assertTrue(json[0]['first_name'] == 'James William',
                         'First name should have been "James William"')
         self.assertTrue(json[0]['last_name'] == 'Elliot',
@@ -59,6 +64,7 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         self.assertTrue(json[0]['email'] == 'humpdydumpdy@wienfluss.net',
                         'Email should have been "humpdydumpdy@wienfluss.net"')
 
+        # Assert creation of first user
         self.assertTrue(json[1]['first_name'] == 'Rick',
                         'First name should have been "Rick')
         self.assertTrue(json[1]['last_name'] == 'Castle',
@@ -67,7 +73,10 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
                         'Email should have been "ruggedlyhandsome@wienfluss.net"')
 
     def test_user_delete(self):
-        # Create a second user
+        """
+        Test deleting a user
+        """
+        # Create a user
         userlist = []
         userlist.append({
             "email": "wibblywobbly@wienfluss.net",
@@ -88,6 +97,10 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
             '/time/api/v1/users/{}/'.format(created_id), status=404)
 
     def test_get_user(self):
+        """
+        Test fetching a user by ID
+        """
+
         # Create a third user
         userlist = []
         userlist.append({
