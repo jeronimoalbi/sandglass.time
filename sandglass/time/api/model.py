@@ -156,15 +156,21 @@ class ModelResource(BaseResource):
 
         return obj
 
-    def delete(self):
+    @transactional
+    def delete(self, session):
         """
         Delete current object from database.
 
         """
         obj = self.get_object()
-        obj.delete()
-
-        # TODO:  Return a proper Response instance
-        return True
+        query = obj.query(session=session)
+        count = query.delete()
+        
+        if count != 1:
+            # TODO:  Return a proper Error Response 
+            return count
+        else:
+            # TODO:  Return a proper Response instance
+            return True
 
     # TODO: Implement related methods
