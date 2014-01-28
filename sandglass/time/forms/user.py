@@ -13,6 +13,7 @@ class UserSchema(BaseModelSchema):
     Schema definition for user model.
 
     TODO: define required, missing, default attributes.
+
     """
 
     email = SchemaNode(String(), validator=Email())

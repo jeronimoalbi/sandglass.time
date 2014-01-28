@@ -1,4 +1,6 @@
 from sandglass.time.api.model import ModelResource
+from sandglass.time.forms.project import ProjectListSchema
+from sandglass.time.forms.project import ProjectSchema
 from sandglass.time.models.project import Project
 
 
@@ -9,3 +11,5 @@ class ProjectResource(ModelResource):
     """
     name = 'projects'
     model = Project
+    schema = ProjectSchema
+    list_schema = ProjectListSchema
