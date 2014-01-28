@@ -45,3 +45,7 @@ class BaseFunctionalTest(unittest.TestCase):
         # Delete all users
         self.testapp.delete_json(
             '/time/api/v1/users/', status=200)
+
+        # Delete all clients
+        self.testapp.delete_json(
+            '/time/api/v1/clients/', status=200)
