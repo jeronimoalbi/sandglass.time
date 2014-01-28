@@ -20,18 +20,28 @@ TEST_SETTINGS = {"use": "egg:sandglass.time",
                  "database.url": "sqlite:///./sandglass_test.db",
                  "database.encoding": "utf8",
                  "database.echo": "false",
-                }
+                 }
 
 # Test Base Classes
 
+
 class BaseFunctionalTest(unittest.TestCase):
+
     """
     Base class for functional test
 
     Creates testapp instance by wrapping main.run_wsgi()
     """
-    def setUp(self):
-
+    @classmethod
+    def setUpClass(self):
         self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
 
         self.testapp = TestApp(self.app)
+
+    @classmethod
+    def tearDownClass(self):
+        # Clear database of all models
+
+        # Delete all users
+        self.testapp.delete_json(
+            '/time/api/v1/users/', status=200)
