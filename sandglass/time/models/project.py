@@ -1,16 +1,18 @@
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Integer
 from sqlalchemy.types import Unicode
 from sqlalchemy.types import UnicodeText
 
+from sandglass.time.models import ActivePeriodMixin
 from sandglass.time.models import BaseModel
 from sandglass.time.models import create_index
 
 
-class Project(BaseModel):
+class Project(ActivePeriodMixin, BaseModel):
     """
     TODO
 
@@ -20,6 +22,12 @@ class Project(BaseModel):
     client_id = Column(Integer, ForeignKey('time_client.id'))
     parent_id = Column(Integer, ForeignKey('time_project.id'))
     tasks = relationship("Task", backref="project")
+    children = relationship(
+        "Project",
+        lazy=True,
+        join_depth=1,
+        # Resolve remote side field using an inline callable
+        backref=backref("parent", remote_side=(lambda: Project.id)))
 
     @declared_attr
     def __table_args__(cls):

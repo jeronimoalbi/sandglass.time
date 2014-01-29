@@ -1,5 +1,6 @@
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Integer
 from sqlalchemy.types import Unicode
@@ -18,6 +19,13 @@ class Task(BaseModel):
     short_name = Column(Unicode(16))
     parent_id = Column(Integer, ForeignKey('time_task.id'))
     project_id = Column(Integer, ForeignKey('time_project.id'))
+    children = relationship(
+        "Task",
+        lazy=True,
+        join_depth=1,
+        # Resolve remote side field using an inline callable
+        remote_side=(lambda: Task.id),
+        backref="parent")
 
     @declared_attr
     def __table_args__(cls):

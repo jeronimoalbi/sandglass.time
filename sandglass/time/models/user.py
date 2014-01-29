@@ -7,9 +7,10 @@ from sqlalchemy.types import Unicode
 from sqlalchemy.types import UnicodeText
 
 from sandglass.time.models import BaseModel
+from sandglass.time.models import TimestampMixin
 
 
-class User(BaseModel):
+class User(TimestampMixin, BaseModel):
     """
     TODO
 
@@ -20,6 +21,15 @@ class User(BaseModel):
     key = Column(Unicode(64), nullable=False, unique=True)
     salt = Column(Unicode(40), nullable=False)
     tags = relationship("Tag", backref="user")
+
+    def __init__(self, *args, **kwargs):
+        super(User, self).__init__(*args, **kwargs)
+        # Generate key and salt values the very first time
+        # a User is created (this is not called during deserialization)
+        if not self.salt:
+            self.generate_salt()
+        if not self.key:
+            self.generate_key()
 
     @classmethod
     def get_by_email(cls, email):
