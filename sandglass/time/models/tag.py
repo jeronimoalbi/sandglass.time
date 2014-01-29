@@ -36,11 +36,11 @@ class Tag(BaseModel):
         nullable=False)
     aliased_tag_id = Column(
         Integer,
-        ForeignKey('tag.id'),
+        ForeignKey('time_tag.id'),
         doc=u"If current tag is an alias this is the ID of the original tag")
     user_id = Column(
         Integer,
-        ForeignKey('user.id'),
+        ForeignKey('time_user.id'),
         doc=u"User that created the tag")
     tag_aliases = relationship("Tag")
 

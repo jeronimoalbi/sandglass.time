@@ -53,6 +53,6 @@ class Activity(BaseModel):
         default=ACTIVITY_UNASSIGNED,
         nullable=False)
     project_id = Column(
-        Integer, ForeignKey('project.id'))
+        Integer, ForeignKey('time_project.id'))
     task_id = Column(
-        Integer, ForeignKey('task.id'))
+        Integer, ForeignKey('time_task.id'))

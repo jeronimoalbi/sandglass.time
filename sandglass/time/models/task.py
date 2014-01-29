@@ -16,8 +16,8 @@ class Task(BaseModel):
     """
     name = Column(UnicodeText(255), nullable=False)
     short_name = Column(Unicode(16))
-    parent_id = Column(Integer, ForeignKey('task.id'))
-    project_id = Column(Integer, ForeignKey('project.id'))
+    parent_id = Column(Integer, ForeignKey('time_task.id'))
+    project_id = Column(Integer, ForeignKey('time_project.id'))
 
     @declared_attr
     def __table_args__(cls):
