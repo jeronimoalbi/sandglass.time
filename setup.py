@@ -24,6 +24,7 @@ setup(
         'coverage',
         'virtualenv',
         'WebTest==2.0.11',
+        'PasteDeploy==1.5.2',
         # Translations extraction support
         'Babel',
         'lingua',
