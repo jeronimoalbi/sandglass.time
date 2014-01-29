@@ -7,6 +7,7 @@ from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from sandglass.time.main import run_wsgi
 from webtest import TestApp
+from sandglass.time.models import user
 
 
 # TODO import these from an ini file
@@ -51,11 +52,14 @@ engine = engine_from_config(settings, prefix='database.')
 
 from fixture import DataSet
 
+
 class UserData(DataSet):
+
     class homer_simpson:
         email = "homer@simpson.com"
         first_name = "Homer"
         last_name = "Simpson"
+
     class marge_simpson:
         email = "marge@simpson.com"
         first_name = "marge"
@@ -71,15 +75,17 @@ dbfixture = SQLAlchemyFixture(
 
 # Test Base Classes
 class BaseTest(unittest.TestCase):
+
     """
     Base class for functional test
 
     Creates testapp instance by wrapping main.run_wsgi()
     """
+
     def setUp(self):
-        # self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
-        # 
-        # self.testapp = TestApp(self.app)
+        self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
+
+        self.testapp = TestApp(self.app) 
         print "Setting settings..."
         self.settings = settings
         print "META create_all..."
@@ -98,7 +104,6 @@ class BaseTest(unittest.TestCase):
         self.data.teardown()
         print "META drop_all..."
         META.drop_all(engine)
-
 
 class BaseFunctionalTest(unittest.TestCase):
 
