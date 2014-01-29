@@ -10,25 +10,6 @@ from webtest import TestApp
 from sandglass.time.models import user
 
 
-# TODO import these from an ini file
-TEST_SETTINGS = {"use": "egg:sandglass.time",
-                 "pyramid.reload_templates": "true",
-                 "pyramid.debug_authorization": "false",
-                 "pyramid.debug_notfound": "false",
-                 "pyramid.debug_routematch": "false",
-                 "pyramid.debug_templates": "true",
-                 "pyramid.default_locale_name": "en",
-                 "pyramid.includes": "pyramid_tm pyramid_mailer",
-                 "available_languages": "en de es",
-                 "tm.attempts": "3",
-                 "mail.host": "localhost",
-                 "mail.port": "25",
-                 "database.url": "sqlite:///./sandglass_test.db",
-                 "database.encoding": "utf8",
-                 "database.echo": "false",
-                 }
-
-
 def get_config_file_path():
     test_dir = os.path.dirname(os.path.realpath(__file__))
     config_file_path = os.path.join(test_dir,
@@ -42,7 +23,7 @@ settings = appconfig('config:' + get_config_file_path())
 
 
 from sandglass.time import models
-from sandglass.time.models import META
+from sandglass.time.models import META, DBSESSION
 from fixture import SQLAlchemyFixture
 from fixture.style import NamedDataStyle
 
@@ -85,7 +66,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
 
-        self.testapp = TestApp(self.app) 
+        self.testapp = TestApp(self.app)
         print "Setting settings..."
         self.settings = settings
         print "META create_all..."
@@ -105,6 +86,7 @@ class BaseTest(unittest.TestCase):
         print "META drop_all..."
         META.drop_all(engine)
 
+
 class BaseFunctionalTest(unittest.TestCase):
 
     """
@@ -114,9 +96,13 @@ class BaseFunctionalTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(self):
-        self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
 
-        self.testapp = TestApp(self.app)
+        testing.setUp()
+        print "wsgiapp loadapp with config..."
+        wsgiapp = loadapp('config:%s' % get_config_file_path())
+
+        print "TestApp..."
+        self.testapp = TestApp(wsgiapp)
 
     @classmethod
     def tearDownClass(self):
@@ -129,6 +115,8 @@ class BaseFunctionalTest(unittest.TestCase):
         # Delete all clients
         self.testapp.delete_json(
             '/time/api/v1/clients/', status=200)
+
+        testing.tearDown()
 
     def _create(self, path, content=None, status=200):
         create_response = self.testapp.post_json(path, content, status=status)
