@@ -1,12 +1,17 @@
+from datetime import datetime
+
 from sqlalchemy import Column
 from sqlalchemy import MetaData
 from sqlalchemy import Sequence
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import as_declarative
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import Index
+from sqlalchemy.sql.expression import func
+from sqlalchemy.types import Boolean
+from sqlalchemy.types import DateTime
 from sqlalchemy.types import Integer
 from zope.sqlalchemy import ZopeTransactionExtension
 
@@ -75,7 +80,9 @@ def create_index(cls, *fields, **kwargs):
     return Index(index_name, *fields)
 
 
-class DeclarativeBaseModel(object):
+# Define base model class for declarative definitions
+@as_declarative(metadata=META)
+class BaseModel(object):
     """
     Base class for declarative models definition.
 
@@ -185,7 +192,20 @@ class DeclarativeBaseModel(object):
         return (field_name, field_value)
 
 
-# Define base model class for declarative definitions
-BaseModel = declarative_base(name="BaseModel",
-                             cls=DeclarativeBaseModel,
-                             metadata=META)
+class TimestampMixin(object):
+    """
+    Model MixIn to add created and modified fields.
+
+    """
+    created = Column(DateTime, default=func.now())
+    modified = Column(DateTime, onupdate=datetime.now)
+
+
+class ActivePeriodMixin(object):
+    """
+    Model MixIn to add active flag and period fields.
+
+    """
+    is_active = Column(Boolean, default=True)
+    active_from = Column(DateTime)
+    active_until = Column(DateTime)
