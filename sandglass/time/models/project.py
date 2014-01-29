@@ -17,8 +17,8 @@ class Project(BaseModel):
     """
     name = Column(UnicodeText(255), nullable=False)
     short_name = Column(Unicode(16))
-    client_id = Column(Integer, ForeignKey('client.id'))
-    parent_id = Column(Integer, ForeignKey('project.id'))
+    client_id = Column(Integer, ForeignKey('time_client.id'))
+    parent_id = Column(Integer, ForeignKey('time_project.id'))
     tasks = relationship("Task", backref="project")
 
     @declared_attr
