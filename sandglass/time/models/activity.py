@@ -1,6 +1,8 @@
 from datetime import datetime
 from sqlalchemy import Column
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import Table
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Enum
 from sqlalchemy.types import Integer
@@ -8,6 +10,7 @@ from sqlalchemy.types import UnicodeText
 
 from sandglass.time import _
 from sandglass.time.models import BaseModel
+from sandglass.time.models import META
 
 
 # Activity codes
@@ -35,13 +38,23 @@ ACTIVITY_TYPES = {
 }
 
 
+# Table definition to store the tags used in and activity
+tag_association_table = Table(
+    'time_activity_tag',
+    META,
+    Column('activity_id', Integer, ForeignKey('time_activity.id')),
+    Column('tag_id', Integer, ForeignKey('time_tag.id')),
+)
+
+
 class Activity(BaseModel):
     """
     TODO
 
     """
     description = Column(
-        UnicodeText(255), nullable=False)
+        UnicodeText(255),
+        nullable=False)
     start = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -53,6 +66,16 @@ class Activity(BaseModel):
         default=ACTIVITY_UNASSIGNED,
         nullable=False)
     project_id = Column(
-        Integer, ForeignKey('time_project.id'))
+        Integer,
+        ForeignKey('time_project.id'))
     task_id = Column(
-        Integer, ForeignKey('time_task.id'))
+        Integer,
+        ForeignKey('time_task.id'))
+    user_id = Column(
+        Integer,
+        ForeignKey('time_user.id'),
+        nullable=False)
+    project = relationship("Project", lazy=True)
+    task = relationship("Task", lazy=True)
+    user = relationship("User", lazy=True)
+    tags = relationship("Tag", secondary=tag_association_table)

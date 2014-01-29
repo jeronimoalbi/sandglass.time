@@ -1,5 +1,6 @@
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Enum
@@ -34,15 +35,20 @@ class Tag(BaseModel):
         Enum(*TAG_TYPES, native_enum=False),
         default=TAG_TYPE_ACTIVITY,
         nullable=False)
-    aliased_tag_id = Column(
+    original_id = Column(
         Integer,
         ForeignKey('time_tag.id'),
-        doc=u"If current tag is an alias this is the ID of the original tag")
+        doc="If current tag is an alias this is the ID of the original tag")
     user_id = Column(
         Integer,
         ForeignKey('time_user.id'),
-        doc=u"User that created the tag")
-    tag_aliases = relationship("Tag")
+        nullable=False,
+        doc="User that created the tag")
+    aliases = relationship(
+        "Tag",
+        lazy=True,
+        join_depth=1,
+        backref=backref("original", remote_side=(lambda: Tag.id)))
 
     @declared_attr
     def __table_args__(cls):
