@@ -84,8 +84,14 @@ class DeclarativeBaseModel(object):
     """
     @declared_attr
     def __tablename__(cls):
+        # Get sandglass application module name where current model is defined
+        if not cls.__module__.startswith('sandglass.'):
+            raise Exception('Model is not defined inside a sandglass app !')
+
+        parts = cls.__module__.split('.')
         # By default table name is the name of model class in lower case
-        return cls.__name__.lower()
+        # prefixed with the name of the app where it is defined
+        return "{0}_{1}".format(parts[1], cls.__name__.lower())
 
     @declared_attr
     def id(cls):
@@ -97,17 +103,6 @@ class DeclarativeBaseModel(object):
         self._col_iter = iter(self._mapper.columns)
 
         return self
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        description = str(self)
-
-        if description:
-            text = '<%s: %s>' % (cls_name, description)
-        else:
-            text = '<%s>' % cls_name
-
-        return text
 
     def __str__(self):
         # Call unicode to get value and encode str as UTF8
