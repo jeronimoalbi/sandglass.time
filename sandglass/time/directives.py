@@ -18,7 +18,7 @@ def add_rest_resource(config, cls_or_dotted):
         #    POST: Create new item(s)
         #    DELETE: Delete all items
         {'path': resource_prefix,
-         'name_suffix': '_all',
+         'name_suffix': '_collection',
          'methods': ('GET', 'POST', 'DELETE'),
          'enable_rpc': True, },
         # /route_prefix/{pk}/
@@ -26,17 +26,15 @@ def add_rest_resource(config, cls_or_dotted):
         #    PUT: Update a single item
         #    DELETE: Delete a single item
         {'path': (resource_prefix + '{pk}/'),
-         'name_suffix': '',
-         'methods': ('GET', 'PUT', 'DELETE'),
+         'name_suffix': '_member',
+         'methods': ('GET', 'PUT', 'DELETE', 'POST'),
          'enable_rpc': True, },
         # /route_prefix/{pk}/{related_name}/
         #    GET: List all related items
-        #    POST: Create related item(s)
-        #    PUT: Update related item(s)
         #    DELETE: Delete related item(s)
         {'path': (resource_prefix + '{pk}/{related_name}/'),
          'name_suffix': '_related',
-         'methods': ('GET', 'POST', 'PUT', 'DELETE'),
+         'methods': ('GET', 'DELETE'),
          'enable_rpc': False, },
     )
 
@@ -50,6 +48,15 @@ def add_rest_resource(config, cls_or_dotted):
         config.add_route(route_name,
                          pattern=data['path'],
                          request_method=request_methods)
+        # Attach a view to handle RPC function calls
+        rpc_view_handler = getattr(cls, rpc_attr_name, None)
+        if data['enable_rpc'] and hasattr(rpc_view_handler, '__call__'):
+            config.add_view(cls,
+                            attr=rpc_attr_name,
+                            route_name=route_name,
+                            request_param='call',
+                            renderer='json',
+                            request_method=('GET', 'POST', 'PUT', 'DELETE'))
         # Add views to handle different request methods in this view
         for method in request_methods:
             # Init the name of the methos that the class should
@@ -65,13 +72,3 @@ def add_rest_resource(config, cls_or_dotted):
                             route_name=route_name,
                             renderer='json',
                             request_method=method)
-
-        # Attach a view to handle RPC function calls
-        rpc_view_handler = getattr(cls, rpc_attr_name, None)
-        if data['enable_rpc'] and hasattr(rpc_view_handler, '__call__'):
-            config.add_view(cls,
-                            attr=rpc_attr_name,
-                            route_name=route_name,
-                            request_param='call',
-                            renderer='json',
-                            request_method=('GET', 'POST'))

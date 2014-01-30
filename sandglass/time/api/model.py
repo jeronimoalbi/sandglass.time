@@ -2,10 +2,32 @@ import transaction
 
 from colander import Invalid
 from sqlalchemy.exc import IntegrityError
+from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
+from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.view import view_config
 
+from sandglass.time import _
 from sandglass.time.api import BaseResource
 from sandglass.time.models import transactional
+from sandglass.time.response import error_response
+
+
+# TODO: Rethink and finish exception global handling
+# http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/views.html#custom-exception-views
+@view_config(context=ValueError)
+@view_config(context=Invalid)
+def failed_validation(exc, request):
+    transaction.abort()
+    # TODO: Log invalid exceptions
+    return HTTPBadRequest()
+
+
+@view_config(context=IntegrityError)
+def handle_integrity_errors(exc, request):
+    transaction.abort()
+    return error_response(exc.message)
+
 
 class ModelResource(BaseResource):
     """
@@ -18,22 +40,48 @@ class ModelResource(BaseResource):
     schema = None
     list_schema = None
 
-    def get_pk_value(self):
+    def _get_pk_value(self):
+        value = self.request.matchdict.get('pk')
+        try:
+            pk_value = int(value)
+        except (ValueError, TypeError):
+            pk_value = None
+
+        return pk_value
+
+    def _get_object(self, check=True, session=None):
+        if not self.model:
+            raise Exception('No model assigned to class')
+
+        obj = None
+        if self.pk_value:
+            obj = self.model.get(self.pk_value, session=session)
+
+        if check and not obj:
+            raise NotFound()
+
+        return obj
+
+    def _get_related_name(self):
+        related_name = self.request.matchdict.get('related_name')
+        # Check that related name is in fact a relationship
+        if related_name not in self.model.__mapper__.relationships:
+            raise NotFound()
+
+        return related_name
+
+    @reify
+    def pk_value(self):
         """
         Get primary key value for current request.
 
         Return an Integer or None.
 
         """
-        value = self.request.matchdict.get('pk')
-        try:
-            pk_value = int(value)
-        except ValueError:
-            pk_value = None
+        return self._get_pk_value()
 
-        return pk_value
-
-    def get_object(self, check=True, session=None):
+    @reify
+    def object(self):
         """
         Get object for current request.
 
@@ -43,126 +91,115 @@ class ModelResource(BaseResource):
         Return a BaseModel instance or None.
 
         """
-        if not self.model:
-            raise Exception('No model assigned to class')
+        return self._get_object()
 
-        pk_value = self.get_pk_value()
-        obj = self.model.get(pk_value, session=session)
-        if check and not obj:
-            raise NotFound()
-
-        return obj
-
-    def before_session_add(self, obj):
+    @reify
+    def related_name(self):
         """
-        Called after a new object is created.
+        Get related name when it is available in the URL.
+
+        When no related name is given or the name is not a model
+        relationship `NotFound` is raised.
+
+        Return a String.
 
         """
+        return self._get_related_name()
+
+    def handle_rpc_call(self):
+        """
+        Handle RPC calls for model resources.
+
+        Handlers for specific object call receive the database
+        object as argument.
+
+        """
+        # When RPC is called for an object, get it and use it
+        # as argument for the view handler
+        if 'pk' in self.request.matchdict:
+            return self.rpc_handler(self.object)
+        else:
+            # When RPC is called for a collection dont use arguments
+            return self.rpc_handler()
 
     @transactional
-    def post_all(self, session):
+    def post_collection(self, session):
         """
         Create new object(s).
 
         """
         # Get submited JSON data from the request body
         list_schema = self.list_schema()
-        try:
-            users_data_list = list_schema.deserialize(self.request.json_body)
-        except Invalid as err:
-            transaction.abort()
-            # TODO: Log invalid exceptions
-            # TODO: return proper error response
-            return unicode(err)
+        data_list = list_schema.deserialize(self.request.json_body)
 
         obj_list = []
-        for data in users_data_list:
+        for data in data_list:
             obj = self.model(**data)
-            self.before_session_add(obj)
             session.add(obj)
             obj_list.append(obj)
 
-        try:
-            # Flush users to generate IDs
-            session.flush()
-            # Generate object dictionaries here because after commit
-            # objects are dettached from the session and then is
-            # not possible to read field values.
-            obj_list = [dict(obj) for user in obj_list]
-
-            transaction.commit()
-        except IntegrityError as err:
-            transaction.abort()
-            # TODO: return proper error response
-            return err.message
+        # Flush to generate IDs
+        session.flush()
+        # Generate object dictionaries before commit because after
+        # that objects are dettached from the session and then is
+        # not possible to read field values from them.
+        obj_list = [dict(obj) for obj in obj_list]
+        transaction.commit()
 
         return obj_list
 
-    def get_all(self):
+    def get_collection(self):
         """
-        Get all user objects.
+        Get all model objects.
 
         """
         query = self.model.query()
         return query.all()
 
-    def delete_all(self):
+    def delete_collection(self):
         """
-        Delete all user objects.
+        Delete all model objects.
 
         """
         query = self.model.query()
         count = query.delete()
-
         # TODO: Return a proper Response instance
         return count
 
-    def get(self):
+    def get_member(self):
         """
-        Get user object for current `pk` value.
+        Get object for current request.
 
         """
-        return self.get_object()
+        return self.object
 
-    @transactional
-    def put(self, session):
+    def put_member(self):
         """
-        Update object data.
+        Update current object data.
 
         """
-        obj = self.get_object(session=session)
+        query = self.object.query()
         schema = self.schema()
-        try:
-            user_data = schema.deserialize(self.request.json_body)
-        except Invalid as err:
-            transaction.abort()
-            # TODO: Log invalid exceptions
-            # TODO: return proper error response
-            return unicode(err)
+        data = schema.deserialize(self.request.json_body)
 
         try:
-            query = obj.query(session=session)
-            count = query.update(user_data)
-        # TODO: Handle errors during update
+            # TODO: Handle errors during update
+            count = query.update(data)
         except:
             transaction.abort()
-            # TODO: return proper error response
-            return "Object update failed"
+            return error_response(_("Object update failed"))
 
         if not count:
-            # TODO: return proper error response
-            return "No object was updated"
+            return error_response(_("No object was updated"))
 
-        return obj
+        return self.object
 
-    @transactional
-    def delete(self, session):
+    def delete_member(self):
         """
         Delete current object from database.
 
         """
-        obj = self.get_object(session=session)
-        query = obj.query(session=session)
+        query = self.object.query()
         count = query.delete()
 
         if count != 1:
@@ -172,4 +209,26 @@ class ModelResource(BaseResource):
             # TODO:  Return a proper Response instance
             return True
 
-    # TODO: Implement related methods
+    def get_related(self):
+        """
+        Get a list of related objects for current object.
+
+        """
+        # TODO: Use count() to avoid useless initial full object query
+        #       Raise 404 when object count == 0. Same for delete_related.
+        return (getattr(self.object, self.related_name) or [])
+
+    def delete_related(self):
+        """
+        Delete related objects from current object.
+
+        """
+        session = self.object.current_session
+        # Get related objects and delete one by one
+        # NOTE: They are really deleted during session.flush()
+        # TODO: Reimplement using a single delete statement
+        related_object_list = getattr(self.object, self.related_name) or ()
+        for related_object in related_object_list:
+            session.delete(related_object)
+
+        return len(related_object_list)

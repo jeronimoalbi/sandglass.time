@@ -1,4 +1,5 @@
 from datetime import datetime
+from inspect import isclass
 
 from sqlalchemy import Column
 from sqlalchemy import MetaData
@@ -14,6 +15,8 @@ from sqlalchemy.types import Boolean
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Integer
 from zope.sqlalchemy import ZopeTransactionExtension
+
+from sandglass.time.utils import mixedmethod
 
 
 META = MetaData()
@@ -128,15 +131,25 @@ class BaseModel(object):
         """
         return DBSESSION()
 
-    @classmethod
-    def query(cls, session=None):
+    @mixedmethod
+    def query(obj, session=None):
         """
-        Get a query instance for current model class.
+        Get a query instance for current model class or instance.
+
+        Session argument is used only when method is called as class method.
+        Global session is used for class method calls without a session
+        argument.
 
         """
-        # When no session is given use global session
-        if not session:
-            session = DBSESSION
+        if isclass(obj):
+            cls = obj
+            # For class method calls use global session when none is available
+            if not session:
+                session = cls.new_session()
+        else:
+            # When called as instance method get class and session from object
+            cls = obj.__class__
+            session = obj.current_session
 
         query = session.query(cls)
         return query

@@ -34,6 +34,7 @@ def init_app_modules(config):
 
     """
     config.scan('sandglass.time.models')
+    config.scan('sandglass.time.api.model')
     config.include("sandglass.time.api.init_api_versions", route_prefix='api')
 
 
