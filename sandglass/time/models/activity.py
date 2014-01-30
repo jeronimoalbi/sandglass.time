@@ -49,7 +49,11 @@ tag_association_table = Table(
 
 class Activity(BaseModel):
     """
-    TODO
+    A record of activity.
+
+    This is the main unit of measure for sandglass. Activities can describe
+    either work on a project, unassigned time, breaks or days where employees
+    are away sick or on vacation.
 
     """
     description = Column(
@@ -79,3 +83,19 @@ class Activity(BaseModel):
     task = relationship("Task", lazy=True)
     user = relationship("User", lazy=True)
     tags = relationship("Tag", secondary=tag_association_table)
+
+    def remove_tags(self, tag_id_list):
+        """
+        Remove tag(s) from current activity.
+
+        Return an Integer with the number of deleted rows.
+
+        """
+        # Prepare the DELETE statement for the list of tag IDs
+        condition = tag_association_table.c.tag_id.in_(tag_id_list)
+        query = tag_association_table.delete()
+        query = query.where(condition)
+        # Execute query in the context of current object session
+        result = self.current_session.execute(query)
+        # Return the number of removed tags
+        return result.rowcount

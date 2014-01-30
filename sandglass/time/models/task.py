@@ -12,7 +12,9 @@ from sandglass.time.models import create_index
 
 class Task(BaseModel):
     """
-    TODO
+    Main activity categorization for projects.
+
+    Describes project phases, parts and areas.
 
     """
     name = Column(UnicodeText(255), nullable=False)

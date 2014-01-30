@@ -14,7 +14,12 @@ from sandglass.time.models import create_index
 
 class Project(ActivePeriodMixin, BaseModel):
     """
-    TODO
+    Project for a ceratain client or internal (for the company itsself).
+
+    Defines a list of tasks (project parts) available to book hours to.
+
+    Projects can be cloned to easily create new projects with the same
+    attributes.
 
     """
     name = Column(UnicodeText(255), nullable=False)
