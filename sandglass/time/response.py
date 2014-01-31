@@ -1,6 +1,7 @@
 import json
 
 from pyramid import response
+from pyramid.httpexceptions import HTTPFound
 
 
 class Response(response.Response):
@@ -20,6 +21,7 @@ def error_response(message, data=None):
     Return a Response.
 
     """
+    # TODO: Define error codes for the API and use them in response body
     error_info = {'message': message}
     if data:
         error_info['error'] = data
@@ -27,3 +29,11 @@ def error_response(message, data=None):
     body = json.dumps(error_info)
     response = Response(body=body, status_code=500)
     return response
+
+
+def redirect(url):
+    """
+    Redirect a request to another URL.
+
+    """
+    raise HTTPFound(location=url)
