@@ -15,15 +15,15 @@ class ActivityResource(ModelResource):
     schema = ActivitySchema
     list_schema = ActivityListSchema
 
-    @rpc(method='post')
-    def add_tags(self):
+    @rpc(member=True, method='post')
+    def add_tags(self, activity):
         """
         Add tags to current activity.
 
         """
 
-    @rpc(method='post')
-    def remove_tags(self):
+    @rpc(member=True, method='post')
+    def remove_tags(self, activity):
         """
         Remove tags from current activity.
 
@@ -31,7 +31,6 @@ class ActivityResource(ModelResource):
         Tag IDs to remove.
 
         """
-        activity = self.object
         # TODO: Create a schema to validate JSON body (has to be a list of ID)
         tag_id_list = self.request.json_body
         # TODO: Return a proper response object
