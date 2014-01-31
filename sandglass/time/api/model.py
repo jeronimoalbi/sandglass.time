@@ -37,6 +37,16 @@ class ModelResource(BaseResource):
 
         return obj
 
+    def _get_related_query_mode(self):
+        # Dont use query modes when include is missing or when
+        # current request is not querying for an object
+        if ('include' not in self.request.GET) or not self.pk_value:
+            return {}
+
+        include_items = self.request.GET['include'].split(',')
+        # Create a dictionary of related field name and query mode
+        return dict([item.strip().split(':') for item in include_items])
+
     @reify
     def object(self):
         """
@@ -49,6 +59,33 @@ class ModelResource(BaseResource):
 
         """
         return self._get_object()
+
+    @reify
+    def related_query_mode(self):
+        """
+        Get query modes for related objects.
+
+        Supported mode values:
+            - full (load all fields; Default one)
+            - pk (only load pk values)
+
+        By default no related objects are loaded.
+
+        Loading of related object in the same request is specified
+        using a GET parameter called `include`.
+        It takes a comma separated list of related objects to load.
+
+        Format:
+            include=(field_name:query_mode[, ...])
+
+        Example:
+            include=tags:full,user:pk
+
+        Return a Dictionary.
+
+        """
+        # TODO: Implement query/serialization of related objects
+        return self._get_related_query_mode()
 
     def handle_rpc_call(self):
         """
