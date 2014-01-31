@@ -16,7 +16,7 @@ class BaseModelSchema(MappingSchema):
     id = SchemaNode(Integer(), missing=drop)
 
 
-class IDListSchema(SequenceSchema):
+class IdListSchema(SequenceSchema):
     """
     Schema definition for a List of "ids".
 

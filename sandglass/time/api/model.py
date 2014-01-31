@@ -75,9 +75,6 @@ class ModelResource(BaseResource):
         using a GET parameter called `include`.
         It takes a comma separated list of related objects to load.
 
-        Format:
-            include=(field_name:query_mode[, ...])
-
         Example:
             include=tags:full,user:pk
 
@@ -111,7 +108,7 @@ class ModelResource(BaseResource):
         """
         # Get submited JSON data from the request body
         list_schema = self.list_schema()
-        data_list = list_schema.deserialize(self.request.json_body)
+        data_list = list_schema.deserialize(self.request_data)
 
         obj_list = []
         for data in data_list:
@@ -121,11 +118,6 @@ class ModelResource(BaseResource):
 
         # Flush to generate IDs
         session.flush()
-        # Generate object dictionaries before commit because after
-        # that objects are dettached from the session and then is
-        # not possible to read field values from them.
-        obj_list = [dict(obj) for obj in obj_list]
-        transaction.commit()
 
         return obj_list
 
@@ -161,12 +153,12 @@ class ModelResource(BaseResource):
         """
         query = self.object.query()
         schema = self.schema()
-        data = schema.deserialize(self.request.json_body)
+        data = schema.deserialize(self.request_data)
         try:
             count = query.update(data)
         except:
             LOG.exception('Error updating object during PUT request')
-            transaction.abort()
+            transaction.doom()
             return error_response(_("Object update failed"))
 
         if not count:
@@ -193,9 +185,7 @@ class ModelResource(BaseResource):
         Get a list of related objects for current object.
 
         """
-        # TODO: Use count() to avoid useless initial full object query
-        #       Raise 404 when object count == 0. Same for delete_related.
-        return (getattr(self.object, self.related_name) or [])
+        return getattr(self.object, self.related_name) or []
 
     def delete_related(self):
         """
