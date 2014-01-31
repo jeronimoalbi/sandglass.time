@@ -5,9 +5,15 @@ from pyramid.exceptions import NotFound
 from pyramid.httpexceptions import HTTPMethodNotAllowed
 
 
-def rpc(permissions=None, method=None, **kwargs):
+def rpc(member=False, method=None, permissions=None, **kwargs):
     """
     Mark decorated method to be accesible by RPC calls.
+
+    When `member` is True handler receives an argument with the requested
+    member PK (or object instance).
+
+    By default all RPC request methods are supported, but a method name
+    can be given using `method` argument.
 
     """
     def rpc_wrapper(func):
@@ -24,6 +30,7 @@ def rpc(permissions=None, method=None, **kwargs):
         # Save RPC related info inside wrapped function/method
         func.__rpc__ = kwargs.copy()
         func.__rpc__.update({
+            'is_member_call': member,
             'permissions': permissions,
             'method': method,
         })
@@ -58,6 +65,23 @@ class BaseResource(object):
     def __init__(self, request):
         self.request = request
 
+    def _get_pk_value(self):
+        value = self.request.matchdict.get('pk')
+        try:
+            pk_value = int(value)
+        except (ValueError, TypeError):
+            pk_value = None
+
+        return pk_value
+
+    def _get_related_name(self):
+        related_name = self.request.matchdict.get('related_name')
+        # Check that related name is in fact a relationship
+        if related_name not in self.model.__mapper__.relationships:
+            raise NotFound()
+
+        return related_name
+
     def _get_rpc_handler(self):
         # Get the method that handles current RPC request
         call_name = self.request.params.get('call')
@@ -70,6 +94,29 @@ class BaseResource(object):
             raise NotFound()
 
         return rpc_handler
+
+    @reify
+    def pk_value(self):
+        """
+        Get primary key value for current request.
+
+        Return an Integer or None.
+
+        """
+        return self._get_pk_value()
+
+    @reify
+    def related_name(self):
+        """
+        Get related name when it is available in the URL.
+
+        When no related name is given or the name is not a model
+        relationship `NotFound` is raised.
+
+        Return a String.
+
+        """
+        return self._get_related_name()
 
     @reify
     def rpc_handler(self):
@@ -91,7 +138,12 @@ class BaseResource(object):
         the `@rpc` decorator.
 
         """
-        return self.rpc_handler()
+        # When an RPC call is done for an object use its PK as argument
+        if self.pk_value:
+            return self.rpc_handler(self.pk_value)
+        else:
+            # When RPC is called for a collection dont use arguments
+            return self.rpc_handler()
 
 
 def load_api_v1(config):

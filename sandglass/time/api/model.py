@@ -40,15 +40,6 @@ class ModelResource(BaseResource):
     schema = None
     list_schema = None
 
-    def _get_pk_value(self):
-        value = self.request.matchdict.get('pk')
-        try:
-            pk_value = int(value)
-        except (ValueError, TypeError):
-            pk_value = None
-
-        return pk_value
-
     def _get_object(self, check=True, session=None):
         if not self.model:
             raise Exception('No model assigned to class')
@@ -61,24 +52,6 @@ class ModelResource(BaseResource):
             raise NotFound()
 
         return obj
-
-    def _get_related_name(self):
-        related_name = self.request.matchdict.get('related_name')
-        # Check that related name is in fact a relationship
-        if related_name not in self.model.__mapper__.relationships:
-            raise NotFound()
-
-        return related_name
-
-    @reify
-    def pk_value(self):
-        """
-        Get primary key value for current request.
-
-        Return an Integer or None.
-
-        """
-        return self._get_pk_value()
 
     @reify
     def object(self):
@@ -93,19 +66,6 @@ class ModelResource(BaseResource):
         """
         return self._get_object()
 
-    @reify
-    def related_name(self):
-        """
-        Get related name when it is available in the URL.
-
-        When no related name is given or the name is not a model
-        relationship `NotFound` is raised.
-
-        Return a String.
-
-        """
-        return self._get_related_name()
-
     def handle_rpc_call(self):
         """
         Handle RPC calls for model resources.
@@ -116,7 +76,7 @@ class ModelResource(BaseResource):
         """
         # When RPC is called for an object, get it and use it
         # as argument for the view handler
-        if 'pk' in self.request.matchdict:
+        if self.pk_value:
             return self.rpc_handler(self.object)
         else:
             # When RPC is called for a collection dont use arguments
