@@ -1,32 +1,16 @@
+import logging
+
 import transaction
 
-from colander import Invalid
-from sqlalchemy.exc import IntegrityError
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
-from pyramid.httpexceptions import HTTPBadRequest
-from pyramid.view import view_config
 
 from sandglass.time import _
 from sandglass.time.api import BaseResource
 from sandglass.time.models import transactional
 from sandglass.time.response import error_response
 
-
-# TODO: Rethink and finish exception global handling
-# http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/views.html#custom-exception-views
-@view_config(context=ValueError)
-@view_config(context=Invalid)
-def failed_validation(exc, request):
-    transaction.abort()
-    # TODO: Log invalid exceptions
-    return HTTPBadRequest()
-
-
-@view_config(context=IntegrityError)
-def handle_integrity_errors(exc, request):
-    transaction.abort()
-    return error_response(exc.message)
+LOG = logging.getLogger(__name__)
 
 
 class ModelResource(BaseResource):
@@ -141,11 +125,10 @@ class ModelResource(BaseResource):
         query = self.object.query()
         schema = self.schema()
         data = schema.deserialize(self.request.json_body)
-
         try:
-            # TODO: Handle errors during update
             count = query.update(data)
         except:
+            LOG.exception('Error updating object during PUT request')
             transaction.abort()
             return error_response(_("Object update failed"))
 
@@ -159,15 +142,14 @@ class ModelResource(BaseResource):
         Delete current object from database.
 
         """
+        serialized_object = dict(self.object)
         query = self.object.query()
         count = query.delete()
-
-        if count != 1:
-            # TODO:  Return a proper Error Response
-            return count
+        if not count:
+            return error_response(_('No object was deleted'))
         else:
-            # TODO:  Return a proper Response instance
-            return True
+            # Return the deleted object
+            return serialized_object
 
     def get_related(self):
         """
