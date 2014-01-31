@@ -3,6 +3,7 @@ from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.schema import Table
+from sqlalchemy.sql.expression import and_
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Enum
 from sqlalchemy.types import Integer
@@ -92,10 +93,14 @@ class Activity(BaseModel):
 
         """
         # Prepare the DELETE statement for the list of tag IDs
-        condition = tag_association_table.c.tag_id.in_(tag_id_list)
+        condition = and_(
+            tag_association_table.c.tag_id.in_(tag_id_list),
+            tag_association_table.c.activity_id == self.id)
         query = tag_association_table.delete()
         query = query.where(condition)
         # Execute query in the context of current object session
         result = self.current_session.execute(query)
+        import transaction
+        transaction.commit()
         # Return the number of removed tags
         return result.rowcount

@@ -1,10 +1,15 @@
+import logging
+
 from functools import wraps
 
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
 from pyramid.httpexceptions import HTTPMethodNotAllowed
 
+LOG = logging.getLogger(__name__)
 
+
+# TODO: Add include related for member=True
 def rpc(member=False, method=None, permissions=None, **kwargs):
     """
     Mark decorated method to be accesible by RPC calls.
@@ -38,6 +43,17 @@ def rpc(member=False, method=None, permissions=None, **kwargs):
         return rpc_wrapper_inner
 
     return rpc_wrapper
+
+
+class APIRequestDataError(Exception):
+    """
+    Exception for invalid API requests.
+
+    API requests uses JSON format to transfer data. This exception
+    is raised when data has an invalid format and fails during
+    JSON serialization.
+
+    """
 
 
 class BaseResource(object):
@@ -94,6 +110,18 @@ class BaseResource(object):
             raise NotFound()
 
         return rpc_handler
+
+    @reify
+    def request_data(self):
+        """
+        Get JSON data from current request body.
+
+        """
+        try:
+            return self.request.json_body
+        except ValueError:
+            LOG.exception('Invalid JSON in request body')
+            raise APIRequestDataError()
 
     @reify
     def pk_value(self):
