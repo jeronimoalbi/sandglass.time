@@ -3,7 +3,6 @@ from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.schema import Table
-from sqlalchemy.sql.expression import and_
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Enum
 from sqlalchemy.types import Integer

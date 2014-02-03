@@ -1,6 +1,9 @@
 import functools
 import re
 
+from pyramid.interfaces import ISettings
+from zope.component import getUtility
+
 CAMELCASE_RE = re.compile('(.)([A-Z]{1})')
 
 
@@ -31,3 +34,13 @@ class mixedmethod(object):
             else:
                 return self.method(objtype, *args, **kwargs)
         return _wrapper
+
+
+def get_settings():
+    """
+    Get application settings.
+
+    Return a Dictionary.
+
+    """
+    return getUtility(ISettings)

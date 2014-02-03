@@ -16,6 +16,7 @@ setup(
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
         'zope.sqlalchemy',
+        'zope.component==4.1.0',
         # Forms/data handling
         'colander',
         # Unittest support

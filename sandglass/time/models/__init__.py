@@ -1,3 +1,5 @@
+import weakref
+
 from datetime import datetime
 from inspect import isclass
 
@@ -25,6 +27,9 @@ DBSESSION = scoped_session(
     # Integrate transaction manager with SQLAlchemy
     sessionmaker(extension=ZopeTransactionExtension())
 )
+
+# Dictionary used to map model class names to class definitions
+MODEL_REGISTRY = weakref.WeakValueDictionary()
 
 
 def initialize_database(engine):
@@ -84,7 +89,7 @@ def create_index(cls, *fields, **kwargs):
 
 
 # Define base model class for declarative definitions
-@as_declarative(metadata=META)
+@as_declarative(metadata=META, class_registry=MODEL_REGISTRY)
 class BaseModel(object):
     """
     Base class for declarative models definition.
