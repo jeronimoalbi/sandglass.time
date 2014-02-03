@@ -13,6 +13,7 @@ def json_datetime_adapter(obj, request):
     Adapter to properly (de)serialize JSON/Python datetimes.
 
     """
+    # TODO: Add time zone info to dates (See: pytz module)
     # Get a tring representation of the date in ISO 8601 format with TZ
     return obj.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
