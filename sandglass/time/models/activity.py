@@ -84,23 +84,3 @@ class Activity(BaseModel):
     task = relationship("Task", lazy=True)
     user = relationship("User", lazy=True)
     tags = relationship("Tag", secondary=tag_association_table)
-
-    def remove_tags(self, tag_id_list):
-        """
-        Remove tag(s) from current activity.
-
-        Return an Integer with the number of deleted rows.
-
-        """
-        # Prepare the DELETE statement for the list of tag IDs
-        condition = and_(
-            tag_association_table.c.tag_id.in_(tag_id_list),
-            tag_association_table.c.activity_id == self.id)
-        query = tag_association_table.delete()
-        query = query.where(condition)
-        # Execute query in the context of current object session
-        result = self.current_session.execute(query)
-        import transaction
-        transaction.commit()
-        # Return the number of removed tags
-        return result.rowcount
