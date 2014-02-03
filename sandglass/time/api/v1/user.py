@@ -18,7 +18,7 @@ class UserResource(ModelResource):
     list_schema = UserListSchema
 
     @rpc(method='get')
-    def get_by_credential(self):
+    def user_by_credential(self):
         """
         Get a User by email or key.
 
