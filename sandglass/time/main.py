@@ -56,13 +56,9 @@ def prepare_application(config):
 
 def make_wsgi_app(global_config, **settings):
     """
-    Main Sandglass time application entry point.
+    Create a WSGI application for Sandglass time.
 
     """
     config = Configurator(settings=settings)
-    config.include('pyramid_tm')
-    config.include('pyramid_mailer')
-    prepare_application(config)
-    init_database(settings)
-
+    config.include('sandglass.time')
     return config.make_wsgi_app()

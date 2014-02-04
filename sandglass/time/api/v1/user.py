@@ -25,20 +25,17 @@ class UserResource(ModelResource):
         Return a User or raise HTTP 404.
 
         """
+        user = None
         email = self.request.GET.get('email')
-        key = self.request.GET.get('key')
-        filters = {}
         if email:
-            filters['email'] = email
-        elif key:
-            filters['key'] = key
-        else:
-            user = None
+            user = User.get_by_email(email)
+            if user:
+                return user
 
-        if filters:
-            user = User.query().filter_by(**filters).first()
+        key = self.request.GET.get('key')
+        if key:
+            user = User.get_by_key(key)
+            if user:
+                return user
 
-        if not user:
-            raise NotFound()
-
-        return user
+        raise NotFound()

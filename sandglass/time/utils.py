@@ -1,7 +1,10 @@
 import functools
 import re
 
+import pyramid.url
+
 from pyramid.interfaces import ISettings
+from pyramid.testing import DummyRequest
 from zope.component import getUtility
 
 CAMELCASE_RE = re.compile('(.)([A-Z]{1})')
@@ -44,3 +47,18 @@ def get_settings():
 
     """
     return getUtility(ISettings)
+
+
+def route_path(route_name, request=None, **kwargs):
+    """
+    Get a route path for an existing route.
+
+    A `DummyRequest` is used when no request is given.
+
+    Return a String.
+
+    """
+    if not request:
+        request = DummyRequest()
+
+    return pyramid.url.route_path(route_name, request, **kwargs)
