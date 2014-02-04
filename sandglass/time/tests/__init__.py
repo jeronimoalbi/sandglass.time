@@ -3,6 +3,7 @@ import unittest
 
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
+from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
@@ -54,30 +55,21 @@ class BaseTestCase(unittest.TestCase):
         cls.meta = META
         cls.Session = models.DBSESSION
         cls.settings = SETTINGS
+        cls.engine = engine_from_config(cls.settings, prefix='database.')
+        super(BaseTestCase, cls).setUpClass()
 
-    @staticmethod
-    def _initialize_wsgi_application():
-        """
-        Initialize WSGI application instance.
-
-        Return a WSGI application.
-
-        """
-        from sandglass.time.main import make_wsgi_app
-
-        print "Initializing WSGI test application ..."
-        return make_wsgi_app({}, **SETTINGS)
-
-    def setUp(self):
+    @classmethod
+    def setup_application(cls):
         request = testing.DummyRequest()
-        # Call pyramid setUp, and later on tearDown to properly
-        # support 'get_current_*' functions or calls Pyramid
-        # code uses to that function.
-        # Also give a request to avoid getting None during
-        # 'pyramid.threadlocal.get_current_request()'
-        self.config = testing.setUp(request=request)
+        # Initialize Pyramid testing environment support
+        cls.config = testing.setUp(settings=cls.settings, request=request)
+        cls.config.include('sandglass.time')
 
-    def tearDown(self):
+    @classmethod
+    def cleanup_application(cls):
+        # Drop all database tables when tests are finished
+        cls.meta.drop_all()
+        # Cleanup Pyramid testing environment
         testing.tearDown()
 
 
@@ -87,41 +79,46 @@ class UnitTestCase(BaseTestCase):
 
     Unit tests are small tests that only test 1 thing at a time.
 
-    Test WSGI application can be accesed as `self.app`.
+    Database/tables are created at the beginning of each tests and
+    tables are dropped after each test finishes.
 
     """
     def setUp(self):
+        self.setup_application()
         super(UnitTestCase, self).setUp()
-        self.wsgi_app = self._initialize_wsgi_application()
-        self.app = TestApp(self.wsgi_app)
 
     def tearDown(self):
+        self.cleanup_application()
         super(UnitTestCase, self).tearDown()
-        print "Dropping all database tables ..."
-        self.meta.drop_all()
 
 
-class FunctionalTestCase(BaseTestCase):
+class IntegrationTestCase(BaseTestCase):
     """
-    Base class for functional tests.
+    Base class for integration tests.
 
     This will integrate with the whole web framework and test
     the full stack of your application.
 
     Test WSGI application can be accesed as `self.app`.
 
+    Database and tables are created before any test is run and
+    tables are dropped when all tests are finished.
+
     """
     @classmethod
     def setUpClass(cls):
-        super(FunctionalTestCase, cls).setUpClass()
-        cls.wsgi_app = cls._initialize_wsgi_application()
-        cls.app = TestApp(cls.wsgi_app)
+        super(IntegrationTestCase, cls).setUpClass()
+        cls.setup_application()
+        cls.wsgi_app = cls.config.make_wsgi_app()
 
     @classmethod
     def tearDownClass(cls):
-        super(FunctionalTestCase, cls).tearDownClass()
-        # Drop all tables and data
-        cls.meta.drop_all()
+        cls.cleanup_application()
+        super(IntegrationTestCase, cls).tearDownClass()
+
+    def setUp(self):
+        self.app = TestApp(self.wsgi_app)
+        super(IntegrationTestCase, self).setUp()
 
     def _create(self, path, content=None, status=200):
         create_response = self.app.post_json(path, content, status=status)

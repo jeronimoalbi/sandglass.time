@@ -6,6 +6,8 @@ from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
 from pyramid.httpexceptions import HTTPMethodNotAllowed
 
+from sandglass.time.utils import route_path
+
 LOG = logging.getLogger(__name__)
 
 
@@ -77,6 +79,48 @@ class BaseResource(object):
             raise Exception("Resource name can't be empty")
 
         return cls.name.lower()
+
+    @classmethod
+    def get_collection_path(cls):
+        """
+        Get collection URL path.
+
+        Return a String.
+
+        """
+        prefix = cls.get_route_prefix()
+        route_name = "{}_collection".format(prefix)
+        return route_path(route_name)
+
+    @classmethod
+    def get_member_path(cls, pk):
+        """
+        Get member URL path.
+
+        Argument `pk` is the primary key value for the member object.
+
+        Return a String.
+
+        """
+        prefix = cls.get_route_prefix()
+        route_name = "{}_member".format(prefix)
+        return route_path(route_name, pk=pk)
+
+    @classmethod
+    def get_related_path(cls, pk, related_name):
+        """
+        Get member URL path.
+
+        Argument `pk` is the primary key value for the member object,
+        and `related_name` is the name of the related object(s).
+
+
+        Return a String.
+
+        """
+        prefix = cls.get_route_prefix()
+        route_name = "{}_related".format(prefix)
+        return route_path(route_name, pk=pk, related_name=related_name)
 
     def __init__(self, request):
         self.request = request
