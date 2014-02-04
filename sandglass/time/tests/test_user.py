@@ -3,7 +3,7 @@ import sandglass.time
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
-class UserTest(sandglass.time.tests.BaseFunctionalTest):
+class UserTest(sandglass.time.tests.FunctionalTestCase):
 
     user_list = []
     user_list.append({
@@ -93,10 +93,10 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
             [self.user_list[3]])
 
         # Delete that user again
-        self.testapp.delete_json(
+        self.app.delete_json(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
 
-        self.testapp.get(
+        self.app.get(
             '/time/api/v1/users/{}/'.format(created_id), status=404)
 
     def test_user_update(self):
@@ -114,13 +114,13 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
         }
 
         # Update that user
-        update_response = self.testapp.put_json(
+        update_response = self.app.put_json(
             '/time/api/v1/users/{}/'.format(created_id),
             update,
             status=200
         )
 
-        get_response = self.testapp.get(
+        get_response = self.app.get(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
 
         json = get_response.json
@@ -140,7 +140,7 @@ class UserTest(sandglass.time.tests.BaseFunctionalTest):
             '/time/api/v1/users/',
             [self.user_list[5]])
 
-        get_response = self.testapp.get(
+        get_response = self.app.get(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
 
         json = get_response.json

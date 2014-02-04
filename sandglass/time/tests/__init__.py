@@ -1,125 +1,130 @@
 import os
 import unittest
 
-from paste.deploy import loadapp
 from paste.deploy.loadwsgi import appconfig
-
 from pyramid import testing
-from sandglass.time.main import run_wsgi
+from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
-from sandglass.time.models import user
+from zope.sqlalchemy import ZopeTransactionExtension
+
+
+def get_static_test_dir():
+    """
+    Get path to static files directory for tests.
+
+    Static directory contains all non python files needed
+    for the tests to be run.
+
+    Return a String with the directory path.
+
+    """
+    tests_dir = os.path.dirname(__file__)
+    return os.path.join(tests_dir, 'static')
 
 
 def get_config_file_path():
-    test_dir = os.path.dirname(os.path.realpath(__file__))
-    config_file_path = os.path.join(test_dir,
-                                    os.pardir, os.pardir, os.pardir,
-                                    'sandglass-test.ini')
-
-    return config_file_path
-
-
-settings = appconfig('config:' + get_config_file_path())
+    """
+    Get path to tests config file `sandglass-tests.ini`
+    """
+    file_name = 'sandglass-tests.ini'
+    tests_dir = os.path.dirname(__file__)
+    file_path = [tests_dir, os.pardir, os.pardir, os.pardir, file_name]
+    return os.path.join(*file_path)
 
 
-from sandglass.time import models
-from sandglass.time.models import META, DBSESSION
-from fixture import SQLAlchemyFixture
-from fixture.style import NamedDataStyle
-
-from sqlalchemy import engine_from_config
-
-engine = engine_from_config(settings, prefix='database.')
-
-from fixture import DataSet
+# Load tests settings
+SETTINGS = appconfig('config:' + get_config_file_path())
 
 
-class UserData(DataSet):
-
-    class homer_simpson:
-        email = "homer@simpson.com"
-        first_name = "Homer"
-        last_name = "Simpson"
-
-    class marge_simpson:
-        email = "marge@simpson.com"
-        first_name = "marge"
-        last_name = "Simpson"
-
-
-dbfixture = SQLAlchemyFixture(
-    env={'UserData': models.user.User, },
-    engine=engine,
-    style=NamedDataStyle()
-)
-
-
-# Test Base Classes
-class BaseTest(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
+    """
+    Base class for all tests.
 
     """
-    Base class for functional test
+    @classmethod
+    def setUpClass(cls):
+        from sandglass.time import models
+        from sandglass.time.models import META
 
-    Creates testapp instance by wrapping main.run_wsgi()
-    """
+        # Make global database session a non scoped session
+        models.DBSESSION = sessionmaker(extension=ZopeTransactionExtension())
+
+        # Initialize some useful class variables
+        # to be available in all test classes
+        cls.meta = META
+        cls.Session = models.DBSESSION
+        cls.settings = SETTINGS
+
+    @staticmethod
+    def _initialize_wsgi_application():
+        """
+        Initialize WSGI application instance.
+
+        Return a WSGI application.
+
+        """
+        from sandglass.time.main import make_wsgi_app
+
+        print "Initializing WSGI test application ..."
+        return make_wsgi_app({}, **SETTINGS)
 
     def setUp(self):
-        self.app = run_wsgi(TEST_SETTINGS, **TEST_SETTINGS)
-
-        self.testapp = TestApp(self.app)
-        print "Setting settings..."
-        self.settings = settings
-        print "META create_all..."
-        META.create_all(engine)
-
-        self.data = dbfixture.data(UserData)
-        self.data.setup()
-
-        print "wsgiapp loadapp with config..."
-        wsgiapp = loadapp('config:%s' % get_config_file_path())
-
-        print "TestApp..."
-        self.testapp = TestApp(wsgiapp)
+        request = testing.DummyRequest()
+        # Call pyramid setUp, and later on tearDown to properly
+        # support 'get_current_*' functions or calls Pyramid
+        # code uses to that function.
+        # Also give a request to avoid getting None during
+        # 'pyramid.threadlocal.get_current_request()'
+        self.config = testing.setUp(request=request)
 
     def tearDown(self):
-        self.data.teardown()
-        print "META drop_all..."
-        META.drop_all(engine)
-
-
-class BaseFunctionalTest(unittest.TestCase):
-
-    """
-    Base class for functional test
-
-    Creates testapp instance by wrapping main.run_wsgi()
-    """
-    @classmethod
-    def setUpClass(self):
-
-        testing.setUp()
-        print "wsgiapp loadapp with config..."
-        wsgiapp = loadapp('config:%s' % get_config_file_path())
-
-        print "TestApp..."
-        self.testapp = TestApp(wsgiapp)
-
-    @classmethod
-    def tearDownClass(self):
-        # Clear database of all models
-
-        # Delete all users
-        self.testapp.delete_json(
-            '/time/api/v1/users/', status=200)
-
-        # Delete all clients
-        self.testapp.delete_json(
-            '/time/api/v1/clients/', status=200)
-
         testing.tearDown()
 
+
+class UnitTestCase(BaseTestCase):
+    """
+    Base class for unit tests.
+
+    Unit tests are small tests that only test 1 thing at a time.
+
+    Test WSGI application can be accesed as `self.app`.
+
+    """
+    def setUp(self):
+        super(UnitTestCase, self).setUp()
+        self.wsgi_app = self._initialize_wsgi_application()
+        self.app = TestApp(self.wsgi_app)
+
+    def tearDown(self):
+        super(UnitTestCase, self).tearDown()
+        print "Dropping all database tables ..."
+        self.meta.drop_all()
+
+
+class FunctionalTestCase(BaseTestCase):
+    """
+    Base class for functional tests.
+
+    This will integrate with the whole web framework and test
+    the full stack of your application.
+
+    Test WSGI application can be accesed as `self.app`.
+
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(FunctionalTestCase, cls).setUpClass()
+        cls.wsgi_app = cls._initialize_wsgi_application()
+        cls.app = TestApp(cls.wsgi_app)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(FunctionalTestCase, cls).tearDownClass()
+        # Drop all tables and data
+        cls.meta.drop_all()
+
     def _create(self, path, content=None, status=200):
-        create_response = self.testapp.post_json(path, content, status=status)
+        create_response = self.app.post_json(path, content, status=status)
         created_id = create_response.json[0]['id']
         json = create_response.json
 
