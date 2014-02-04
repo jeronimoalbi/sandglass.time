@@ -34,7 +34,7 @@ setup(
     ],
     entry_points={
         'paste.app_factory': [
-            'main = sandglass.time.main:run_wsgi',
+            'main = sandglass.time.main:make_wsgi_app',
         ]
     },
     paster_plugins=['pyramid'],

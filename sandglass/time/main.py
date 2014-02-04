@@ -54,7 +54,7 @@ def prepare_application(config):
     config.include(init_app_modules, route_prefix='time')
 
 
-def run_wsgi(global_config, **settings):
+def make_wsgi_app(global_config, **settings):
     """
     Main Sandglass time application entry point.
 
