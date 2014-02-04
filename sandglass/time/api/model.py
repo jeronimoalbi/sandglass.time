@@ -105,10 +105,21 @@ class ModelResource(BaseResource):
         """
         Create new object(s).
 
+        Request body can be a JSON object or a list of objects.
+
         """
+        is_single_object = isinstance(self.request_data, dict)
         # Get submited JSON data from the request body
-        list_schema = self.list_schema()
-        data_list = list_schema.deserialize(self.request_data)
+        if is_single_object:
+            # When POSTed data is an object deserialize it
+            # and create a list with this single object
+            schema = self.schema()
+            data = schema.deserialize(self.request_data)
+            data_list = [data]
+        else:
+            # By default assume that request data is a list of objects
+            list_schema = self.list_schema()
+            data_list = list_schema.deserialize(self.request_data)
 
         obj_list = []
         for data in data_list:
@@ -119,7 +130,10 @@ class ModelResource(BaseResource):
         # Flush to generate IDs
         session.flush()
 
-        return obj_list
+        if is_single_object:
+            return obj_list[0]
+        else:
+            return obj_list
 
     def get_collection(self):
         """
