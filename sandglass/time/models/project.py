@@ -23,7 +23,6 @@ class Project(ActivePeriodMixin, BaseModel):
 
     """
     name = Column(UnicodeText(255), nullable=False)
-    short_name = Column(Unicode(16))
     client_id = Column(Integer, ForeignKey('time_client.id'))
     parent_id = Column(Integer, ForeignKey('time_project.id'))
     tasks = relationship("Task", backref="project")
@@ -39,7 +38,6 @@ class Project(ActivePeriodMixin, BaseModel):
         return (
             # Create field indexes
             create_index(cls, 'name'),
-            create_index(cls, 'short_name'),
         )
 
     @property
