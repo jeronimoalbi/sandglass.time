@@ -20,6 +20,7 @@ class User(TimestampMixin, BaseModel):
     last_name = Column(UnicodeText(80), nullable=False)
     key = Column(Unicode(64), nullable=False, unique=True)
     salt = Column(Unicode(40), nullable=False)
+
     tags = relationship("Tag", backref="user")
 
     def __init__(self, *args, **kwargs):

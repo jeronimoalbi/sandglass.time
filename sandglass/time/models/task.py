@@ -20,6 +20,7 @@ class Task(BaseModel):
     name = Column(UnicodeText(255), nullable=False)
     parent_id = Column(Integer, ForeignKey('time_task.id'))
     project_id = Column(Integer, ForeignKey('time_project.id'))
+
     children = relationship(
         "Task",
         lazy=True,
