@@ -84,22 +84,6 @@ class ModelResource(BaseResource):
         # TODO: Implement query/serialization of related objects
         return self._get_related_query_mode()
 
-    def handle_rpc_call(self):
-        """
-        Handle RPC calls for model resources.
-
-        Handlers for specific object call receive the database
-        object as argument.
-
-        """
-        # When RPC is called for an object, get it and use it
-        # as argument for the view handler
-        if self.pk_value:
-            return self.rpc_handler(self.object)
-        else:
-            # When RPC is called for a collection dont use arguments
-            return self.rpc_handler()
-
     @transactional
     def post_collection(self, session):
         """

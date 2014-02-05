@@ -1,4 +1,4 @@
-from sandglass.time.api import rpc
+from sandglass.time.api import member_rpc
 from sandglass.time.api.model import ModelResource
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.tag import Tag
@@ -17,14 +17,15 @@ class ActivityResource(ModelResource):
     schema = ActivitySchema
     list_schema = ActivityListSchema
 
-    @rpc(member=True, method='post')
-    def add_tags(self, activity):
+    @member_rpc(method='POST')
+    def add_tags(self):
         """
         Add tags to current activity.
 
         Return a List of Tags that were added.
 
         """
+        activity = self.object
         id_list_schema = IdListSchema()
         tag_id_list = id_list_schema.deserialize(self.request_data)
         # Get Tag objects for the given IDs
@@ -38,8 +39,8 @@ class ActivityResource(ModelResource):
 
         return tag_list
 
-    @rpc(member=True, method='delete')
-    def remove_tags(self, activity):
+    @member_rpc(method='DELETE')
+    def remove_tags(self):
         """
         Remove tags from current activity.
 
@@ -47,6 +48,7 @@ class ActivityResource(ModelResource):
         Tag IDs to remove.
 
         """
+        activity = self.object
         id_list_schema = IdListSchema()
         tag_id_list = id_list_schema.deserialize(self.request_data)
         removed_tag_list = []

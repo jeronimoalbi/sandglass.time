@@ -1,6 +1,6 @@
 from pyramid.exceptions import NotFound
 
-from sandglass.time.api import rpc
+from sandglass.time.api import collection_rpc
 from sandglass.time.api.model import ModelResource
 from sandglass.time.forms.user import UserListSchema
 from sandglass.time.forms.user import UserSchema
@@ -17,8 +17,8 @@ class UserResource(ModelResource):
     schema = UserSchema
     list_schema = UserListSchema
 
-    @rpc(method='get')
-    def user_by_credential(self):
+    @collection_rpc(methods='GET')
+    def search(self):
         """
         Get a User by email or key.
 
