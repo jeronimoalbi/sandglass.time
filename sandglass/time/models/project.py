@@ -26,6 +26,7 @@ class Project(ActivePeriodMixin, BaseModel):
     client_id = Column(Integer, ForeignKey('time_client.id'))
     parent_id = Column(Integer, ForeignKey('time_project.id'))
     tasks = relationship("Task", backref="project")
+
     children = relationship(
         "Project",
         lazy=True,

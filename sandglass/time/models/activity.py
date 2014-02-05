@@ -79,6 +79,7 @@ class Activity(BaseModel):
         Integer,
         ForeignKey('time_user.id'),
         nullable=False)
+
     project = relationship("Project", lazy=True)
     task = relationship("Task", lazy=True)
     user = relationship("User", lazy=True)

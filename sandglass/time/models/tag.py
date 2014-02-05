@@ -28,9 +28,11 @@ class Tag(BaseModel):
     TODO
 
     """
-    name = Column(UnicodeText(255), nullable=False)
-    short_name = Column(Unicode(16))
-    description = Column(UnicodeText())
+    name = Column(
+        UnicodeText(40),
+        nullable=False)
+    description = Column(
+        UnicodeText())
     tag_type = Column(
         Enum(*TAG_TYPES, native_enum=False),
         default=TAG_TYPE_ACTIVITY,
@@ -44,6 +46,7 @@ class Tag(BaseModel):
         ForeignKey('time_user.id'),
         nullable=False,
         doc="User that created the tag")
+
     aliases = relationship(
         "Tag",
         lazy=True,
