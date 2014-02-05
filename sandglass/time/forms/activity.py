@@ -20,12 +20,13 @@ class ActivitySchema(BaseModelSchema):
     description = SchemaNode(
         String())
     start = SchemaNode(
-        DateTime()) # TODO: default, TZ aware
+        DateTime())  # TODO: default, TZ aware
     end = SchemaNode(
         DateTime(),  # TODO: default, TZ aware
         missing=drop)
     activity_type = SchemaNode(
         String(),
+        missing=drop,
         validator=OneOf(ACTIVITY_TYPES.keys()),
         default=ACTIVITY_UNASSIGNED)
     project_id = SchemaNode(
