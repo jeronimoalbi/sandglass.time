@@ -10,39 +10,67 @@ from sandglass.time.utils import route_path
 
 LOG = logging.getLogger(__name__)
 
+REQUEST_METHODS = ('GET', 'POST', 'PUT', 'DELETE')
 
-# TODO: Add include related for member=True
-def rpc(member=False, method=None, permissions=None, **kwargs):
+
+def _add_rpc_info(func, **kwargs):
+    """
+    TODO
+
+    """
+    rpc_type = kwargs.pop('type', '*')
+    schema = kwargs.pop('schema', None)
+    methods = kwargs.pop('methods', REQUEST_METHODS)
+    # Get RPC name, or use the function/method name
+    name = kwargs.pop('name', func.__name__)
+    # Save RPC related info
+    func.__rpc__ = kwargs.copy()
+    func.__rpc__.update({
+        'request_method': methods,
+        'schema': schema,
+        'attr_name': func.__name__,
+        'name': name,
+        'type': rpc_type,
+    })
+
+    return func
+
+
+def member_rpc(**kwargs):
     """
     Mark decorated method to be accesible by RPC calls.
 
-    When `member` is True handler receives an argument with the requested
-    member PK (or object instance).
-
-    By default all RPC request methods are supported, but a method name
-    can be given using `method` argument.
+    #TODO: Document arguments.
 
     """
     def rpc_wrapper(func):
-        @wraps(func)
-        def rpc_wrapper_inner(self, *args, **kwargs):
-            # When a request method is given check request before call
-            if method:
-                if method.upper() != self.request.method:
-                    raise HTTPMethodNotAllowed()
+        return _add_rpc_info(func, type='member', **kwargs)
 
-            return func(self, *args, **kwargs)
+    return rpc_wrapper
 
-        rpc_wrapper_inner.__rpc_func__ = func
-        # Save RPC related info inside wrapped function/method
-        func.__rpc__ = kwargs.copy()
-        func.__rpc__.update({
-            'is_member_call': member,
-            'permissions': permissions,
-            'method': method,
-        })
 
-        return rpc_wrapper_inner
+def collection_rpc(**kwargs):
+    """
+    Mark decorated method to be accesible by RPC calls.
+
+    #TODO: Document arguments.
+
+    """
+    def rpc_wrapper(func):
+        return _add_rpc_info(func, type='collection', **kwargs)
+
+    return rpc_wrapper
+
+
+def rpc(**kwargs):
+    """
+    Mark decorated method to be accesible by RPC calls.
+
+    #TODO: Document arguments.
+
+    """
+    def rpc_wrapper(func):
+        return _add_rpc_info(func, **kwargs)
 
     return rpc_wrapper
 
@@ -142,18 +170,18 @@ class BaseResource(object):
 
         return related_name
 
-    def _get_rpc_handler(self):
-        # Get the method that handles current RPC request
-        call_name = self.request.params.get('call')
-        rpc_handler = None
-        if call_name:
-            rpc_handler = getattr(self, call_name, None)
+    @property
+    def is_member_request(self):
+        """
+        Check if current request is a member request.
 
-        # TODO: Handle permissions for each request
-        if not hasattr(rpc_handler, '__rpc_func__'):
-            raise NotFound()
+        Method checks if pk_value is not None. When no pk value is
+        available it means the current is a collection request.
 
-        return rpc_handler
+        Return a Boolean.
+
+        """
+        return (self.pk_value is not None)
 
     @reify
     def request_data(self):
@@ -189,33 +217,6 @@ class BaseResource(object):
 
         """
         return self._get_related_name()
-
-    @reify
-    def rpc_handler(self):
-        """
-        Get the method that handles current RPC call.
-
-        """
-        return self._get_rpc_handler()
-
-    def handle_rpc_call(self):
-        """
-        Main entry point for API RPC calls.
-
-        API RPC calls are triggered when a request has the `call` parameter
-        available in the request; Value for this parameter is the name of
-        method that should handle the request.
-
-        To publish a method to be accesible as RCP call decorate it using
-        the `@rpc` decorator.
-
-        """
-        # When an RPC call is done for an object use its PK as argument
-        if self.pk_value:
-            return self.rpc_handler(self.pk_value)
-        else:
-            # When RPC is called for a collection dont use arguments
-            return self.rpc_handler()
 
 
 def load_api_v1(config):

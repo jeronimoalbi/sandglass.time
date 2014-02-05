@@ -1,4 +1,36 @@
+import inspect
+
 from pyramid.path import DottedNameResolver
+
+
+def is_collection_name(name):
+    """
+    Check if a name has "_collection" suffix.
+
+    Return a Boolean.
+
+    """
+    return name.endswith('_collection')
+
+
+def is_member_name(name):
+    """
+    Check if a name has "_member" suffix.
+
+    Return a Boolean.
+
+    """
+    return name.endswith('_member')
+
+
+def is_related_name(name):
+    """
+    Check if a name has "_related" suffix.
+
+    Return a Boolean.
+
+    """
+    return name.endswith('_related')
 
 
 def add_rest_resource(config, cls_or_dotted):
@@ -38,8 +70,6 @@ def add_rest_resource(config, cls_or_dotted):
          'enable_rpc': False, },
     )
 
-    # Name of the entry point method for all RPC calls
-    rpc_attr_name = 'handle_rpc_call'
     # Generate routes and attach views for current class
     for data in resource_data:
         route_name = resource_name + data['name_suffix']
@@ -48,15 +78,35 @@ def add_rest_resource(config, cls_or_dotted):
         config.add_route(route_name,
                          pattern=data['path'],
                          request_method=request_methods)
-        # Attach a view to handle RPC function calls
-        rpc_view_handler = getattr(cls, rpc_attr_name, None)
-        if data['enable_rpc'] and hasattr(rpc_view_handler, '__call__'):
+
+        # When RPC is enabled get info for each RPC enabled method
+        rpc_info_list = []
+        if data['enable_rpc']:
+            for member in inspect.getmembers(cls, predicate=inspect.ismethod):
+                # Get RPC info from the method definition
+                rpc_info = getattr(member[1], '__rpc__', None)
+                if rpc_info:
+                    rpc_info_list.append(rpc_info)
+
+        # Attach RPC methods to current route
+        for rpc_info in rpc_info_list:
+            # Check if current RPC info describes rules for current resource
+            rpc_type = rpc_info.get('type')
+            if rpc_type == 'member' and not is_member_name(route_name):
+                continue
+            if rpc_type == 'collection' and not is_collection_name(route_name):
+                continue
+
             config.add_view(cls,
-                            attr=rpc_attr_name,
+                            attr=rpc_info['attr_name'],
                             route_name=route_name,
-                            request_param='call',
+                            # TODO: Add a decorator to raise method not allowed
+                            #       instead the default 404 error.
+                            #decorator=restrict_request_methods,
+                            request_param=(rpc_info['name'] + '='),
                             renderer='json',
-                            request_method=('GET', 'POST', 'PUT', 'DELETE'))
+                            request_method=rpc_info['request_method'])
+
         # Add views to handle different request methods in this view
         for method in request_methods:
             # Init the name of the methos that the class should
