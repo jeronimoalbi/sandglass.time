@@ -58,6 +58,5 @@ class Tag(BaseModel):
         return (
             # Create field indexes
             create_index(cls, 'name'),
-            create_index(cls, 'short_name'),
             create_index(cls, 'tag_type'),
         )

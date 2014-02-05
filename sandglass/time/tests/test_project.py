@@ -9,8 +9,7 @@ class ProjectTest(sandglass.time.tests.FunctionalTestCase):
 
     project_list = []
     project_list.append({
-        "name": "Solve the mystery of the Hound of Baskerville",
-        "short_name": "MysteriousHound",
+        "name": "Mysterious Hound",
         "parent_id": "0",
         "client_id": "0",
     })
