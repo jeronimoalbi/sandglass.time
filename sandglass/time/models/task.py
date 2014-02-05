@@ -18,7 +18,6 @@ class Task(BaseModel):
 
     """
     name = Column(UnicodeText(255), nullable=False)
-    short_name = Column(Unicode(16))
     parent_id = Column(Integer, ForeignKey('time_task.id'))
     project_id = Column(Integer, ForeignKey('time_project.id'))
     children = relationship(
@@ -34,5 +33,4 @@ class Task(BaseModel):
         return (
             # Create field indexes
             create_index(cls, 'name'),
-            create_index(cls, 'short_name'),
         )
