@@ -22,6 +22,8 @@ class TaskSchema(BaseModelSchema):
     project_id = SchemaNode(
         Integer(),
         missing=drop)
+    user_id = SchemaNode(
+        Integer())
 
 
 class TaskListSchema(SequenceSchema):

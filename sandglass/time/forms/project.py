@@ -22,6 +22,8 @@ class ProjectSchema(BaseModelSchema):
     client_id = SchemaNode(
         Integer(),
         missing=drop)
+    user_id = SchemaNode(
+        Integer())
 
 
 class ProjectListSchema(SequenceSchema):
