@@ -22,11 +22,21 @@ class Project(ActivePeriodMixin, BaseModel):
     attributes.
 
     """
-    name = Column(UnicodeText(255), nullable=False)
-    client_id = Column(Integer, ForeignKey('time_client.id'))
-    parent_id = Column(Integer, ForeignKey('time_project.id'))
-    tasks = relationship("Task", backref="project")
+    name = Column(
+        UnicodeText(255),
+        nullable=False)
+    client_id = Column(
+        Integer,
+        ForeignKey('time_client.id'))
+    parent_id = Column(
+        Integer,
+        ForeignKey('time_project.id'))
+    user_id = Column(
+        Integer,
+        ForeignKey('time_user.id'),
+        nullable=False)
 
+    tasks = relationship("Task", backref="project")
     children = relationship(
         "Project",
         lazy=True,

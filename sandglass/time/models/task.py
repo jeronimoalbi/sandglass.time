@@ -17,9 +17,19 @@ class Task(BaseModel):
     Describes project phases, parts and areas.
 
     """
-    name = Column(UnicodeText(255), nullable=False)
-    parent_id = Column(Integer, ForeignKey('time_task.id'))
-    project_id = Column(Integer, ForeignKey('time_project.id'))
+    name = Column(
+        UnicodeText(255),
+        nullable=False)
+    parent_id = Column(
+        Integer,
+        ForeignKey('time_task.id'))
+    project_id = Column(
+        Integer,
+        ForeignKey('time_project.id'))
+    user_id = Column(
+        Integer,
+        ForeignKey('time_user.id'),
+        nullable=False)
 
     children = relationship(
         "Task",

@@ -22,6 +22,8 @@ class User(TimestampMixin, BaseModel):
     salt = Column(Unicode(40), nullable=False)
 
     tags = relationship("Tag", backref="user")
+    projects = relationship("Project", backref="user")
+    tasks = relationship("Task", backref="user")
 
     def __init__(self, *args, **kwargs):
         super(User, self).__init__(*args, **kwargs)
