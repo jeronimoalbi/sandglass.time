@@ -7,17 +7,64 @@ from pyramid.interfaces import ISettings
 from pyramid.testing import DummyRequest
 from zope.component import getUtility
 
-CAMELCASE_RE = re.compile('(.)([A-Z]{1})')
+# Regexps for underscore/camelcase convertions
+CAMELCASE_RE = re.compile("(.)([A-Z]{1})")
+UNDERSCORE_RE = re.compile(r"(?:^|_)(.)")
 
 
 def camelcase_to_underscore(name):
     """
-    Convert camel case names to underscore.
+    Convert camelcase names to underscore.
 
     Return a String.
 
     """
     return CAMELCASE_RE.sub(r'\1_\2', name).lower()
+
+
+def underscore_to_camelcase(name):
+    """
+    Convert underscore names to camelcase.
+
+    Return a String.
+
+    """
+    def replace_fn(match):
+        """
+        Upercase first char after "_".
+
+        Return a char.
+
+        """
+        return match.group(1).upper()
+
+    if not name:
+        return name
+
+    name = UNDERSCORE_RE.sub(replace_fn, name)
+    return (name[0].lower() + name[1:])
+
+
+def camelcase_dict(obj):
+    """
+    Create a new dictionary with camelcase keys using the given one.
+
+    Return a Dictionary.
+
+    """
+    u2c = underscore_to_camelcase
+    return {u2c(key):value for (key, value) in obj.iteritems()}
+
+
+def underscore_dict(obj):
+    """
+    Create a new dictionary with underscore keys using the given one.
+
+    Return a Dictionary.
+
+    """
+    c2u = camelcase_to_underscore
+    return {c2u(key):value for (key, value) in obj.iteritems()}
 
 
 class mixedmethod(object):

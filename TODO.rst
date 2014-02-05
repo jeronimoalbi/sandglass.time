@@ -16,4 +16,5 @@ API
 
  * Define error codes for reponses
  * Implement support to get partial data from related items (x.e ?include=tags:full)
+ * Implement support for returning JSON with camelcase field names
  * Implement a Sphinx extension to auto document api resources
