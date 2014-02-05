@@ -16,10 +16,6 @@ class ProjectSchema(BaseModelSchema):
     name = SchemaNode(
         String(),
         validator=Length(min=3))
-    short_name = SchemaNode(
-        String(),
-        missing=drop,
-        validator=Length(max=16))
     parent_id = SchemaNode(
         Integer(),
         missing=drop)
