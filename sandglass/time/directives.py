@@ -106,6 +106,13 @@ def add_rest_resource(config, cls_or_dotted):
                             request_param=(rpc_info['name'] + '='),
                             renderer='json',
                             request_method=rpc_info['request_method'])
+            # Add a view also for explicit RPC call
+            config.add_view(cls,
+                            attr=rpc_info['attr_name'],
+                            route_name=route_name,
+                            request_param=("action=" + rpc_info['name']),
+                            renderer='json',
+                            request_method=rpc_info['request_method'])
 
         # Add views to handle different request methods in this view
         for method in request_methods:
