@@ -61,6 +61,20 @@ class ModelResource(BaseResource):
         return self._get_object()
 
     @reify
+    def return_fields(self):
+        """
+        Get a list of field names to return for current model objects.
+
+        Return a List.
+
+        """
+        field_names = self.request.params.get('fields')
+        if not field_names:
+            return []
+
+        return [name.strip() for name in field_names.split(',')]
+
+    @reify
     def related_query_mode(self):
         """
         Get query modes for related objects.
@@ -125,7 +139,12 @@ class ModelResource(BaseResource):
 
         """
         query = self.model.query()
-        return query.all()
+        if self.return_fields:
+            # TODO: Force to always return id field ?
+            attributes = self.model.get_attributes_by_name(*self.return_fields)
+            return [row._asdict() for row in query.values(*attributes)]
+        else:
+            return query.all()
 
     def delete_collection(self):
         """
@@ -142,7 +161,24 @@ class ModelResource(BaseResource):
         Get object for current request.
 
         """
-        return self.object
+        if self.return_fields:
+            if not self.pk_value:
+                raise NotFound()
+
+            # Create a query to get the object for current PK value
+            query = self.model.query().filter_by(id=self.pk_value)
+
+            attributes = self.model.get_attributes_by_name(*self.return_fields)
+            try:
+                # Get first result
+                row = query.values(*attributes).next()
+            except StopIteration:
+                raise NotFound()
+
+            # Return a dictionary with result fields
+            return row._asdict()
+        else:
+            return self.object
 
     def put_member(self):
         """
