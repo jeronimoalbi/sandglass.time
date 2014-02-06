@@ -145,18 +145,25 @@ class BaseModel(object):
         Global session is used for class method calls without a session
         argument.
 
+        When query is called on an instance then it will be filtered by
+        the instance `id` field.
+
         """
         if isclass(obj):
             cls = obj
             # For class method calls use global session when none is available
             if not session:
                 session = cls.new_session()
+
+            # Create a Query to get all records for current class
+            query = session.query(cls)
         else:
             # When called as instance method get class and session from object
             cls = obj.__class__
             session = obj.current_session
+            # Create a Query that filters records for current object
+            query = session.query(cls).filter(cls.id==obj.id)
 
-        query = session.query(cls)
         return query
 
     @classmethod

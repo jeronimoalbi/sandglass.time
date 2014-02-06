@@ -9,11 +9,7 @@ class BaseModelSchema(MappingSchema):
     """
     Base Schema definition.
 
-    Simple Schema that defines the common "id" field
-    that Models define.
-
     """
-    id = SchemaNode(Integer(), missing=drop)
 
 
 class IdListSchema(SequenceSchema):
