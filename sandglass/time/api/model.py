@@ -98,6 +98,32 @@ class ModelResource(BaseResource):
         # TODO: Implement query/serialization of related objects
         return self._get_related_query_mode()
 
+    @reify
+    def submitted_member_data(self):
+        """
+        Get deserialized data for current member.
+
+        Data is deserialized from current request body.
+
+        Return a Dictionary.
+
+        """
+        schema = self.schema()
+        return schema.deserialize(self.request_data)
+
+    @reify
+    def submitted_collection_data(self):
+        """
+        Get deserialized data for current collection.
+
+        Data is deserialized from current request body.
+
+        Return a List of dictionaries.
+
+        """
+        list_schema = self.list_schema()
+        return list_schema.deserialize(self.request_data)
+
     @transactional
     def post_collection(self, session):
         """
@@ -111,13 +137,10 @@ class ModelResource(BaseResource):
         if is_single_object:
             # When POSTed data is an object deserialize it
             # and create a list with this single object
-            schema = self.schema()
-            data = schema.deserialize(self.request_data)
-            data_list = [data]
+            data_list = [self.submitted_member_data]
         else:
             # By default assume that request data is a list of objects
-            list_schema = self.list_schema()
-            data_list = list_schema.deserialize(self.request_data)
+            data_list = self.submitted_collection_data
 
         obj_list = []
         for data in data_list:
@@ -186,10 +209,8 @@ class ModelResource(BaseResource):
 
         """
         query = self.object.query()
-        schema = self.schema()
-        data = schema.deserialize(self.request_data)
         try:
-            count = query.update(data)
+            count = query.update(self.submitted_member_data)
         except:
             LOG.exception('Error updating object during PUT request')
             transaction.doom()
