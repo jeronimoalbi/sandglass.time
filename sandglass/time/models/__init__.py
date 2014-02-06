@@ -160,6 +160,29 @@ class BaseModel(object):
         return query
 
     @classmethod
+    def get_attributes_by_name(cls, *field_names):
+        """
+        Get a list of Model field attributes for the given names.
+
+        If an attribute does not exists it is ignored.
+
+        Return a List.
+
+        """
+        columns = cls.__table__.columns
+        attr_list = []
+        for name in field_names:
+            # Skip non column field
+            if name not in columns:
+                # TODO: Skip non public fields lile user "salt"
+                continue
+
+            attr = getattr(cls, name)
+            attr_list.append(attr)
+
+        return attr_list
+
+    @classmethod
     def query_from(cls, statement, session=None):
         """
         Get a query instance for current model class using select
