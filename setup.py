@@ -31,6 +31,9 @@ setup(
         'lingua',
         # Documentation support
         'Sphinx',
+        # Date/time and TZ support
+        'dateutils',
+        'pytz',
     ],
     entry_points={
         'paste.app_factory': [

@@ -1,10 +1,11 @@
 import logging
 
+import dateutil.parser
+
 from functools import wraps
 
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
-from pyramid.httpexceptions import HTTPMethodNotAllowed
 
 from sandglass.time.utils import route_path
 
@@ -217,6 +218,28 @@ class BaseResource(object):
 
         """
         return self._get_related_name()
+
+    def get_filter_from_to(self):
+        """
+        Get from/to request arguments as python dates.
+
+        ValueError is raised when date format is invalid for one
+        or both dates.
+
+        Return a Tuple.
+
+        """
+        from_date = self.request.params.get('from')
+        if from_date:
+            # Convert string to date
+            from_date = dateutil.parser.parse(from_date)
+
+        to_date = self.request.params.get('to')
+        if to_date:
+            # Convert string to date
+            to_date = dateutil.parser.parse(to_date)
+
+        return (from_date, to_date)
 
 
 def load_api_v1(config):
