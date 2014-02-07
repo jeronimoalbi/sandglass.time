@@ -48,6 +48,18 @@ class ModelResource(BaseResource):
         return dict([item.strip().split(':') for item in include_items])
 
     @reify
+    def is_valid_object(self):
+        """
+        Check if an object exists for current pk value.
+
+        Return a Boolean.
+
+        """
+        query = self.model.query()
+        query = query.filter(self.model.id == self.pk_value)
+        return (query.count() == 1)
+
+    @reify
     def object(self):
         """
         Get object for current request.
