@@ -15,6 +15,7 @@ class FormActivityTest(unittest.TestCase):
         self.config = testing.setUp(request=request)
         self.activity = {
                          'id': 1,
+                         'user_id': 1,
                          'description':'Activity description.',
                          'start':'2014-01-23 13:51:58.354288',
                          'end':'2014-01-23 13:52:00.354288',
@@ -31,7 +32,6 @@ class FormActivityTest(unittest.TestCase):
         schema = ActivitySchema()
         deserialized = schema.deserialize(cstruct)
 
-        self.assertEqual(deserialized['id'], 1)
         self.assertTrue(isinstance(deserialized['description'], unicode))
         self.assertTrue(isinstance(deserialized['start'], datetime))
         self.assertTrue(isinstance(deserialized['end'], datetime))

@@ -1,5 +1,6 @@
 import sandglass.time
 
+from pyramid.exceptions import NotFound
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
@@ -96,8 +97,9 @@ class UserTest(sandglass.time.tests.IntegrationTestCase):
         self.app.delete_json(
             '/time/api/v1/users/{}/'.format(created_id), status=200)
 
-        self.app.get(
-            '/time/api/v1/users/{}/'.format(created_id), status=404)
+        with self.assertRaises(NotFound):  
+            self.app.get(
+                '/time/api/v1/users/{}/'.format(created_id), status=404)
 
     def test_user_update(self):
         """

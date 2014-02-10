@@ -12,6 +12,7 @@ class ProjectTest(sandglass.time.tests.IntegrationTestCase):
         "name": "Mysterious Hound",
         "parent_id": "0",
         "client_id": "0",
+        "user_id": "1",
     })
 
     def test_project_create(self):
