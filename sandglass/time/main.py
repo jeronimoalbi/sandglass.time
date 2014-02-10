@@ -1,9 +1,11 @@
 import datetime
 
+from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.renderers import JSON
 from sqlalchemy import engine_from_config
 
+from sandglass.time.auth import basic
 from sandglass.time.directives import add_rest_resource
 from sandglass.time.models import initialize_database
 
@@ -50,6 +52,12 @@ def prepare_application(config):
     json_renderer = JSON()
     json_renderer.add_adapter(datetime.datetime, json_datetime_adapter)
     config.add_renderer('json', json_renderer)
+    # Authentication support
+    acl_auth = ACLAuthorizationPolicy()
+    config.set_authorization_policy(acl_auth)
+    # Add HTTP basic authentication
+    # TODO: Make authentication default when no other auth is on
+    basic.initialize_auth(config)
     # Attach sandglass.time to '/time' URL path prefix
     config.include(init_app_modules, route_prefix='time')
 

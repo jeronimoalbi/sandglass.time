@@ -2,6 +2,7 @@ Misc
 ====
 
  * Implement timezone support for dates (pytz)
+ * Add pylint to validate code
 
 SQL/Models
 ==========
