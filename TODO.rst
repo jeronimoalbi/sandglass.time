@@ -10,11 +10,6 @@ SQL/Models
  * Add migration support. See: http://code.google.com/p/sqlalchemy-migrate/
    or http://alembic.readthedocs.org/en/latest/.
 
-Tests
-=====
-
-  * Add tox support to enable tests for py27, py3.2 and py3.3.
-
 API
 ===
 
@@ -24,3 +19,9 @@ API
  * Implement support for returning JSON with camelcase field names
  * Add XML and JSONP formats support (use extension in URL ?)
  * Implement a Sphinx extension to auto document api resources
+
+Tests
+=====
+
+ * Make python 3 work in tox. See:
+   http://stackoverflow.com/questions/14892977/internationalization-with-pyramid-and-python-3
