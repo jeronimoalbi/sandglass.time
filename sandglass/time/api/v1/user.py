@@ -26,7 +26,7 @@ class UserResource(ModelResource):
     @collection_rpc(methods='GET')
     def search(self):
         """
-        Get a User by email or key.
+        Get a User by email or token.
 
         Return a User or raise HTTP 404.
 
@@ -38,9 +38,9 @@ class UserResource(ModelResource):
             if user:
                 return user
 
-        key = self.request.GET.get('key')
-        if key:
-            user = User.get_by_key(key)
+        token = self.request.GET.get('token')
+        if token:
+            user = User.get_by_token(token)
             if user:
                 return user
 

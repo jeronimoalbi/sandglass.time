@@ -15,10 +15,11 @@ class User(TimestampMixin, BaseModel):
     TODO
 
     """
+    token = Column(Unicode(64), nullable=False, unique=True)
     email = Column(UnicodeText(255), nullable=False, unique=True)
     first_name = Column(UnicodeText(60), nullable=False)
     last_name = Column(UnicodeText(80), nullable=False)
-    key = Column(Unicode(64), nullable=False, unique=True)
+    key = Column(Unicode(64), nullable=False)
     salt = Column(Unicode(40), nullable=False)
 
     tags = relationship("Tag", backref="user")
@@ -31,8 +32,12 @@ class User(TimestampMixin, BaseModel):
         # a User is created (this is not called during deserialization)
         if not self.salt:
             self.generate_salt()
+
+        # Generate a unique user token
+        self.token = self.generate_hash()
+
         if not self.key:
-            self.generate_key()
+            self.key = self.generate_hash()
 
     @classmethod
     def get_by_email(cls, email):
@@ -43,19 +48,19 @@ class User(TimestampMixin, BaseModel):
 
         """
         query = cls.query()
-        query = query.filter(cls.email==email)
+        query = query.filter(cls.email == email)
         return query.first()
 
     @classmethod
-    def get_by_key(cls, key):
+    def get_by_token(cls, token):
         """
-        Get user by key.
+        Get user by token.
 
         Return a User or None.
 
         """
         query = cls.query()
-        query = query.filter(cls.key==key)
+        query = query.filter(cls.token == token)
         return query.first()
 
     def generate_salt(self):
@@ -69,16 +74,20 @@ class User(TimestampMixin, BaseModel):
         self.salt = unicode(sha_obj.hexdigest())
         return self.salt
 
-    def generate_key(self):
+    def generate_hash(self):
         """
-        Generate a new random user key.
+        Generate a new random user hash.
 
         A new salt value is generated when user has no salt value.
 
-        Return a String with the new key value.
+        Return a String with a new hash value.
 
         """
         salt = (self.salt or self.generate_salt())
         sha_obj = hashlib.sha256(os.urandom(48) + salt.encode('utf8'))
-        self.key = unicode(sha_obj.hexdigest())
-        return self.key
+        return unicode(sha_obj.hexdigest())
+
+    def update_json_data(self, data):
+        # Add an email hash (can be used for example to get user Gravatar)
+        data['email_md5'] = hashlib.md5(self.email).hexdigest()
+        return data
