@@ -26,11 +26,16 @@ def get_static_test_dir():
 def get_config_file_path():
     """
     Get path to tests config file `sandglass-tests.ini`
+
+    Config file is looked up in current working directory.
+
+    Return a String.
+
     """
     file_name = 'sandglass-tests.ini'
-    tests_dir = os.path.dirname(__file__)
-    file_path = [tests_dir, os.pardir, os.pardir, os.pardir, file_name]
-    return os.path.join(*file_path)
+    cwd_path = os.getcwd()
+    file_path = os.path.join(cwd_path, file_name)
+    return os.path.join(file_path)
 
 
 # Load tests settings

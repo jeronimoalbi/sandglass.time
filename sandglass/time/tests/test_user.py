@@ -3,7 +3,7 @@ import sandglass.time
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
-class UserTest(sandglass.time.tests.FunctionalTestCase):
+class UserTest(sandglass.time.tests.IntegrationTestCase):
 
     user_list = []
     user_list.append({

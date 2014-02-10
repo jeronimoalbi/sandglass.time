@@ -12,3 +12,4 @@ coverage
 *.EGG-INFO
 *.db
 .coverage
+.tox

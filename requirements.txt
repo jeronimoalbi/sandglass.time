@@ -4,6 +4,7 @@ pep8
 nose
 nose-selecttests
 coverage
-virtualenv
 WebTest
 PasteDeploy
+tox
+virtualenv>=1.11.2

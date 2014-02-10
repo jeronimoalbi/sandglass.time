@@ -17,7 +17,7 @@ USERS_DATA = [
 
 class UserResourceTest(IntegrationTestCase):
     """
-    Functional tests for User resource.
+    Integration tests for User resource.
 
     """
     def setUp(self):
