@@ -1,3 +1,9 @@
 ipython
 ipdb
 pep8
+nose
+nose-selecttests
+coverage
+virtualenv
+WebTest
+PasteDeploy

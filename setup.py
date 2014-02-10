@@ -19,13 +19,6 @@ setup(
         'zope.component==4.1.0',
         # Forms/data handling
         'colander',
-        # Unittest support
-        'nose',
-        'nose-selecttests',
-        'coverage',
-        'virtualenv',
-        'WebTest==2.0.11',
-        'PasteDeploy==1.5.2',
         # Translations extraction support
         'Babel',
         'lingua',
