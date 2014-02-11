@@ -8,6 +8,13 @@ from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
 
+# Fixture Stuffs
+from fixture import SQLAlchemyFixture
+from fixture.style import NamedDataStyle
+from sandglass.time.tests.fixtures import UserData, ClientData, ProjectData
+from sandglass.time import models
+from sandglass.time.models import activity, client, project, tag, task, user
+
 
 def get_static_test_dir():
     """
@@ -43,13 +50,13 @@ SETTINGS = appconfig('config:' + get_config_file_path())
 
 
 class BaseTestCase(unittest.TestCase):
+
     """
     Base class for all tests.
 
     """
     @classmethod
     def setUpClass(cls):
-        from sandglass.time import models
         from sandglass.time.models import META
 
         # Make global database session a non scoped session
@@ -61,6 +68,8 @@ class BaseTestCase(unittest.TestCase):
         cls.Session = models.DBSESSION
         cls.settings = SETTINGS
         cls.engine = engine_from_config(cls.settings, prefix='database.')
+
+
         super(BaseTestCase, cls).setUpClass()
 
     @classmethod
@@ -79,6 +88,7 @@ class BaseTestCase(unittest.TestCase):
 
 
 class UnitTestCase(BaseTestCase):
+
     """
     Base class for unit tests.
 
@@ -88,6 +98,7 @@ class UnitTestCase(BaseTestCase):
     tables are dropped after each test finishes.
 
     """
+
     def setUp(self):
         self.setup_application()
         super(UnitTestCase, self).setUp()
@@ -97,7 +108,8 @@ class UnitTestCase(BaseTestCase):
         super(UnitTestCase, self).tearDown()
 
 
-class IntegrationTestCase(BaseTestCase):
+class FunctionalTestCase(BaseTestCase):
+
     """
     Base class for integration tests.
 
@@ -112,18 +124,41 @@ class IntegrationTestCase(BaseTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        super(IntegrationTestCase, cls).setUpClass()
+        super(FunctionalTestCase, cls).setUpClass()
         cls.setup_application()
         cls.wsgi_app = cls.config.make_wsgi_app()
 
+        # Create the db-fixtures
+        db = SQLAlchemyFixture(
+            env={'User': user.User,
+                  'Client': client.Client,
+                  'Project': project.Project,
+                  'Tag': tag.Tag,
+                  'Task': task.Task,
+                  'Activity': models.activity.Activity,
+                 }, 
+            style=NamedDataStyle(),
+            engine=cls.engine)
+
+        cls.data = db.data(UserData, ClientData, ProjectData)
+        cls.data.setup()
+
+
     @classmethod
     def tearDownClass(cls):
+
+        cls.data.teardown()
         cls.cleanup_application()
-        super(IntegrationTestCase, cls).tearDownClass()
+        super(FunctionalTestCase, cls).tearDownClass()
 
     def setUp(self):
         self.app = TestApp(self.wsgi_app)
-        super(IntegrationTestCase, self).setUp()
+        super(FunctionalTestCase, self).setUp()
+
+    # def test_user_url_
+    # def _rpc_create_model(self, model):
+    #     url = model.get_member_url()
+    #     response =
 
     def _create(self, path, content=None, status=200):
         create_response = self.app.post_json(path, content, status=status)

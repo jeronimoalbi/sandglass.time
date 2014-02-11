@@ -2,7 +2,7 @@ import sandglass.time
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
-class ProjectTest(sandglass.time.tests.IntegrationTestCase):
+class ProjectTest(sandglass.time.tests.FunctionalTestCase):
 
     client_list = []
     client_list.append({'name': 'Henry Knight'})

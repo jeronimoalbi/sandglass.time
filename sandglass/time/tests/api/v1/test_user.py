@@ -1,5 +1,5 @@
 from sandglass.time.api.v1.user import UserResource
-from sandglass.time.tests import IntegrationTestCase
+from sandglass.time.tests import FunctionalTestCase
 
 
 USERS_DATA = [
@@ -15,7 +15,7 @@ USERS_DATA = [
 ]
 
 
-class UserResourceTest(IntegrationTestCase):
+class UserResourceTest(FunctionalTestCase):
     """
     Integration tests for User resource.
 

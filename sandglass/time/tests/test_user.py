@@ -4,7 +4,7 @@ from pyramid.exceptions import NotFound
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
-class UserTest(sandglass.time.tests.IntegrationTestCase):
+class UserTest(sandglass.time.tests.FunctionalTestCase):
 
     user_list = []
     user_list.append({
