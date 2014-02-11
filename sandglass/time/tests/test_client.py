@@ -5,7 +5,7 @@ from pyramid.exceptions import NotFound
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
 
-class ClientTest(sandglass.time.tests.IntegrationTestCase):
+class ClientTest(sandglass.time.tests.FunctionalTestCase):
 
     clients = ['Sherlock Holmes',
                'Mycroft Holmes',
