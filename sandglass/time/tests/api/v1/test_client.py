@@ -3,7 +3,7 @@ from sandglass.time.tests.fixtures import UserData, ClientData, ProjectData
 from sandglass.time.tests import fixture
 import unittest
 
-
+@unittest.skip("showing class skipping")
 class ClientResourceTest(FunctionalTestCase):
 
     """

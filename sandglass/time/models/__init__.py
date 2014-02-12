@@ -41,7 +41,6 @@ def initialize_database(engine):
     DBSESSION.configure(bind=engine)
     META.create_all(engine)
 
-
 def execute(sql, **kwargs):
     """Execute an SQL statement in global session context
 
@@ -87,6 +86,12 @@ def create_index(cls, *fields, **kwargs):
     index_name = 'idx_{0}_{1}'.format(table_name, suffix)
     return Index(index_name, *fields)
 
+def clear_tables():
+    """
+    Clear all tables, but leave DB structure whole 
+    """
+    for table in reversed(META.sorted_tables):
+        table.delete().execute()
 
 # Define base model class for declarative definitions
 @as_declarative(metadata=META, class_registry=MODEL_REGISTRY)

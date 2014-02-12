@@ -39,23 +39,6 @@ class UserTest(sandglass.time.tests.FunctionalTestCase):
         "last_name": "Book"
     })
 
-    def test_user_create(self):
-        """
-        Test creation of a single user
-        """
-        (created_id, json) = self._create(
-            '/time/api/v1/users/',
-            [self.user_list[0]])
-
-        self.failUnless(created_id.__class__ == int)
-
-        self.assertTrue(json[0]['first_name'] == 'Dr',
-                        'First name should have been "Dr"')
-        self.assertTrue(json[0]['last_name'] == 'Who',
-                        'Last name should have been "Who"')
-        self.assertTrue(json[0]['email'] == 'timeywimey@wienfluss.net',
-                        'Email should have been "timeywimey@wienfluss.net"')
-
     def test_user_create_multiple(self):
         """
         Tests creation of multiple users
@@ -84,76 +67,3 @@ class UserTest(sandglass.time.tests.FunctionalTestCase):
                         'Last name should have been "Castle"')
         self.assertTrue(json[1]['email'] == 'ruggedlyhandsome@wienfluss.net',
                         'Email should have been "ruggedlyhandsome@wienfluss.net"')
-
-    def test_user_delete(self):
-        """
-        Test deleting a user
-        """
-        # Create a user
-        (created_id, json) = self._create(
-            '/time/api/v1/users/',
-            [self.user_list[3]])
-
-        # Delete that user again
-        self.app.delete_json(
-            '/time/api/v1/users/{}/'.format(created_id), status=200)
-
-        with self.assertRaises(NotFound):  
-            self.app.get(
-                '/time/api/v1/users/{}/'.format(created_id), status=404)
-
-    def test_user_update(self):
-        """
-        Test updating a user
-        """
-        (created_id, json) = self._create(
-            '/time/api/v1/users/',
-            [self.user_list[4]])
-
-        update = {
-            "email": "strangecase@wienfluss.net",
-            "first_name": "Mr.",
-            "last_name": "Hyde",
-        }
-
-        # Update that user
-        update_response = self.app.put_json(
-            '/time/api/v1/users/{}/'.format(created_id),
-            update,
-            status=200
-        )
-
-        get_response = self.app.get(
-            '/time/api/v1/users/{}/'.format(created_id), status=200)
-
-        json = get_response.json
-        self.assertTrue(json['first_name'] == 'Mr.',
-                        'Expected first_name to be "Mr.", was "{}"'
-            .format(json['first_name']))
-        self.assertTrue(json['last_name'] == 'Hyde',
-                        'Expected last_name to be "Hyde", was "{}"'
-            .format(json['last_name']))
-
-    def test_user_get(self):
-        """
-        Test fetching a user by ID
-        """
-
-        (created_id, json) = self._create(
-            '/time/api/v1/users/',
-            [self.user_list[5]])
-
-        get_response = self.app.get(
-            '/time/api/v1/users/{}/'.format(created_id), status=200)
-
-        json = get_response.json
-
-        self.assertTrue(json['email'] == 'specialhell@serenity.org',
-                        'Expected email to be "{}", was "{}"'
-            .format(self.user_list[5]['email'], json['email']))
-        self.assertTrue(json['first_name'] == 'Shepherd',
-                        'Expected first_name to be "Shepherd", was "{}"'
-            .format(json['first_name']))
-        self.assertTrue(json['last_name'] == 'Book',
-                        'Expected last_name to be "Book", was "{}"'
-            .format(json['last_name']))

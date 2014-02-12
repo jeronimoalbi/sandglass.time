@@ -97,6 +97,11 @@ class BaseTestCase(unittest.TestCase):
         super(BaseTestCase, cls).setUpClass()
 
     @classmethod
+    def clear_database(cls):
+        from sandglass.time.models import clear_tables
+        clear_tables()
+
+    @classmethod
     def setup_application(cls):
         request = testing.DummyRequest()
         # Initialize Pyramid testing environment support
