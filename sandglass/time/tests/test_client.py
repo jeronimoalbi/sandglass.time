@@ -1,10 +1,10 @@
 import sandglass.time
-
+import unittest
 from pyramid.exceptions import NotFound
 
 # TODO Improve Tests: Tests for multiple deletion, multiple getting
 
-
+@unittest.skip("showing class skipping")
 class ClientTest(sandglass.time.tests.FunctionalTestCase):
 
     clients = ['Sherlock Holmes',

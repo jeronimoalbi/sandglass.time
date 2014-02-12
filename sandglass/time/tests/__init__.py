@@ -48,6 +48,30 @@ def get_config_file_path():
 # Load tests settings
 SETTINGS = appconfig('config:' + get_config_file_path())
 
+# Create the db-fixtures
+FIXTURE = SQLAlchemyFixture(
+    env={'User': user.User,
+          'Client': client.Client,
+          'Project': project.Project,
+          'Tag': tag.Tag,
+          'Task': task.Task,
+          'Activity': models.activity.Activity,
+         }, 
+    style=NamedDataStyle(),
+    engine=engine_from_config(SETTINGS, prefix='database.'))
+
+
+def fixture(*datasets):
+    """
+    Test method decorator that sets up a fixture before test is run.
+
+    """
+    def fixture_wrapper(func):
+        wrapper = FIXTURE.with_data(*datasets)
+        return wrapper(func)
+
+    return fixture_wrapper
+
 
 class BaseTestCase(unittest.TestCase):
 
@@ -122,32 +146,15 @@ class FunctionalTestCase(BaseTestCase):
     tables are dropped when all tests are finished.
 
     """
+
     @classmethod
     def setUpClass(cls):
         super(FunctionalTestCase, cls).setUpClass()
         cls.setup_application()
         cls.wsgi_app = cls.config.make_wsgi_app()
-
-        # Create the db-fixtures
-        db = SQLAlchemyFixture(
-            env={'User': user.User,
-                  'Client': client.Client,
-                  'Project': project.Project,
-                  'Tag': tag.Tag,
-                  'Task': task.Task,
-                  'Activity': models.activity.Activity,
-                 }, 
-            style=NamedDataStyle(),
-            engine=cls.engine)
-
-        cls.data = db.data(UserData, ClientData, ProjectData)
-        cls.data.setup()
-
-
+        
     @classmethod
     def tearDownClass(cls):
-
-        cls.data.teardown()
         cls.cleanup_application()
         super(FunctionalTestCase, cls).tearDownClass()
 

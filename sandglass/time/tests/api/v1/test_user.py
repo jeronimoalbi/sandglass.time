@@ -1,11 +1,11 @@
 from sandglass.time.api.v1.user import UserResource
 from sandglass.time.tests import FunctionalTestCase
-
+import unittest
 
 USERS_DATA = [
-    {"email": "timeywimey@wienfluss.net",
-     "first_name": "Dr",
-     "last_name": "Who"},
+    {"email": "winkydinky@wienfluss.net",
+     "first_name": "Emilia",
+     "last_name": "Pond"},
     {"email": "humpdydumpdy@wienfluss.net",
      "first_name": "James William",
      "last_name": "Elliot"},
@@ -14,12 +14,14 @@ USERS_DATA = [
      "last_name": "Castle"},
 ]
 
-
+@unittest.skip("showing class skipping")
 class UserResourceTest(FunctionalTestCase):
-    """
-    Integration tests for User resource.
 
     """
+    Functional tests for User resource.
+
+    """
+
     def setUp(self):
         super(UserResourceTest, self).setUp()
         self.user_list = []
