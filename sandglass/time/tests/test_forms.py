@@ -4,8 +4,9 @@ from pyramid import testing
 
 from sandglass.time.forms.activity import ActivitySchema
 from sandglass.time.models.activity import ACTIVITY_WORKING
+import unittest
 
-
+@unittest.skip("showing class skipping")
 class FormActivityTest(unittest.TestCase):
     """Test class for sandglass.time.forms.activity
 
