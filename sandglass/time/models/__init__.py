@@ -1,8 +1,11 @@
 import weakref
 
 from datetime import datetime
+from functools import wraps
 from inspect import isclass
 
+from pyramid.security import Allow
+from pyramid.security import Authenticated
 from sqlalchemy import Column
 from sqlalchemy import MetaData
 from sqlalchemy import Sequence
@@ -64,6 +67,7 @@ def transactional(func):
     Wrapped method will receive an extra argument with a new database session.
 
     """
+    @wraps(func)
     def transactional_wrap(self):
         session = DBSESSION()
         return func(self, session)
@@ -93,6 +97,18 @@ def clear_tables():
     for table in reversed(META.sorted_tables):
         table.delete().execute()
 
+
+from pyramid.security import ALL_PERMISSIONS
+from pyramid.security import Deny
+from pyramid.security import Everyone
+DEFAULT_ACL = [
+    # Users in 'group:admin' group have full access
+    (Allow, 'group:admin', ALL_PERMISSIONS),
+    # Last rule to deny all if no rule matched before
+    (Deny, Everyone, ALL_PERMISSIONS)
+]
+
+
 # Define base model class for declarative definitions
 @as_declarative(metadata=META, class_registry=MODEL_REGISTRY)
 class BaseModel(object):
@@ -103,20 +119,64 @@ class BaseModel(object):
 
     """
     @declared_attr
+    def __acl__(cls):
+        """
+        ACL (Access Control List) with permission rules for current model.
+
+        Rules apply only to Authenticated users.
+
+        ACL follows C.R.U.D. for each rule (Create, Read, Update and Delete).
+
+        Return an ACL (List).
+
+        """
+        acl = []
+        for permission_name in ('create', 'read', 'update', 'delete'):
+            permission = cls.get_permission(permission_name)
+            rule = (Allow, Authenticated, permission)
+            acl.append(rule)
+
+        acl.extend(DEFAULT_ACL)
+
+        return acl
+
+    @declared_attr
     def __tablename__(cls):
         # Get sandglass application module name where current model is defined
         if not cls.__module__.startswith('sandglass.'):
             raise Exception('Model is not defined inside a sandglass app !')
 
-        parts = cls.__module__.split('.')
-        # By default table name is the name of model class in lower case
-        # prefixed with the name of the app where it is defined
-        return "{0}_{1}".format(parts[1], cls.__name__.lower())
+        return cls.get_namespaced_name()
 
     @declared_attr
     def id(cls):
         seq_name = cls.__tablename__ + "_id_seq"
         return Column(Integer, Sequence(seq_name), primary_key=True)
+
+    @classmethod
+    def get_namespaced_name(cls):
+        """
+        Get name for current model with app name as prefix.
+
+        Name is lowercase and has the application name where current
+        model class is defined as name prefix.
+
+        Return a String.
+
+        """
+        parts = cls.__module__.split('.')
+        return "{0}_{1}".format(parts[1], cls.__name__.lower())
+
+    @classmethod
+    def get_permission(cls, permission_name):
+        """
+        Get a permission for current model.
+
+        Return a String.
+
+        """
+        prefix = cls.get_namespaced_name()
+        return "{0}_{1}".format(prefix, permission_name)
 
     def __iter__(self):
         self._mapper = object_mapper(self)
