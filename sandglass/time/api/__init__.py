@@ -2,8 +2,10 @@ import logging
 
 import dateutil.parser
 
-from functools import wraps
-
+from pyramid.security import ALL_PERMISSIONS
+from pyramid.security import Allow
+from pyramid.security import Deny
+from pyramid.security import Everyone
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
 
@@ -12,6 +14,34 @@ from sandglass.time.utils import route_path
 LOG = logging.getLogger(__name__)
 
 REQUEST_METHODS = ('GET', 'POST', 'PUT', 'DELETE')
+
+REST_ROUTE_INFO = {
+    #    GET: List all items
+    #    POST: Create new item(s)
+    #    DELETE: Delete all items
+    'collection': {
+        'route_name': 'api.rest.collection',
+        'pattern': '/{member}/',
+        'methods': ('GET', 'POST', 'DELETE'),
+    },
+    #    GET: Get a single item
+    #    PUT: Update a single item
+    #    DELETE: Delete a single item
+    'member': {
+        'route_name': 'api.rest.member',
+        'pattern': '/{member}/{pk}/',
+        'methods': ('GET', 'PUT', 'DELETE', 'POST'),
+    },
+    #    GET: List all related items
+    #    DELETE: Delete related item(s)
+    'related': {
+        'route_name': 'api.rest.related',
+        'pattern': '/{member}/{pk}/{related_name}/',
+        'methods': ('GET', 'DELETE'),
+        # Disable RPC for this route 
+        'disable_actions': True,
+    },
+}
 
 
 def _add_rpc_info(func, **kwargs):
@@ -242,11 +272,57 @@ class BaseResource(object):
         return (from_date, to_date)
 
 
+class RootFactory(object):
+    default_acl = [
+        # Users in 'group:admin' group have full access
+        (Allow, 'group:admin', ALL_PERMISSIONS),
+        # Last rule to deny all if no rule matched before
+        (Deny, Everyone, ALL_PERMISSIONS)
+    ]
+
+    def __init__(self, name, resources):
+        self.name = name
+        self.resources = resources
+
+    def __call__(self, request):
+        return self
+
+    def __getitem__(self, name):
+        if name not in self.resources:
+            return
+
+        # Use current resource model as context
+        return self.resources[name].model
+
+
+def create_root_factory(name):
+    from sandglass.time.directives import RESOURCE_REGISTRY
+    return RootFactory(name, RESOURCE_REGISTRY)
+
+
+def add_api_rest_routes(config):
+    """
+    Add API REST routes to a config object.
+
+    """
+    for route_info in REST_ROUTE_INFO.values():
+        name = route_info['route_name']
+        pattern = route_info['pattern']
+        methods = route_info['methods']
+        config.add_route(name, pattern=pattern, request_method=methods,
+                         factory=create_root_factory(name),
+                         traverse="/{member}")
+
+
 def load_api_v1(config):
     """
     Load API version 1 resources.
 
     """
+    # Load API REST routes for current config path
+    add_api_rest_routes(config)
+
+    # Attach resources to API REST routes
     resources = (
         'activity.ActivityResource',
         'client.ClientResource',
