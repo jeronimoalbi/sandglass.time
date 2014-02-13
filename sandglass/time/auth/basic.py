@@ -28,8 +28,8 @@ def auth_callback(username, password, request):
     identifiers (possibly empty) if the user does exist.
 
     """
-    # TODO: Get current user groups
-    return ['group:admin']
+    # TODO: Create a default admin user during DB setup, then remove this
+    return ['time.admins']
 
     user = User.get_by_token(username)
     authenticated = (user and user.key == password)
@@ -37,7 +37,7 @@ def auth_callback(username, password, request):
         return
 
     # Get user credentials
-    # TODO: Implement user credentials
+    return [unicode(group) for group in user.groups]
 
 
 def initialize_auth(config):
