@@ -15,7 +15,6 @@ class ActivitySchema(BaseModelSchema):
     """
     Schema definition for activity model.
 
-    TODO: define required, missing, default attributes.
     """
     description = SchemaNode(
         String())

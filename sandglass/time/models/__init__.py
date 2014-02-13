@@ -4,8 +4,11 @@ from datetime import datetime
 from functools import wraps
 from inspect import isclass
 
+from pyramid.security import ALL_PERMISSIONS
 from pyramid.security import Allow
 from pyramid.security import Authenticated
+from pyramid.security import Deny
+from pyramid.security import Everyone
 from sqlalchemy import Column
 from sqlalchemy import MetaData
 from sqlalchemy import Sequence
@@ -34,6 +37,16 @@ DBSESSION = scoped_session(
 # Dictionary used to map model class names to class definitions
 MODEL_REGISTRY = weakref.WeakValueDictionary()
 
+# Default ACL rules for all models.
+# Rules allow full access to admin group and deny access
+# to anyone that didn't match a previous acces rule.
+DEFAULT_ACL = [
+    # TODO: Define a variable Administrators = 'time.admins'
+    (Allow, 'time.admins', ALL_PERMISSIONS),
+    # Last rule to deny all if no rule matched before
+    (Deny, Everyone, ALL_PERMISSIONS)
+]
+
 
 def initialize_database(engine):
     """
@@ -43,6 +56,7 @@ def initialize_database(engine):
     META.bind = engine
     DBSESSION.configure(bind=engine)
     META.create_all(engine)
+
 
 def execute(sql, **kwargs):
     """Execute an SQL statement in global session context
@@ -55,9 +69,7 @@ def execute(sql, **kwargs):
         SELECT * FROM some_table WHERE id = :id
 
     """
-    result = DBSESSION.execute(sql, kwargs)
-
-    return result
+    return DBSESSION.execute(sql, kwargs)
 
 
 def transactional(func):
@@ -92,21 +104,11 @@ def create_index(cls, *fields, **kwargs):
 
 def clear_tables():
     """
-    Clear all tables, but leave DB structure whole 
+    Empty all database table rows.
+
     """
     for table in reversed(META.sorted_tables):
         table.delete().execute()
-
-
-from pyramid.security import ALL_PERMISSIONS
-from pyramid.security import Deny
-from pyramid.security import Everyone
-DEFAULT_ACL = [
-    # Users in 'group:admin' group have full access
-    (Allow, 'group:admin', ALL_PERMISSIONS),
-    # Last rule to deny all if no rule matched before
-    (Deny, Everyone, ALL_PERMISSIONS)
-]
 
 
 # Define base model class for declarative definitions
@@ -136,6 +138,7 @@ class BaseModel(object):
             rule = (Allow, Authenticated, permission)
             acl.append(rule)
 
+        # Append default ACL rules
         acl.extend(DEFAULT_ACL)
 
         return acl
