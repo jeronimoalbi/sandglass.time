@@ -2,10 +2,6 @@ import logging
 
 import dateutil.parser
 
-from pyramid.security import ALL_PERMISSIONS
-from pyramid.security import Allow
-from pyramid.security import Deny
-from pyramid.security import Everyone
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
 
@@ -38,7 +34,7 @@ REST_ROUTE_INFO = {
         'route_name': 'api.rest.related',
         'pattern': '/{member}/{pk}/{related_name}/',
         'methods': ('GET', 'DELETE'),
-        # Disable RPC for this route 
+        # Disable RPC for this route
         'disable_actions': True,
     },
 }
@@ -147,9 +143,10 @@ class BaseResource(object):
         Return a String.
 
         """
-        prefix = cls.get_route_prefix()
-        route_name = "{}_collection".format(prefix)
-        return route_path(route_name)
+        route_info = REST_ROUTE_INFO['collection']
+        route_name = route_info['route_name']
+        member = cls.get_route_prefix()
+        return route_path(route_name, member=member)
 
     @classmethod
     def get_member_path(cls, pk):
@@ -161,9 +158,10 @@ class BaseResource(object):
         Return a String.
 
         """
-        prefix = cls.get_route_prefix()
-        route_name = "{}_member".format(prefix)
-        return route_path(route_name, pk=pk)
+        route_info = REST_ROUTE_INFO['member']
+        route_name = route_info['route_name']
+        member = cls.get_route_prefix()
+        return route_path(route_name, member=member, pk=pk)
 
     @classmethod
     def get_related_path(cls, pk, related_name):
@@ -173,13 +171,17 @@ class BaseResource(object):
         Argument `pk` is the primary key value for the member object,
         and `related_name` is the name of the related object(s).
 
-
         Return a String.
 
         """
-        prefix = cls.get_route_prefix()
-        route_name = "{}_related".format(prefix)
-        return route_path(route_name, pk=pk, related_name=related_name)
+        route_info = REST_ROUTE_INFO['member']
+        route_name = route_info['route_name']
+        member = cls.get_route_prefix()
+        return route_path(
+            route_name,
+            member=member,
+            pk=pk,
+            related_name=related_name)
 
     def __init__(self, request):
         self.request = request
@@ -212,7 +214,7 @@ class BaseResource(object):
         Return a Boolean.
 
         """
-        return (self.pk_value is not None)
+        return self.pk_value is not None
 
     @reify
     def request_data(self):
@@ -272,17 +274,16 @@ class BaseResource(object):
         return (from_date, to_date)
 
 
-class RootFactory(object):
-    default_acl = [
-        # Users in 'group:admin' group have full access
-        (Allow, 'group:admin', ALL_PERMISSIONS),
-        # Last rule to deny all if no rule matched before
-        (Deny, Everyone, ALL_PERMISSIONS)
-    ]
+class RootModelFactory(object):
+    """
+    Root factory that uses current request model class as context.
 
-    def __init__(self, name, resources):
-        self.name = name
-        self.resources = resources
+    Model class is getted from current request resource.
+
+    """
+    def __init__(self):
+        from sandglass.time.directives import RESOURCE_REGISTRY
+        self.resources = RESOURCE_REGISTRY
 
     def __call__(self, request):
         return self
@@ -295,11 +296,6 @@ class RootFactory(object):
         return self.resources[name].model
 
 
-def create_root_factory(name):
-    from sandglass.time.directives import RESOURCE_REGISTRY
-    return RootFactory(name, RESOURCE_REGISTRY)
-
-
 def add_api_rest_routes(config):
     """
     Add API REST routes to a config object.
@@ -309,9 +305,12 @@ def add_api_rest_routes(config):
         name = route_info['route_name']
         pattern = route_info['pattern']
         methods = route_info['methods']
-        config.add_route(name, pattern=pattern, request_method=methods,
-                         factory=create_root_factory(name),
-                         traverse="/{member}")
+        config.add_route(
+            name,
+            pattern=pattern,
+            request_method=methods,
+            factory=RootModelFactory(),
+            traverse="/{member}")
 
 
 def load_api_v1(config):

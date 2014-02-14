@@ -5,6 +5,7 @@ from pyramid.path import DottedNameResolver
 from sandglass.time.api import REST_ROUTE_INFO
 
 
+# Added REST API resources are saved here
 RESOURCE_REGISTRY = {}
 
 # Permission suffix by request method
@@ -43,24 +44,26 @@ def add_rest_resource(config, cls_or_dotted):
 
         # Attach RPC methods to current route
         for rpc_info in rpc_info_list:
-            config.add_view(cls,
-                            attr=rpc_info['attr_name'],
-                            match_param=match_param,
-                            route_name=route_info['route_name'],
-                            # TODO: Add a decorator to raise method not allowed
-                            #       instead the default 404 error.
-                            #decorator=restrict_request_methods,
-                            request_param=(rpc_info['name'] + '='),
-                            renderer='json',
-                            request_method=rpc_info['request_method'])
+            config.add_view(
+                cls,
+                attr=rpc_info['attr_name'],
+                match_param=match_param,
+                route_name=route_info['route_name'],
+                # TODO: Add a decorator to raise method not allowed
+                #       instead the default 404 error.
+                #decorator=restrict_request_methods,
+                request_param=(rpc_info['name'] + '='),
+                renderer='json',
+                request_method=rpc_info['request_method'])
             # Add a view also for explicit RPC call
-            config.add_view(cls,
-                            attr=rpc_info['attr_name'],
-                            match_param=match_param,
-                            route_name=route_info['route_name'],
-                            request_param=("action=" + rpc_info['name']),
-                            renderer='json',
-                            request_method=rpc_info['request_method'])
+            config.add_view(
+                cls,
+                attr=rpc_info['attr_name'],
+                match_param=match_param,
+                route_name=route_info['route_name'],
+                request_param=("action=" + rpc_info['name']),
+                renderer='json',
+                request_method=rpc_info['request_method'])
 
         # Add views to handle different request methods in this view
         for request_method in route_info['methods']:
@@ -76,10 +79,11 @@ def add_rest_resource(config, cls_or_dotted):
             permission_name = PERMISSION_SUFFIX[request_method]
             permission = cls.model.get_permission(permission_name)
 
-            config.add_view(cls,
-                            attr=attr_name,
-                            match_param=match_param,
-                            route_name=route_info['route_name'],
-                            renderer='json',
-                            request_method=request_method,
-                            permission=permission)
+            config.add_view(
+                cls,
+                attr=attr_name,
+                match_param=match_param,
+                route_name=route_info['route_name'],
+                renderer='json',
+                request_method=request_method,
+                permission=permission)

@@ -53,7 +53,7 @@ def camelcase_dict(obj):
 
     """
     u2c = underscore_to_camelcase
-    return {u2c(key):value for (key, value) in obj.iteritems()}
+    return {u2c(key): value for (key, value) in obj.iteritems()}
 
 
 def underscore_dict(obj):
@@ -64,7 +64,7 @@ def underscore_dict(obj):
 
     """
     c2u = camelcase_to_underscore
-    return {c2u(key):value for (key, value) in obj.iteritems()}
+    return {c2u(key): value for (key, value) in obj.iteritems()}
 
 
 class mixedmethod(object):

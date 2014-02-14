@@ -1,6 +1,8 @@
 ipython
 ipdb
 pep8
+flakes8
+pylint
 nose
 nose-selecttests
 coverage
@@ -8,3 +10,4 @@ WebTest
 PasteDeploy
 tox
 virtualenv>=1.11.2
+fixture
