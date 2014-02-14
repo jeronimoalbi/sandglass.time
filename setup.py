@@ -27,11 +27,16 @@ setup(
         # Date/time and TZ support
         'dateutils',
         'pytz',
+        # Command line support
+        'cement',
     ],
     entry_points={
         'paste.app_factory': [
             'main = sandglass.time.main:make_wsgi_app',
-        ]
+        ],
+        'console_scripts': [
+            'sandglass = sandglass.time.command:main',
+        ],
     },
     paster_plugins=['pyramid'],
     message_extractors={
