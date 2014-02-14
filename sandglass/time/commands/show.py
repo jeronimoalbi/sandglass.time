@@ -20,7 +20,6 @@ class ShowController(controller.CementBaseController):
 
     @controller.expose(help="display sandglass version")
     def version(self):
-        import ipdb;ipdb.set_trace() 
         print("Sandglass", __version__)
 
 
