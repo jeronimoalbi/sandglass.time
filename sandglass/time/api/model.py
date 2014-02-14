@@ -57,7 +57,7 @@ class ModelResource(BaseResource):
         """
         query = self.model.query()
         query = query.filter(self.model.id == self.pk_value)
-        return (query.count() == 1)
+        return query.count() == 1
 
     @reify
     def object(self):

@@ -3,7 +3,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Integer
-from sqlalchemy.types import Unicode
 from sqlalchemy.types import UnicodeText
 
 from sandglass.time.models import BaseModel

@@ -1,4 +1,3 @@
-from colander import drop
 from colander import Integer
 from colander import MappingSchema
 from colander import SchemaNode

@@ -72,17 +72,17 @@ def execute(sql, **kwargs):
     return DBSESSION.execute(sql, kwargs)
 
 
-def transactional(func):
+def transactional(method):
     """
     Decorator to add implicit session support to a method.
 
     Wrapped method will receive an extra argument with a new database session.
 
     """
-    @wraps(func)
+    @wraps(method)
     def transactional_wrap(self):
         session = DBSESSION()
-        return func(self, session)
+        return method(self, session)
 
     return transactional_wrap
 
@@ -101,6 +101,7 @@ def create_index(cls, *fields, **kwargs):
     table_name = cls.__tablename__
     index_name = 'idx_{0}_{1}'.format(table_name, suffix)
     return Index(index_name, *fields)
+
 
 def clear_tables():
     """
@@ -231,7 +232,7 @@ class BaseModel(object):
             cls = obj.__class__
             session = obj.current_session
             # Create a Query that filters records for current object
-            query = session.query(cls).filter(cls.id==obj.id)
+            query = session.query(cls).filter(cls.id == obj.id)
 
         return query
 
