@@ -46,7 +46,10 @@ def add_rest_resource(config, cls_or_dotted):
         for rpc_info in rpc_info_list:
             # Init permission for RPC calls
             permission_name = rpc_info.get('permission', 'action')
-            permission = cls.model.get_permission(permission_name)
+            if permission_name:
+                permission = permission_name
+            else:
+                permission = cls.model.get_permission(permission_name)
 
             config.add_view(
                 cls,

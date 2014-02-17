@@ -9,8 +9,11 @@ from sandglass.time.api.model import ModelResource
 from sandglass.time.forms.user import UserListSchema
 from sandglass.time.forms.user import UserSchema
 from sandglass.time.models.activity import Activity
+from sandglass.time.models.group import Group
 from sandglass.time.models.user import User
 from sandglass.time.response import error_response
+from sandglass.time.security import Administrators
+from sandglass.time.security import PUBLIC
 
 
 class UserResource(ModelResource):
@@ -22,6 +25,29 @@ class UserResource(ModelResource):
     model = User
     schema = UserSchema
     list_schema = UserListSchema
+
+    @collection_rpc(methods='POST', permission=PUBLIC)
+    def signup(self):
+        """
+        Create a new user.
+
+        """
+        # TODO: Validate user by sending a link to the email
+        data = self.submitted_member_data
+        if User.query().filter_by(email=data['email']).count():
+            msg = _("A user with the same E-Mail already exists")
+            return error_response(msg)
+
+        user = User(**data)
+        session = User.new_session()
+        session.add(user)
+        session.flush()
+
+        # TODO: Assing only non admin permissions (or a Users group ?)
+        admin_group = Group.query().filter_by(name=Administrators).first()
+        user.groups.append(admin_group)
+
+        return user
 
     @collection_rpc(methods='GET')
     def search(self):
