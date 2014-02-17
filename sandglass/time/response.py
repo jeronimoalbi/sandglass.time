@@ -25,6 +25,8 @@ def error_response(message, data=None):
     error_info = {'message': message}
     if data:
         error_info['error'] = data
+    else:
+        error_info['error'] = True
 
     body = json.dumps(error_info)
     response = Response(body=body, status_code=500)
