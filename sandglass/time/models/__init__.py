@@ -183,6 +183,22 @@ class BaseModel(object):
         prefix = cls.get_namespaced_name()
         return "{0}_{1}".format(prefix, permission_name)
 
+    @classmethod
+    def get_default_permission_list(cls):
+        """
+        Get a list with default permissions for this model.
+
+        Return a List of strings.
+
+        """
+        default_names_list = ('create', 'read', 'update', 'delete', 'action')
+        permission_list = []
+        for permission_name in default_names_list:
+            permission = cls.get_permission(permission_name)
+            permission_list.append(permission)
+
+        return permission_list
+
     def __iter__(self):
         self._mapper = object_mapper(self)
         self._col_iter = iter(self._mapper.columns)

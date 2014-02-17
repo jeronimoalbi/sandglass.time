@@ -44,6 +44,10 @@ def add_rest_resource(config, cls_or_dotted):
 
         # Attach RPC methods to current route
         for rpc_info in rpc_info_list:
+            # Init permission for RPC calls
+            permission_name = rpc_info.get('permission', 'action')
+            permission = cls.model.get_permission(permission_name)
+
             config.add_view(
                 cls,
                 attr=rpc_info['attr_name'],
@@ -54,7 +58,8 @@ def add_rest_resource(config, cls_or_dotted):
                 #decorator=restrict_request_methods,
                 request_param=(rpc_info['name'] + '='),
                 renderer='json',
-                request_method=rpc_info['request_method'])
+                request_method=rpc_info['request_method'],
+                permission=permission)
             # Add a view also for explicit RPC call
             config.add_view(
                 cls,
@@ -63,7 +68,8 @@ def add_rest_resource(config, cls_or_dotted):
                 route_name=route_info['route_name'],
                 request_param=("action=" + rpc_info['name']),
                 renderer='json',
-                request_method=rpc_info['request_method'])
+                request_method=rpc_info['request_method'],
+                permission=permission)
 
         # Add views to handle different request methods in this view
         for request_method in route_info['methods']:

@@ -3,6 +3,7 @@ from fixture import SQLAlchemyFixture
 from fixture.style import NamedDataStyle
 
 from sandglass.time import _
+from sandglass.time.models import BaseModel
 from sandglass.time.models import META
 from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.security import Administrators
@@ -16,6 +17,31 @@ class GroupData(DataSet):
     class Admins:
         name = Administrators
         description = _("Administrators")
+
+
+class PermissionData(DataSet):
+    """
+    Dataset with all model permissions.
+
+    """
+    def data(self):
+        """
+        Generate Dataset data.
+
+        """
+        data_list = []
+        # Iterate all registered models
+        for name, model in MODEL_REGISTRY.iteritems():
+            if name.startswith('_'):
+                continue
+
+            # Get permissions for current model
+            permission_list = model.get_default_permission_list()
+            for permission in permission_list:
+                data_item = (permission, {'name': permission})
+                data_list.append(data_item)
+
+        return tuple(data_list)
 
 
 def init_database_data():
@@ -32,5 +58,6 @@ def init_database_data():
     # Register Datasets to be created
     data = db_fixture.data(
         GroupData,
+        PermissionData,
     )
     data.setup()
