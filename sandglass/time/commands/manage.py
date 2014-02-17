@@ -39,12 +39,8 @@ class ManageController(controller.CementBaseController):
         Insert initial database records to a newly created database.
 
         """
-        try:
-            setup.init_database_data()
-            print(_("Sandglass is ready to run now"))
-        except:
-            self.app.log.exception(_("Unable to insert initial data"))
-            sys.exit(1)
+        setup.init_database_data()
+        print(_("Sandglass is ready to run now"))
 
     @controller.expose(help="create a new user")
     def create_user(self):

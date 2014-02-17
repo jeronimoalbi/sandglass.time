@@ -47,6 +47,7 @@ def _add_rpc_info(func, **kwargs):
     """
     rpc_type = kwargs.pop('type', '*')
     schema = kwargs.pop('schema', None)
+    permission = kwargs.pop('permission', None)
     methods = kwargs.pop('methods', REQUEST_METHODS)
     # Get RPC name, or use the function/method name
     name = kwargs.pop('name', func.__name__)
@@ -57,6 +58,7 @@ def _add_rpc_info(func, **kwargs):
         'schema': schema,
         'attr_name': func.__name__,
         'name': name,
+        'permission': permission,
         'type': rpc_type,
     })
 
