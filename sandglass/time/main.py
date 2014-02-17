@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import datetime
 
+import pytz
+
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
 from pyramid.renderers import JSON
@@ -14,12 +16,18 @@ from sandglass.time.models import initialize_database
 
 def json_datetime_adapter(obj, request):
     """
-    Adapter to properly (de)serialize JSON/Python datetimes.
+    Adapter to properly serialize datetimes to ISO8601.
+
+    Return a String.
 
     """
-    # TODO: Add time zone info to dates (See: pytz module)
+    if obj.tzinfo is None:
+        # We only use UTC datetimes
+        tzinfo = pytz.timezone("UTC")
+        obj = obj.replace(tzinfo=tzinfo)
+
     # Get a tring representation of the date in ISO 8601 format with TZ
-    return obj.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    return obj.isoformat()
 
 
 def init_database(settings):

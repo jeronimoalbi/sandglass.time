@@ -1,5 +1,6 @@
-# pylint: disable=W0201
+# pylint: disable=W0201,W0223
 
+import json
 import weakref
 
 from datetime import datetime
@@ -24,6 +25,8 @@ from sqlalchemy.sql.expression import func
 from sqlalchemy.types import Boolean
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Integer
+from sqlalchemy.types import TypeDecorator
+from sqlalchemy.types import VARCHAR
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from sandglass.time.security import Administrators
@@ -57,6 +60,27 @@ def initialize_database(engine):
     META.bind = engine
     DBSESSION.configure(bind=engine)
     META.create_all(engine)
+
+
+class JSON(TypeDecorator):
+    """
+    Represents an immutable structure as a json-encoded string.
+
+    Usage:
+        JSONEncodedDict(255)
+
+    """
+    impl = VARCHAR
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
 
 
 def execute(sql, **kwargs):

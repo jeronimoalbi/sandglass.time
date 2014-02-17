@@ -19,6 +19,7 @@ class UserSchema(BaseModelSchema):
     email = SchemaNode(String(), validator=Email())
     first_name = SchemaNode(String(), validator=Length(max=60))
     last_name = SchemaNode(String(), validator=Length(max=80))
+    data = SchemaNode(String(), validator=Length(max=255))
     # key = SchemaNode(String(), validator=Length(max=255))
     # salt = SchemaNode(String(), validator=Length(max=255))
     # tags = TagListSchema()

@@ -38,7 +38,7 @@ class PermissionData(DataSet):
             # Get permissions for current model
             permission_list = model.get_default_permission_list()
             for permission in permission_list:
-                data_item = (permission, {'name': permission})
+                data_item = (permission, {'name': unicode(permission)})
                 data_list.append(data_item)
 
         return tuple(data_list)

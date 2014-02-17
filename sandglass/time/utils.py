@@ -4,13 +4,25 @@ import re
 import pyramid.url
 
 from colander import EMAIL_RE
-from pyramid.interfaces import ISettings
 from pyramid.testing import DummyRequest
-from zope.component import getUtility
+from pyramid.threadlocal import get_current_registry
+
 
 # Regexps for underscore/camelcase convertions
 CAMELCASE_RE = re.compile("(.)([A-Z]{1})")
 UNDERSCORE_RE = re.compile(r"(?:^|_)(.)")
+
+
+def get_settings():
+    """
+    Get application settings.
+
+    Application settings are customized in the ".ini" file.
+
+    Return a Dictionary.
+
+    """
+    return get_current_registry().settings
 
 
 def is_valid_email(email):
@@ -95,16 +107,6 @@ class mixedmethod(object):
             else:
                 return self.method(objtype, *args, **kwargs)
         return _wrapper
-
-
-def get_settings():
-    """
-    Get application settings.
-
-    Return a Dictionary.
-
-    """
-    return getUtility(ISettings)
 
 
 def route_path(route_name, request=None, **kwargs):

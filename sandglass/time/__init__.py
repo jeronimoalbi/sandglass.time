@@ -3,7 +3,8 @@ import os
 from pkg_resources import require
 
 from pyramid.i18n import TranslationStringFactory
-from pyramid.threadlocal import get_current_registry
+
+from sandglass.time.utils import get_settings
 
 
 # String translation function for "sandglass.time" app domain
@@ -33,18 +34,6 @@ def guess_version(app_name, file_name):
         pass
 
     return version
-
-
-def get_settings():
-    """
-    Get application settings.
-
-    Application settings are customized in the ".ini" file.
-
-    Return a Dictionary.
-
-    """
-    return get_current_registry().settings
 
 
 def get_available_languages():
