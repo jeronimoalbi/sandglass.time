@@ -1,3 +1,5 @@
+# pylint: disable=W0201
+
 import weakref
 
 from datetime import datetime
@@ -24,8 +26,8 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.types import Integer
 from zope.sqlalchemy import ZopeTransactionExtension
 
+from sandglass.time.security import Administrators
 from sandglass.time.utils import mixedmethod
-
 
 META = MetaData()
 
@@ -41,8 +43,7 @@ MODEL_REGISTRY = weakref.WeakValueDictionary()
 # Rules allow full access to admin group and deny access
 # to anyone that didn't match a previous acces rule.
 DEFAULT_ACL = [
-    # TODO: Define a variable Administrators = 'time.admins'
-    (Allow, 'time.admins', ALL_PERMISSIONS),
+    (Allow, Administrators, ALL_PERMISSIONS),
     # Last rule to deny all if no rule matched before
     (Deny, Everyone, ALL_PERMISSIONS)
 ]

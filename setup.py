@@ -15,6 +15,7 @@ setup(
         'pyramid_mailer==0.13',
         'waitress==0.8.8',
         'sqlalchemy==0.9.1',
+        'fixture[sqlalchemy]',
         'zope.sqlalchemy',
         'zope.component==4.1.0',
         # Forms/data handling

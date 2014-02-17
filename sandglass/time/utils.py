@@ -3,6 +3,7 @@ import re
 
 import pyramid.url
 
+from colander import EMAIL_RE
 from pyramid.interfaces import ISettings
 from pyramid.testing import DummyRequest
 from zope.component import getUtility
@@ -10,6 +11,16 @@ from zope.component import getUtility
 # Regexps for underscore/camelcase convertions
 CAMELCASE_RE = re.compile("(.)([A-Z]{1})")
 UNDERSCORE_RE = re.compile(r"(?:^|_)(.)")
+
+
+def is_valid_email(email):
+    """
+    Check if a string is a valid email.
+
+    Return a Boolean.
+
+    """
+    return re.match(EMAIL_RE, email) is not None
 
 
 def camelcase_to_underscore(name):
