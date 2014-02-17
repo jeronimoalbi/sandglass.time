@@ -4,8 +4,6 @@ from pyramid.security import forget
 
 from sandglass.time.models.user import User
 
-REALM = "Sandglass API"
-
 
 def handle_basic_auth_challenge(request):
     """
@@ -28,9 +26,6 @@ def auth_callback(username, password, request):
     identifiers (possibly empty) if the user does exist.
 
     """
-    # TODO: Create a default admin user during DB setup, then remove this
-    return ['time.admins']
-
     user = User.get_by_token(username)
     authenticated = (user and user.key == password)
     if not authenticated:
@@ -45,6 +40,7 @@ def initialize_auth(config):
     Initialize HTTP Basic Auth support.
 
     """
-    basic_auth = BasicAuthAuthenticationPolicy(auth_callback, realm=REALM)
+    realm = "Sandglass API"
+    basic_auth = BasicAuthAuthenticationPolicy(auth_callback, realm=realm)
     config.set_authentication_policy(basic_auth)
     config.add_forbidden_view(handle_basic_auth_challenge)
