@@ -19,9 +19,9 @@ class ActivitySchema(BaseModelSchema):
     description = SchemaNode(
         String())
     start = SchemaNode(
-        DateTime())  # TODO: default, TZ aware
+        DateTime())
     end = SchemaNode(
-        DateTime(),  # TODO: default, TZ aware
+        DateTime(),
         missing=drop)
     activity_type = SchemaNode(
         String(),

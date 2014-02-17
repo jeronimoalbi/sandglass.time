@@ -60,11 +60,11 @@ class Activity(BaseModel):
         UnicodeText(255),
         nullable=False)
     start = Column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=False,
         default=datetime.now)
     end = Column(
-        DateTime(timezone=True))
+        DateTime)
     activity_type = Column(
         Enum(*ACTIVITY_TYPES.keys(), native_enum=False),
         default=ACTIVITY_UNASSIGNED,

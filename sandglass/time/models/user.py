@@ -7,6 +7,7 @@ from sqlalchemy.types import Unicode
 from sqlalchemy.types import UnicodeText
 
 from sandglass.time.models import BaseModel
+from sandglass.time.models import JSON
 from sandglass.time.models import TimestampMixin
 
 
@@ -21,6 +22,8 @@ class User(TimestampMixin, BaseModel):
     last_name = Column(UnicodeText(80), nullable=False)
     key = Column(Unicode(64), nullable=False)
     salt = Column(Unicode(40), nullable=False)
+    # JSON field to support saving extra user data
+    data = Column(JSON(255))
 
     tags = relationship("Tag", backref="user")
     projects = relationship("Project", backref="user")
