@@ -71,7 +71,12 @@ class SandglassCliApp(foundation.CementApp):
         else:
             text = "{}: ".format(label)
 
-        return raw_input(text) or default
+        value = raw_input(text).strip()
+        if value:
+            # TODO: Use current terminal encoding
+            value = unicode(value, 'utf8')
+
+        return value or default
 
 
 def post_argument_parsing_hook(app):

@@ -1,7 +1,7 @@
 ipython
 ipdb
 pep8
-flakes8
+flake8
 pylint
 nose
 nose-selecttests
@@ -10,4 +10,3 @@ WebTest
 PasteDeploy
 tox
 virtualenv>=1.11.2
-fixture
