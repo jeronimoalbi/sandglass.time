@@ -5,12 +5,12 @@ from colander import SchemaNode
 from colander import String
 from colander import SequenceSchema
 
-from sandglass.time.forms import BaseModelSchema
+from sandglass.time.schemas import BaseModelSchema
 
 
-class ProjectSchema(BaseModelSchema):
+class TaskSchema(BaseModelSchema):
     """
-    Schema definition for Project model.
+    Schema definition for Task model.
 
     """
     name = SchemaNode(
@@ -19,12 +19,12 @@ class ProjectSchema(BaseModelSchema):
     parent_id = SchemaNode(
         Integer(),
         missing=drop)
-    client_id = SchemaNode(
+    project_id = SchemaNode(
         Integer(),
         missing=drop)
     user_id = SchemaNode(
         Integer())
 
 
-class ProjectListSchema(SequenceSchema):
-    project = ProjectSchema()
+class TaskListSchema(SequenceSchema):
+    task = TaskSchema()

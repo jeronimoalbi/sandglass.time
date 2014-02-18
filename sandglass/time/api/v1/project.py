@@ -1,6 +1,6 @@
 from sandglass.time.api.model import ModelResource
-from sandglass.time.forms.project import ProjectListSchema
-from sandglass.time.forms.project import ProjectSchema
+from sandglass.time.schemas.project import ProjectListSchema
+from sandglass.time.schemas.project import ProjectSchema
 from sandglass.time.models.project import Project
 
 

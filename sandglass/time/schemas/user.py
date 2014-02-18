@@ -5,7 +5,7 @@ from colander import String
 from colander import drop
 from colander import SequenceSchema
 
-from sandglass.time.forms import BaseModelSchema
+from sandglass.time.schemas import BaseModelSchema
 
 
 class UserSchema(BaseModelSchema):
