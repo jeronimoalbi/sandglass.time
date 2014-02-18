@@ -36,6 +36,16 @@ class UserListSchema(SequenceSchema):
     user = UserSchema()
 
 
+class UserSignupSchema(UserSchema):
+    """
+    Schema definition for user signup.
+
+    """
+    password = SchemaNode(
+        String(),
+        validator=Length(max=30))
+
+
 class UserSigninSchema(BaseModelSchema):
     """
     Schema definition for user logins.

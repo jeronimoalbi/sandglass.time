@@ -9,6 +9,7 @@ from sandglass.time.api.model import ModelResource
 from sandglass.time.api.model import use_schema
 from sandglass.time.forms.user import UserListSchema
 from sandglass.time.forms.user import UserSigninSchema
+from sandglass.time.forms.user import UserSignupSchema
 from sandglass.time.forms.user import UserSchema
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.group import Group
@@ -42,6 +43,7 @@ class UserResource(ModelResource):
 
         return user
 
+    @use_schema(UserSignupSchema)
     @collection_action(methods='POST', permission=PUBLIC)
     def signup(self):
         """
