@@ -65,9 +65,9 @@ def _add_rpc_info(func, **kwargs):
     return func
 
 
-def member_rpc(**kwargs):
+def member_action(**kwargs):
     """
-    Mark decorated method to be accesible by RPC calls.
+    Mark decorated method to be accesible as an action.
 
     #TODO: Document arguments.
 
@@ -78,9 +78,9 @@ def member_rpc(**kwargs):
     return rpc_wrapper
 
 
-def collection_rpc(**kwargs):
+def collection_action(**kwargs):
     """
-    Mark decorated method to be accesible by RPC calls.
+    Mark decorated method to be accesible as an action.
 
     #TODO: Document arguments.
 

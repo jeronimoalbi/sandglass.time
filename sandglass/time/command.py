@@ -1,3 +1,4 @@
+import getpass
 import os
 import sys
 
@@ -59,7 +60,7 @@ class SandglassCliApp(foundation.CementApp):
         self._config.commit()
 
     @staticmethod
-    def input(label, default=None):
+    def input(label, default=None, echo=True):
         """
         Get user input.
 
@@ -71,7 +72,11 @@ class SandglassCliApp(foundation.CementApp):
         else:
             text = "{}: ".format(label)
 
-        value = raw_input(text).strip()
+        if echo:
+            value = raw_input(text).strip()
+        else:
+            value = getpass.getpass(text)
+
         if value:
             # TODO: Use current terminal encoding
             value = unicode(value, 'utf8')

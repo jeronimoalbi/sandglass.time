@@ -1,4 +1,8 @@
+# pylint: disable=W0622,C0103
+
 import functools
+import hashlib
+import os
 import re
 
 import pyramid.url
@@ -65,7 +69,7 @@ def underscore_to_camelcase(name):
         return name
 
     name = UNDERSCORE_RE.sub(replace_fn, name)
-    return (name[0].lower() + name[1:])
+    return name[0].lower() + name[1:]
 
 
 def camelcase_dict(obj):
@@ -122,3 +126,40 @@ def route_path(route_name, request=None, **kwargs):
         request = DummyRequest()
 
     return pyramid.url.route_path(route_name, request, **kwargs)
+
+
+def generate_random_hash(salt='', hash='sha1'):
+    """
+    Generate a random hash string.
+
+    By default generate a `sha1` hash.
+
+    Other hash can be specified. If so all supported hash
+    algorithms are listed in `hashlib.algorithms`.
+
+    Return a String.
+
+    """
+    if hash not in hashlib.algorithms:
+        raise Exception('Invalid hash algorithm %s' % hash)
+
+    if isinstance(salt, unicode):
+        salt = salt.encode('utf8')
+
+    return generate_hash(os.urandom(48) + salt, hash=hash)
+
+
+def generate_hash(value, hash='sha1'):
+    """
+    Generate a hash for a given value.
+
+    By default generate a `sha1` hash.
+
+    Other hash can be specified. If so all supported hash
+    algorithms are listed in `hashlib.algorithms`.
+
+    Return a String.
+
+    """
+    sha_obj = getattr(hashlib, hash)(value)
+    return sha_obj.hexdigest()

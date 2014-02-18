@@ -1,5 +1,7 @@
 import logging
 
+from functools import wraps
+
 import transaction
 
 from pyramid.decorator import reify
@@ -11,6 +13,25 @@ from sandglass.time.models import transactional
 from sandglass.time.response import error_response
 
 LOG = logging.getLogger(__name__)
+
+
+def use_schema(schema):
+    """
+    ModelResource decorator to change the schema for a method call.
+
+    """
+    def inner_use_schema(func):
+        @wraps(func)
+        def wrapper_use_schema(self, *args, **kwargs):
+            # Save original schema before asigning the new one
+            self.cls_schema = self.schema
+            self.schema = schema
+
+            return func(self, *args, **kwargs)
+
+        return wrapper_use_schema
+
+    return inner_use_schema
 
 
 class ModelResource(BaseResource):
