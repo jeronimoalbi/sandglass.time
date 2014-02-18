@@ -1,4 +1,4 @@
-from sandglass.time.api import member_rpc
+from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.tag import Tag
@@ -17,7 +17,7 @@ class ActivityResource(ModelResource):
     schema = ActivitySchema
     list_schema = ActivityListSchema
 
-    @member_rpc(method='POST')
+    @member_action(method='POST')
     def add_tags(self):
         """
         Add tags to current activity.
@@ -39,7 +39,7 @@ class ActivityResource(ModelResource):
 
         return tag_list
 
-    @member_rpc(method='DELETE')
+    @member_action(method='DELETE')
     def remove_tags(self):
         """
         Remove tags from current activity.

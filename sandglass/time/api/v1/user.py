@@ -3,10 +3,12 @@ import datetime
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
-from sandglass.time.api import collection_rpc
-from sandglass.time.api import member_rpc
+from sandglass.time.api import collection_action
+from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
+from sandglass.time.api.model import use_schema
 from sandglass.time.forms.user import UserListSchema
+from sandglass.time.forms.user import UserSigninSchema
 from sandglass.time.forms.user import UserSchema
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.group import Group
@@ -26,7 +28,21 @@ class UserResource(ModelResource):
     schema = UserSchema
     list_schema = UserListSchema
 
-    @collection_rpc(methods='POST', permission=PUBLIC)
+    @use_schema(UserSigninSchema)
+    @collection_action(methods='POST', permission=PUBLIC)
+    def signin(self):
+        """
+        Signin (login) a user.
+
+        """
+        data = self.submitted_member_data
+        user = User.query().filter_by(email=data['email']).first()
+        if (not user) or not user.is_valid_password(data['password']):
+            return error_response(_("Invalid sign in credentials"))
+
+        return user
+
+    @collection_action(methods='POST', permission=PUBLIC)
     def signup(self):
         """
         Create a new user.
@@ -49,7 +65,7 @@ class UserResource(ModelResource):
 
         return user
 
-    @collection_rpc(methods='GET')
+    @collection_action(methods='GET')
     def search(self):
         """
         Get a User by email or token.
@@ -72,7 +88,7 @@ class UserResource(ModelResource):
 
         raise NotFound()
 
-    @member_rpc(method='GET')
+    @member_action(method='GET')
     def get_activities(self):
         """
         Get activities for current user.

@@ -65,6 +65,18 @@ class ManageController(controller.CementBaseController):
         if not (data['first_name'] and data['last_name']):
             self.app.log.error(_("User first and last names are mandatory"))
 
+        # Get password for new user
+        password = self.app.input(_("Password"), echo=False)
+        while self.app.input(_("Repeat password"), echo=False) != password:
+            print(_("Passwords don't match"))
+            password = self.app.input(_("Password"), echo=False)
+
+        if not (password or '').strip():
+            print(_("No password entered. User is not created."))
+            sys.exit(1)
+
+        data['password'] = password
+
         user = User(**data)
         session = user.new_session()
         session.add(user)

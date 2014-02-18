@@ -1,11 +1,13 @@
 import hashlib
-import os
 
 from sqlalchemy import Column
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import Unicode
+from sqlalchemy.orm import synonym
+from sqlalchemy.types import Text
 from sqlalchemy.types import UnicodeText
 
+from sandglass.time import utils
 from sandglass.time.models import BaseModel
 from sandglass.time.models import JSON
 from sandglass.time.models import TimestampMixin
@@ -13,15 +15,16 @@ from sandglass.time.models import TimestampMixin
 
 class User(TimestampMixin, BaseModel):
     """
-    TODO
+    Model definition for Sandglass users.
 
     """
-    token = Column(Unicode(64), nullable=False, unique=True)
+    token = Column(Text(64), nullable=False, unique=True)
     email = Column(UnicodeText(255), nullable=False, unique=True)
     first_name = Column(UnicodeText(60), nullable=False)
     last_name = Column(UnicodeText(80), nullable=False)
-    key = Column(Unicode(64), nullable=False)
-    salt = Column(Unicode(40), nullable=False)
+    key = Column(Text(64), nullable=False)
+    salt = Column(Text(40), nullable=False)
+    _password = Column('password', Text(30), nullable=False)
     # JSON field to support saving extra user data
     data = Column(JSON(255))
 
@@ -29,18 +32,27 @@ class User(TimestampMixin, BaseModel):
     projects = relationship("Project", backref="user")
     tasks = relationship("Task", backref="user")
 
+    def get_password(self):
+        return self._password
+
+    def set_password(self, value):
+        # Set password as a hash
+        self._password = utils.generate_hash(value, hash='sha1')
+        # (Re)generate API token and key after password is updated
+        salt = (self.email or '') + self.salt + value
+        self.token = utils.generate_random_hash(salt=salt, hash='sha256')
+        salt = value + self.salt
+        self.key = utils.generate_random_hash(salt=salt, hash='sha256')
+
+    @declared_attr
+    def password(cls):
+        descriptor = property(cls.get_password, cls.set_password)
+        return synonym('_password', descriptor=descriptor)
+
     def __init__(self, *args, **kwargs):
+        # Generate user salt during creation
+        self.generate_salt()
         super(User, self).__init__(*args, **kwargs)
-        # Generate key and salt values the very first time
-        # a User is created (this is not called during deserialization)
-        if not self.salt:
-            self.generate_salt()
-
-        # Generate a unique user token
-        self.token = self.generate_hash()
-
-        if not self.key:
-            self.key = self.generate_hash()
 
     @classmethod
     def get_by_email(cls, email):
@@ -66,6 +78,15 @@ class User(TimestampMixin, BaseModel):
         query = query.filter(cls.token == token)
         return query.first()
 
+    def is_valid_password(self, password):
+        """
+        Check if a plaintext password is valid for current user.
+
+        Return a Boolean.
+
+        """
+        return utils.generate_hash(password, hash='sha1') == self.password
+
     def generate_salt(self):
         """
         Generate a new random value for salt.
@@ -73,24 +94,12 @@ class User(TimestampMixin, BaseModel):
         Return a String with the new value.
 
         """
-        sha_obj = hashlib.sha1(os.urandom(48))
-        self.salt = unicode(sha_obj.hexdigest())
-        return self.salt
-
-    def generate_hash(self):
-        """
-        Generate a new random user hash.
-
-        A new salt value is generated when user has no salt value.
-
-        Return a String with a new hash value.
-
-        """
-        salt = (self.salt or self.generate_salt())
-        sha_obj = hashlib.sha256(os.urandom(48) + salt.encode('utf8'))
-        return unicode(sha_obj.hexdigest())
+        self.salt = utils.generate_random_hash(hash='sha1')
 
     def update_json_data(self, data):
         # Add an email hash (can be used for example to get user Gravatar)
         data['email_md5'] = hashlib.md5(self.email).hexdigest()
+        # Remove salt and password from serialized data
+        data.pop('salt', None)
+        data.pop('password', None)
         return data
