@@ -1,6 +1,6 @@
 from sandglass.time.api.model import ModelResource
-from sandglass.time.forms.group import GroupListSchema
-from sandglass.time.forms.group import GroupSchema
+from sandglass.time.schemas.group import GroupListSchema
+from sandglass.time.schemas.group import GroupSchema
 from sandglass.time.models.group import Group
 
 

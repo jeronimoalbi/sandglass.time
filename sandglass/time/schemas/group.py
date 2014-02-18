@@ -4,7 +4,7 @@ from colander import SchemaNode
 from colander import String
 from colander import SequenceSchema
 
-from sandglass.time.forms import BaseModelSchema
+from sandglass.time.schemas import BaseModelSchema
 
 
 class GroupSchema(BaseModelSchema):

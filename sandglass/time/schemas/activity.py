@@ -6,7 +6,7 @@ from colander import SchemaNode
 from colander import String
 from colander import SequenceSchema
 
-from sandglass.time.forms import BaseModelSchema
+from sandglass.time.schemas import BaseModelSchema
 from sandglass.time.models.activity import ACTIVITY_TYPES
 from sandglass.time.models.activity import ACTIVITY_UNASSIGNED
 

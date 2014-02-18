@@ -7,10 +7,10 @@ from sandglass.time.api import collection_action
 from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
 from sandglass.time.api.model import use_schema
-from sandglass.time.forms.user import UserListSchema
-from sandglass.time.forms.user import UserSigninSchema
-from sandglass.time.forms.user import UserSignupSchema
-from sandglass.time.forms.user import UserSchema
+from sandglass.time.schemas.user import UserListSchema
+from sandglass.time.schemas.user import UserSigninSchema
+from sandglass.time.schemas.user import UserSignupSchema
+from sandglass.time.schemas.user import UserSchema
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.group import Group
 from sandglass.time.models.user import User

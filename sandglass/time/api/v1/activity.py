@@ -2,9 +2,9 @@ from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.tag import Tag
-from sandglass.time.forms import IdListSchema
-from sandglass.time.forms.activity import ActivityListSchema
-from sandglass.time.forms.activity import ActivitySchema
+from sandglass.time.schemas import IdListSchema
+from sandglass.time.schemas.activity import ActivityListSchema
+from sandglass.time.schemas.activity import ActivitySchema
 
 
 class ActivityResource(ModelResource):

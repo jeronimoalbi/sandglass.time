@@ -1,6 +1,6 @@
 from sandglass.time.api.model import ModelResource
-from sandglass.time.forms.client import ClientListSchema
-from sandglass.time.forms.client import ClientSchema
+from sandglass.time.schemas.client import ClientListSchema
+from sandglass.time.schemas.client import ClientSchema
 from sandglass.time.models.client import Client
 
 
