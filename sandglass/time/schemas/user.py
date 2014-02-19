@@ -24,7 +24,7 @@ class UserSchema(BaseModelSchema):
         validator=Length(max=80))
     password = SchemaNode(
         String(),
-        validator=Length(max=30),
+        validator=Length(max=255),
         missing=drop)
     data = SchemaNode(
         String(),
