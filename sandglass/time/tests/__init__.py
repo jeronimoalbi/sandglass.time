@@ -1,12 +1,13 @@
 import os
 import unittest
-
+from sandglass.time import setup
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
+import base64
 
 # Fixture Stuffs
 from fixture import SQLAlchemyFixture
@@ -14,6 +15,9 @@ from fixture.style import NamedDataStyle
 from sandglass.time.tests.fixtures import UserData, ClientData, ProjectData
 from sandglass.time import models
 from sandglass.time.models import activity, client, project, tag, task, user
+
+from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
+from sandglass.time.api.v1.user import UserResource
 
 
 def get_static_test_dir():
@@ -95,16 +99,12 @@ class BaseTestCase(unittest.TestCase):
         super(BaseTestCase, cls).setUpClass()
 
     @classmethod
-    def clear_database(cls):
-        from sandglass.time.models import clear_tables
-        clear_tables()
-
-    @classmethod
     def setup_application(cls):
         request = testing.DummyRequest()
         # Initialize Pyramid testing environment support
         cls.config = testing.setUp(settings=cls.settings, request=request)
         cls.config.include('sandglass.time')
+        setup.init_database_data()
 
     @classmethod
     def cleanup_application(cls):
@@ -161,12 +161,35 @@ class FunctionalTestCase(BaseTestCase):
 
     def setUp(self):
         self.app = TestApp(self.wsgi_app)
+        self.init_test_user()
+        
         super(FunctionalTestCase, self).setUp()
 
-    # def test_user_url_
-    # def _action_create_model(self, model):
-    #     url = model.get_member_url()
-    #     response =
+    def init_test_user(self):
+
+        user = ClientUserData.testuser
+
+        # Try and log in with the testuser
+        url = UserResource.get_collection_path() + "signin/"
+        response = self.app.post_json(url, user.json_data(), expect_errors=True)
+        if response.status_code==200:
+            self.token = response.json['token']
+            self.key = response.json['key']
+            return
+
+        # Create a testuser for us to use with the tests
+        url = UserResource.get_collection_path() + "signup/"
+        response = self.app.post_json(url, user.json_data())
+        if response.status_code==200:
+            self.token = response.json['token']
+            self.key = response.json['key']
+
+    def header(self):
+        authstring = "{}:{}".format(self.token, self.key)
+        authstring_enc = "Basic " + base64.b64encode(authstring)
+        headers = {}
+        headers["Authorization"] = authstring_enc
+        return headers
 
     def _create(self, path, content=None, status=200):
         create_response = self.app.post_json(path, content, status=status)

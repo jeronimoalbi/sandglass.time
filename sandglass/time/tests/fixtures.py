@@ -8,7 +8,7 @@ class BaseFixture():
     Base class with util functions for fixtures
     """
     @classmethod
-    def data(cls):
+    def json_data(cls):
         """
         Returns clean attributes only of fixture class
         """
@@ -28,31 +28,37 @@ class UserData(DataSet):
         first_name = "Dr"
         last_name = "Who"
         email = "timeywimey@wienfluss.net"
+        password = "1234"
 
     class james_william_elliot(BaseFixture):
         email = "humpdydumpdy@wienfluss.net"
         first_name = "James William"
         last_name = "Elliot"
+        password = "1234"
 
     class rick_castle(BaseFixture):
         email = "ruggedlyhandsome@wienfluss.net"
         first_name = "Rick"
         last_name = "Castle"
+        password = "1234"
 
     class the_tardis(BaseFixture):
         email = "wibblywobbly@wienfluss.net"
         first_name = "The"
         last_name = "Tardis"
+        password = "1234"
 
     class dr_jekyll(BaseFixture):
         email = "strangecase@wienfluss.net"
         first_name = "Dr."
         last_name = "Jekyll"
+        password = "1234"
 
     class shepherd_book(BaseFixture):
         email = "specialhell@serenity.org"
         first_name = "Shepherd"
         last_name = "Book"
+        password = "1234"
 
 
 class ClientData(DataSet):
