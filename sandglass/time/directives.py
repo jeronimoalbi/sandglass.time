@@ -1,4 +1,4 @@
-import inspect
+# pylint: disable=W0613
 
 from pyramid.path import DottedNameResolver
 
@@ -17,6 +17,19 @@ PERMISSION_SUFFIX = {
 }
 
 
+def resource_action_predicate(action_name):
+    """
+    Function to define a view predicate for action views.
+
+    Return a Function.
+
+    """
+    def predicate(context, request):
+        return request.matchdict.get('action') == action_name
+
+    return predicate
+
+
 def add_rest_resource(config, cls_or_dotted):
     """
     Add routes and views for a `RestResource` class.
@@ -29,57 +42,46 @@ def add_rest_resource(config, cls_or_dotted):
     RESOURCE_REGISTRY[resource_name] = cls
 
     # Generate routes and attach views for current class
-    for route_name, route_info in REST_ROUTE_INFO.items():
+    for route_type, route_info in REST_ROUTE_INFO.items():
         match_param = "member={}".format(resource_name)
 
-        # When action is enabled get info for each action enabled method
-        action_info_list = []
-        if not route_info.get('disable_actions', False):
-            for member in inspect.getmembers(cls, predicate=inspect.ismethod):
-                # Get action info from the method definition
-                action_info = getattr(member[1], '__action__', None)
-                # Check if current action type for current route
-                if action_info and action_info.get('type') == route_name:
-                    action_info_list.append(action_info)
+        # Get action names for current route type and initialize
+        # a route predicate to match the names
+        if 'action' in route_info:
+            action_info_list = cls.get_actions_by_type(route_type)
+            # Attach action methods to current route
+            for action_info in action_info_list:
+                action_name = action_info['name']
 
-        # Attach action methods to current route
-        for action_info in action_info_list:
-            # Init permission for action calls
-            permission_name = action_info.get('permission')
-            if permission_name:
-                permission = permission_name
-            else:
-                permission = cls.model.get_permission('action')
+                # Init permission for action calls
+                permission_name = action_info.get('permission')
+                if permission_name:
+                    permission = permission_name
+                else:
+                    permission = cls.model.get_permission('action')
 
-            # Add a view also for implicit action call
-            config.add_view(
-                cls,
-                attr=action_info['attr_name'],
-                match_param=match_param,
-                route_name=route_info['route_name'],
-                # TODO: Add a decorator to raise method not allowed
-                #       instead the default 404 error.
-                #decorator=restrict_request_methods,
-                request_param=(action_info['name'] + '='),
-                renderer='json',
-                request_method=action_info['request_method'],
-                permission=permission)
-            # Add a view also for explicit action call
-            config.add_view(
-                cls,
-                attr=action_info['attr_name'],
-                match_param=match_param,
-                route_name=route_info['route_name'],
-                request_param=("action=" + action_info['name']),
-                renderer='json',
-                request_method=action_info['request_method'],
-                permission=permission)
+                # Create a resource action predicate to call the view
+                # only when current action name is called in the URL
+                custom_predicates = (resource_action_predicate(action_name), )
+                # Add a view also for implicit action call
+                config.add_view(
+                    cls,
+                    attr=action_info['attr_name'],
+                    match_param=match_param,
+                    route_name="{}_action".format(route_info['route_name']),
+                    # TODO: Add a decorator to raise method not allowed
+                    #       instead the default 404 error.
+                    #decorator=restrict_request_methods,
+                    custom_predicates=custom_predicates,
+                    renderer='json',
+                    request_method=action_info['request_method'],
+                    permission=permission)
 
         # Add views to handle different request methods in this view
         for request_method in route_info['methods']:
             # Init the name of the methos that the class should
             # implement to handle requests for current request method
-            attr_name = '{0}_{1}'.format(request_method.lower(), route_name)
+            attr_name = '{0}_{1}'.format(request_method.lower(), route_type)
             view_handler = getattr(cls, attr_name, None)
             # Skip non callable attributes
             if not hasattr(view_handler, '__call__'):

@@ -6,4 +6,4 @@ from pyramid.security import NO_PERMISSION_REQUIRED
 PUBLIC = NO_PERMISSION_REQUIRED
 
 # Group definition for administrators
-Administrators = u"time.Administrators"
+Administrators = "time.Administrators"

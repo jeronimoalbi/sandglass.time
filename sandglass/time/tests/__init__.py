@@ -74,7 +74,6 @@ def fixture(*datasets):
 
 
 class BaseTestCase(unittest.TestCase):
-
     """
     Base class for all tests.
 
@@ -92,7 +91,6 @@ class BaseTestCase(unittest.TestCase):
         cls.Session = models.DBSESSION
         cls.settings = SETTINGS
         cls.engine = engine_from_config(cls.settings, prefix='database.')
-
 
         super(BaseTestCase, cls).setUpClass()
 
@@ -117,7 +115,6 @@ class BaseTestCase(unittest.TestCase):
 
 
 class UnitTestCase(BaseTestCase):
-
     """
     Base class for unit tests.
 
@@ -138,7 +135,6 @@ class UnitTestCase(BaseTestCase):
 
 
 class FunctionalTestCase(BaseTestCase):
-
     """
     Base class for integration tests.
 
@@ -157,7 +153,7 @@ class FunctionalTestCase(BaseTestCase):
         super(FunctionalTestCase, cls).setUpClass()
         cls.setup_application()
         cls.wsgi_app = cls.config.make_wsgi_app()
-        
+
     @classmethod
     def tearDownClass(cls):
         cls.cleanup_application()

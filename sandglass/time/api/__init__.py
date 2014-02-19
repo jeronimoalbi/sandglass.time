@@ -1,5 +1,6 @@
 # pylint: disable=W0622
 
+import inspect
 import logging
 
 import dateutil.parser
@@ -14,30 +15,40 @@ LOG = logging.getLogger(__name__)
 REQUEST_METHODS = ('GET', 'POST', 'PUT', 'DELETE')
 
 REST_ROUTE_INFO = {
-    #    GET: List all items
-    #    POST: Create new item(s)
-    #    DELETE: Delete all items
+    # GET: List all items
+    # POST: Create new item(s)
+    # DELETE: Delete all items
     'collection': {
         'route_name': 'api.rest.collection',
-        'pattern': '/{member}/',
+        'pattern': r'/{member}/',
         'methods': ('GET', 'POST', 'DELETE'),
+        # Note: Require `resource_action_predicate` during view attachment
+        'action': {
+            'pattern': r'/{member}/{action}/',
+            # All request methods are supported
+            'methods': REQUEST_METHODS,
+        },
     },
-    #    GET: Get a single item
-    #    PUT: Update a single item
-    #    DELETE: Delete a single item
+    # GET: Get a single item
+    # PUT: Update a single item
+    # DELETE: Delete a single item
     'member': {
         'route_name': 'api.rest.member',
-        'pattern': '/{member}/{pk:\d+}/',
-        'methods': ('GET', 'PUT', 'DELETE', 'POST'),
+        'pattern': r'/{member}/{pk:\d+}/',
+        'methods': ('GET', 'PUT', 'DELETE'),
+        # Note: Require `resource_action_predicate` during view attachment
+        'action': {
+            'pattern': r'/{member}/{pk:\d+}/{action}/',
+            # All request methods are supported
+            'methods': REQUEST_METHODS,
+        },
     },
-    #    GET: List all related items
-    #    DELETE: Delete related item(s)
+    # GET: List all related items
+    # DELETE: Delete related item(s)
     'related': {
         'route_name': 'api.rest.related',
-        'pattern': '/{member}/{pk:\d+}/{related_name}/',
+        'pattern': r'/{member}/{pk:\d+}/{related_name}/',
         'methods': ('GET', 'DELETE'),
-        # Disable actions for this route
-        'disable_actions': True,
     },
 }
 
@@ -187,6 +198,34 @@ class BaseResource(object):
             pk=pk,
             related_name=related_name)
 
+    @classmethod
+    def get_actions_by_type(cls, action_type):
+        """
+        Get the list of action information for current class.
+
+        Action type can be member, collection or * for any type.
+
+        Return a List of dictionaries.
+
+        """
+        action_info_list = []
+        member_list = inspect.getmembers(cls, predicate=inspect.ismethod)
+        for member in member_list:
+            # Get action info from the method definition
+            action_info = getattr(member[1], '__action__', None)
+            if not action_info:
+                continue
+
+            # Check if current action info match action type
+            if action_type != '*':
+                if action_info.get('type') != action_type:
+                    # Skip current action info when type is not right
+                    continue
+
+            action_info_list.append(action_info)
+
+        return action_info_list
+
     def __init__(self, request):
         self.request = request
 
@@ -313,6 +352,22 @@ def add_api_rest_routes(config):
             name,
             pattern=pattern,
             request_method=methods,
+            factory=RootModelFactory(),
+            traverse="/{member}")
+
+        #Get action information for current route
+        action_info = route_info.get('action')
+        if not action_info:
+            continue
+
+        # Add action route when available
+        action_name = "{}_action".format(name)
+        action_pattern = action_info['pattern']
+        action_methods = action_info['methods']
+        config.add_route(
+            action_name,
+            pattern=action_pattern,
+            request_method=action_methods,
             factory=RootModelFactory(),
             traverse="/{member}")
 
