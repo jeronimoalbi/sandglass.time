@@ -24,7 +24,7 @@ class User(TimestampMixin, BaseModel):
     last_name = Column(UnicodeText(80), nullable=False)
     key = Column(Text(64), nullable=False)
     salt = Column(Text(40), nullable=False)
-    _password = Column('password', Text(30), nullable=False)
+    _password = Column('password', Text(255), nullable=False)
     # JSON field to support saving extra user data
     data = Column(JSON(255))
 
