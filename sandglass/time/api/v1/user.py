@@ -17,6 +17,7 @@ from sandglass.time.models.user import User
 from sandglass.time.response import error_response
 from sandglass.time.security import Administrators
 from sandglass.time.security import PUBLIC
+import transaction
 
 
 class UserResource(ModelResource):
@@ -50,6 +51,7 @@ class UserResource(ModelResource):
         Create a new user.
 
         """
+
         # TODO: Validate user by sending a link to the email
         data = self.submitted_member_data
         if User.query().filter_by(email=data['email']).count():
@@ -60,11 +62,18 @@ class UserResource(ModelResource):
         session = User.new_session()
         session.add(user)
         session.flush()
-
+      
         # TODO: Assing only non admin permissions (or a Users group ?)
-        admin_group = Group.query().filter_by(name=Administrators).first()
-        user.groups.append(admin_group)
+        admin_group = Group.query(session).filter_by(
+            name=Administrators).first()
+        if not admin_group:
+            msg = _(
+                "No Admin group, run 'sandglass manage init_database'")
+            transaction.doom()
+            return error_response(msg)
 
+        user.groups.append(admin_group)
+  
         return user
 
     @collection_action(methods='GET')
