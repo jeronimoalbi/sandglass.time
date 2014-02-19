@@ -90,8 +90,8 @@ class UserResource(ModelResource):
 
         raise NotFound()
 
-    @member_action(method='GET')
-    def get_activities(self):
+    @member_action(methods='GET')
+    def activities(self):
         """
         Get activities for current user.
 

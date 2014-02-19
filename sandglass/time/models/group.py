@@ -45,5 +45,4 @@ class Group(BaseModel):
         backref='groups')
 
     def __unicode__(self):
-        # Use application name as prefix for group name
-        return u"time.{}".format(self.name)
+        return self.name

@@ -32,46 +32,47 @@ def add_rest_resource(config, cls_or_dotted):
     for route_name, route_info in REST_ROUTE_INFO.items():
         match_param = "member={}".format(resource_name)
 
-        # When RPC is enabled get info for each RPC enabled method
-        rpc_info_list = []
+        # When action is enabled get info for each action enabled method
+        action_info_list = []
         if not route_info.get('disable_actions', False):
             for member in inspect.getmembers(cls, predicate=inspect.ismethod):
-                # Get RPC info from the method definition
-                rpc_info = getattr(member[1], '__rpc__', None)
-                # Check if current RPC type is the right one for current route
-                if rpc_info and rpc_info.get('type') == route_name:
-                    rpc_info_list.append(rpc_info)
+                # Get action info from the method definition
+                action_info = getattr(member[1], '__action__', None)
+                # Check if current action type for current route
+                if action_info and action_info.get('type') == route_name:
+                    action_info_list.append(action_info)
 
-        # Attach RPC methods to current route
-        for rpc_info in rpc_info_list:
-            # Init permission for RPC calls
-            permission_name = rpc_info.get('permission', 'action')
+        # Attach action methods to current route
+        for action_info in action_info_list:
+            # Init permission for action calls
+            permission_name = action_info.get('permission')
             if permission_name:
                 permission = permission_name
             else:
-                permission = cls.model.get_permission(permission_name)
+                permission = cls.model.get_permission('action')
 
+            # Add a view also for implicit action call
             config.add_view(
                 cls,
-                attr=rpc_info['attr_name'],
+                attr=action_info['attr_name'],
                 match_param=match_param,
                 route_name=route_info['route_name'],
                 # TODO: Add a decorator to raise method not allowed
                 #       instead the default 404 error.
                 #decorator=restrict_request_methods,
-                request_param=(rpc_info['name'] + '='),
+                request_param=(action_info['name'] + '='),
                 renderer='json',
-                request_method=rpc_info['request_method'],
+                request_method=action_info['request_method'],
                 permission=permission)
-            # Add a view also for explicit RPC call
+            # Add a view also for explicit action call
             config.add_view(
                 cls,
-                attr=rpc_info['attr_name'],
+                attr=action_info['attr_name'],
                 match_param=match_param,
                 route_name=route_info['route_name'],
-                request_param=("action=" + rpc_info['name']),
+                request_param=("action=" + action_info['name']),
                 renderer='json',
-                request_method=rpc_info['request_method'],
+                request_method=action_info['request_method'],
                 permission=permission)
 
         # Add views to handle different request methods in this view

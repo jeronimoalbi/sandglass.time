@@ -17,7 +17,7 @@ class ActivityResource(ModelResource):
     schema = ActivitySchema
     list_schema = ActivityListSchema
 
-    @member_action(method='POST')
+    @member_action(methods='POST')
     def add_tags(self):
         """
         Add tags to current activity.
@@ -39,7 +39,7 @@ class ActivityResource(ModelResource):
 
         return tag_list
 
-    @member_action(method='DELETE')
+    @member_action(methods='DELETE')
     def remove_tags(self):
         """
         Remove tags from current activity.

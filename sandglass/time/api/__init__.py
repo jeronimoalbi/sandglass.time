@@ -1,3 +1,5 @@
+# pylint: disable=W0622
+
 import logging
 
 import dateutil.parser
@@ -25,83 +27,83 @@ REST_ROUTE_INFO = {
     #    DELETE: Delete a single item
     'member': {
         'route_name': 'api.rest.member',
-        'pattern': '/{member}/{pk}/',
+        'pattern': '/{member}/{pk:\d+}/',
         'methods': ('GET', 'PUT', 'DELETE', 'POST'),
     },
     #    GET: List all related items
     #    DELETE: Delete related item(s)
     'related': {
         'route_name': 'api.rest.related',
-        'pattern': '/{member}/{pk}/{related_name}/',
+        'pattern': '/{member}/{pk:\d+}/{related_name}/',
         'methods': ('GET', 'DELETE'),
-        # Disable RPC for this route
+        # Disable actions for this route
         'disable_actions': True,
     },
 }
 
 
-def _add_rpc_info(func, **kwargs):
+def add_action_info(func, name=None, type='*', permission=None, methods=None,
+                    extra=None):
     """
     TODO
 
     """
-    rpc_type = kwargs.pop('type', '*')
-    schema = kwargs.pop('schema', None)
-    permission = kwargs.pop('permission', None)
-    methods = kwargs.pop('methods', REQUEST_METHODS)
-    # Get RPC name, or use the function/method name
-    name = kwargs.pop('name', func.__name__)
-    # Save RPC related info
-    func.__rpc__ = kwargs.copy()
-    func.__rpc__.update({
-        'request_method': methods,
-        'schema': schema,
+    if type not in ('*', 'member', 'collection'):
+        raise Exception("Invalid resource action type %s" % type)
+
+    # Save action related info
+    func.__action__ = {
+        'request_method': methods or REQUEST_METHODS,
         'attr_name': func.__name__,
-        'name': name,
+        'name': name or func.__name__.replace('_', '-'),
         'permission': permission,
-        'type': rpc_type,
-    })
+        'type': type,
+        'extra': extra,
+    }
 
     return func
 
 
-def member_action(**kwargs):
+def member_action(name=None, permission=None, methods=None):
     """
     Mark decorated method to be accesible as an action.
 
     #TODO: Document arguments.
 
     """
-    def rpc_wrapper(func):
-        return _add_rpc_info(func, type='member', **kwargs)
+    def inner_member_action(func):
+        return add_action_info(func, name=name, type='member',
+                               permission=permission, methods=methods)
 
-    return rpc_wrapper
+    return inner_member_action
 
 
-def collection_action(**kwargs):
+def collection_action(name=None, permission=None, methods=None):
     """
     Mark decorated method to be accesible as an action.
 
     #TODO: Document arguments.
 
     """
-    def rpc_wrapper(func):
-        return _add_rpc_info(func, type='collection', **kwargs)
+    def inner_collection_action(func):
+        return add_action_info(func, name=name, type='collection',
+                               permission=permission, methods=methods)
 
-    return rpc_wrapper
+    return inner_collection_action
 
 
-def rpc(**kwargs):
+def action(name=None, permission=None, methods=None):
     """
-    Mark decorated method to be accesible by RPC calls.
+    Mark decorated method to be accesible as an action.
 
     #TODO: Document arguments.
 
     """
-    def rpc_wrapper(func):
-        return _add_rpc_info(func, **kwargs)
+    def inner_action(func):
+        return add_action_info(func, name=name, permission=permission,
+                               methods=methods)
 
-    return rpc_wrapper
+    return inner_action
 
 
 class APIRequestDataError(Exception):

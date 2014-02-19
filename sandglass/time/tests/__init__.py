@@ -168,7 +168,7 @@ class FunctionalTestCase(BaseTestCase):
         super(FunctionalTestCase, self).setUp()
 
     # def test_user_url_
-    # def _rpc_create_model(self, model):
+    # def _action_create_model(self, model):
     #     url = model.get_member_url()
     #     response =
 
