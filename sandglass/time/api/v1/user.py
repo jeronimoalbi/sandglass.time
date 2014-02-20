@@ -1,5 +1,7 @@
 import datetime
 
+import transaction
+
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
@@ -17,7 +19,6 @@ from sandglass.time.models.user import User
 from sandglass.time.response import error_response
 from sandglass.time.security import Administrators
 from sandglass.time.security import PUBLIC
-import transaction
 
 
 class UserResource(ModelResource):
@@ -51,7 +52,6 @@ class UserResource(ModelResource):
         Create a new user.
 
         """
-
         # TODO: Validate user by sending a link to the email
         data = self.submitted_member_data
         if User.query().filter_by(email=data['email']).count():
@@ -62,18 +62,18 @@ class UserResource(ModelResource):
         session = User.new_session()
         session.add(user)
         session.flush()
-      
+
         # TODO: Assing only non admin permissions (or a Users group ?)
-        admin_group = Group.query(session).filter_by(
-            name=Administrators).first()
+        query = Group.query(session).filter_by(name=Administrators)
+        admin_group = query.first()
         if not admin_group:
-            msg = _(
-                "No Admin group, run 'sandglass manage init_database'")
+            # Admin group is created running `sandglass manage init-database`
+            msg = _("Administrators group does not exist")
             transaction.doom()
             return error_response(msg)
 
         user.groups.append(admin_group)
-  
+
         return user
 
     @collection_action(methods='GET')
@@ -97,7 +97,7 @@ class UserResource(ModelResource):
             if user:
                 return user
 
-        raise NotFound()
+        return error_response(_("No users found"))
 
     @member_action(methods='GET')
     def activities(self):

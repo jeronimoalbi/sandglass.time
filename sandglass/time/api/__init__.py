@@ -24,7 +24,7 @@ REST_ROUTE_INFO = {
         'methods': ('GET', 'POST', 'DELETE'),
         # Note: Require `resource_action_predicate` during view attachment
         'action': {
-            'pattern': r'/{member}/{action}/',
+            'pattern': r'/{member}/@{action}',
             # All request methods are supported
             'methods': REQUEST_METHODS,
         },
@@ -38,7 +38,7 @@ REST_ROUTE_INFO = {
         'methods': ('GET', 'PUT', 'DELETE'),
         # Note: Require `resource_action_predicate` during view attachment
         'action': {
-            'pattern': r'/{member}/{pk:\d+}/{action}/',
+            'pattern': r'/{member}/{pk:\d+}/@{action}',
             # All request methods are supported
             'methods': REQUEST_METHODS,
         },
