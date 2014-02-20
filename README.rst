@@ -7,8 +7,13 @@ Sandglass Time Documentation
 
 Time tracking application.
 
-Setting up after initial checkout::
+Setting up after initial checkout
+---------------------------------
+
+.. code:: bash
+
   $ python setyp.py develop
   $ sandglass manage init-database
   $ sandglass manage create-user --admin
   $ pserve sandglass.ini
+
