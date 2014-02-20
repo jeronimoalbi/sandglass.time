@@ -1,7 +1,11 @@
 # pylint: disable=W0613
 
+from functools import wraps
+
+from pyramid.httpexceptions import HTTPMethodNotAllowed
 from pyramid.path import DottedNameResolver
 
+from sandglass.time.api import REQUEST_METHODS
 from sandglass.time.api import REST_ROUTE_INFO
 
 
@@ -30,6 +34,32 @@ def resource_action_predicate(action_name):
     return predicate
 
 
+def allow_request_methods(methods):
+    """
+    Resource method decorator to allow specific request method(s).
+
+    HTTP method not allowed is raised when request uses a method
+    that is not in the allowed methods list.
+
+    """
+    if isinstance(methods, basestring):
+        allowed_methods = [methods]
+    else:
+        allowed_methods = methods
+
+    def decorator(func):
+        @wraps(func)
+        def allow_request_methods_wrapper(context, request):
+            if request.method not in allowed_methods:
+                raise HTTPMethodNotAllowed()
+
+            return func(context, request)
+
+        return allow_request_methods_wrapper
+
+    return decorator
+
+
 def add_rest_resource(config, cls_or_dotted):
     """
     Add routes and views for a `RestResource` class.
@@ -52,6 +82,7 @@ def add_rest_resource(config, cls_or_dotted):
             # Attach action methods to current route
             for action_info in action_info_list:
                 action_name = action_info['name']
+                request_method = action_info['request_method']
 
                 # Init permission for action calls
                 permission_name = action_info.get('permission')
@@ -69,12 +100,10 @@ def add_rest_resource(config, cls_or_dotted):
                     attr=action_info['attr_name'],
                     match_param=match_param,
                     route_name="{}_action".format(route_info['route_name']),
-                    # TODO: Add a decorator to raise method not allowed
-                    #       instead the default 404 error.
-                    #decorator=restrict_request_methods,
+                    decorator=allow_request_methods(request_method),
                     custom_predicates=custom_predicates,
                     renderer='json',
-                    request_method=action_info['request_method'],
+                    request_method=REQUEST_METHODS,
                     permission=permission)
 
         # Add views to handle different request methods in this view
