@@ -1,23 +1,25 @@
+import base64
+import inspect
 import os
 import unittest
-from sandglass.time import setup
+
+from fixture import SQLAlchemyFixture
+from fixture.style import NamedDataStyle
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
-import base64
 
-# Fixture Stuffs
-from fixture import SQLAlchemyFixture
-from fixture.style import NamedDataStyle
-from sandglass.time.tests.fixtures import UserData, ClientData, ProjectData
+from sandglass.time import setup
 from sandglass.time import models
-from sandglass.time.models import activity, client, project, tag, task, user
-
-from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
 from sandglass.time.api.v1.user import UserResource
+from sandglass.time.models import client
+from sandglass.time.models import project
+from sandglass.time.models import tag
+from sandglass.time.models import task
+from sandglass.time.models import user
 
 
 def get_static_test_dir():
@@ -54,15 +56,17 @@ SETTINGS = appconfig('config:' + get_config_file_path())
 
 # Create the db-fixtures
 FIXTURE = SQLAlchemyFixture(
-    env={'User': user.User,
-          'Client': client.Client,
-          'Project': project.Project,
-          'Tag': tag.Tag,
-          'Task': task.Task,
-          'Activity': models.activity.Activity,
-         }, 
+    env={
+        'User': user.User,
+        'Client': client.Client,
+        'Project': project.Project,
+        'Tag': tag.Tag,
+        'Task': task.Task,
+        'Activity': models.activity.Activity,
+    },
     style=NamedDataStyle(),
-    engine=engine_from_config(SETTINGS, prefix='database.'))
+    engine=engine_from_config(SETTINGS, prefix='database.'),
+)
 
 
 def fixture(*datasets):
@@ -75,6 +79,31 @@ def fixture(*datasets):
         return wrapper(func)
 
     return fixture_wrapper
+
+
+class BaseFixture(object):
+    """
+    Base class with util functions for fixtures.
+
+    """
+    @classmethod
+    def to_dict(cls):
+        """
+        Get a dictionary with class attributes.
+
+        Returns a Dictionary.
+
+        """
+        data = {}
+        for attr_name in dir(cls):
+            value = getattr(cls, attr_name)
+            is_public = not attr_name.startswith('__')
+            is_attribute = not inspect.ismethod(value)
+            name_is_valid = attr_name not in ('_dataset', 'ref')
+            if is_public and is_attribute and name_is_valid:
+                data[attr_name] = value
+
+        return data
 
 
 class BaseTestCase(unittest.TestCase):
@@ -124,7 +153,6 @@ class UnitTestCase(BaseTestCase):
     tables are dropped after each test finishes.
 
     """
-
     def setUp(self):
         self.setup_application()
         super(UnitTestCase, self).setUp()
@@ -134,9 +162,19 @@ class UnitTestCase(BaseTestCase):
         super(UnitTestCase, self).tearDown()
 
 
-class FunctionalTestCase(BaseTestCase):
+class IntegrationTestCase(BaseTestCase):
     """
     Base class for integration tests.
+
+    Database and tables are created before any test is run and
+    tables are dropped when all tests are finished.
+
+    """
+
+
+class FunctionalTestCase(BaseTestCase):
+    """
+    Base class for functional tests.
 
     This will integrate with the whole web framework and test
     the full stack of your application.
@@ -147,6 +185,9 @@ class FunctionalTestCase(BaseTestCase):
     tables are dropped when all tests are finished.
 
     """
+    key = None
+    token = None
+    require_authorization = False
 
     @classmethod
     def setUpClass(cls):
@@ -162,37 +203,104 @@ class FunctionalTestCase(BaseTestCase):
     def setUp(self):
         self.app = TestApp(self.wsgi_app)
         self.init_test_user()
-        
+
         super(FunctionalTestCase, self).setUp()
 
-    def init_test_user(self):
+    def get_authorization_header(self):
+        """
+        Get HTTP basic auth headers for current token and key.
 
+        Returns a Dictionary.
+
+        """
+        header = {}
+        auth_string = "{}:{}".format(self.token, self.key)
+        auth_string_enc = base64.b64encode(auth_string)
+        header['Authorization'] = "Basic {}".format(auth_string_enc)
+        return header
+
+    def init_test_user(self):
+        # TODO: Move to othes test class or avoid using a fixture
+        from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
         user = ClientUserData.testuser
 
         # Try and log in with the testuser
-        url = UserResource.get_collection_path() + "signin/"
-        response = self.app.post_json(url, user.json_data(), expect_errors=True)
-        if response.status_code==200:
+        url = UserResource.get_collection_path() + "@signin"
+        response = self.post_json(url, user.to_dict(), expect_errors=True)
+        if response.status_code == 200:
             self.token = response.json['token']
             self.key = response.json['key']
             return
 
         # Create a testuser for us to use with the tests
-        url = UserResource.get_collection_path() + "signup/"
-        response = self.app.post_json(url, user.json_data())
-        if response.status_code==200:
+        url = UserResource.get_collection_path() + "@signup"
+        response = self.post_json(url, user.to_dict())
+        if response.status_code == 200:
             self.token = response.json['token']
             self.key = response.json['key']
 
-    def header(self):
-        authstring = "{}:{}".format(self.token, self.key)
-        authstring_enc = "Basic " + base64.b64encode(authstring)
-        headers = {}
-        headers["Authorization"] = authstring_enc
+    def update_headers(self, headers):
+        """
+        Update request headers dictionary.
+
+        This is an entry point for tests to override/add/delete
+        special HTTP request headers.
+
+        Return a Dictionary.
+
+        """
+        if not headers:
+            headers = {}
+
+        # Add basig HTTP authorization information
+        if self.require_authorization:
+            authorization_header = self.get_authorization_header()
+            headers.update(authorization_header)
+
         return headers
 
+    def get_json(self, *args, **kwargs):
+        """
+        Make a GET request to the application.
+
+        Return a response.
+
+        """
+        kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        return self.app.get(*args, **kwargs)
+
+    def post_json(self, *args, **kwargs):
+        """
+        Make a JSON POST request to the application.
+
+        Return a response.
+
+        """
+        kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        return self.app.post_json(*args, **kwargs)
+
+    def put_json(self, *args, **kwargs):
+        """
+        Make a JSON PUT request to the application.
+
+        Return a response.
+
+        """
+        kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        return self.app.put_json(*args, **kwargs)
+
+    def delete_json(self, *args, **kwargs):
+        """
+        Make a JSON DELETE request to the application.
+
+        Return a response.
+
+        """
+        kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        return self.app.delete_json(*args, **kwargs)
+
     def _create(self, path, content=None, status=200):
-        create_response = self.app.post_json(path, content, status=status)
+        create_response = self.post_json(path, content, status=status)
         created_id = create_response.json[0]['id']
         json = create_response.json
 

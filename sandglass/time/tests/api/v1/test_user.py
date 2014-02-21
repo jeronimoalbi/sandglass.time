@@ -8,7 +8,6 @@ from pyramid.exceptions import NotFound
 
 
 class UserResourceTest(FunctionalTestCase):
-
     """
     Functional tests for User resource.
 
@@ -22,20 +21,18 @@ class UserResourceTest(FunctionalTestCase):
 
     @fixture(UserData)
     def test_create_single_user(data, self):
-
-        
         # Create first Test User
         user = ClientUserData.dr_schiwago
         url = UserResource.get_collection_path()
 
-        #import ipdb; ipdb.set_trace()
-
-        response = self.app.post_json(url, user.json_data(), headers=self.header())
+        self.require_authorization = True
+        response = self.post_json(url, user.to_dict())
         created_id = response.json['id']
 
         # Get newly created user based on ID
         url = UserResource.get_member_path(created_id)
-        response = self.app.get(url, headers=self.header())
+        response = self.get_json(url)
+        self.require_authorization = False
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
@@ -51,7 +48,7 @@ class UserResourceTest(FunctionalTestCase):
     def test_update_single_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
-        response = self.app.get(url)
+        response = self.get_json(url)
         old_user = response.json[len(response.json) / 2]
         update_id = old_user['id']
 
@@ -60,7 +57,7 @@ class UserResourceTest(FunctionalTestCase):
         user = ClientUserData.humphrey_bogart
         data = user.data()
         data['id'] = update_id
-        response = self.app.put_json(url, data)
+        response = self.put_json(url, data)
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
@@ -81,13 +78,13 @@ class UserResourceTest(FunctionalTestCase):
     def test_get_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
-        response = self.app.get(url)
+        response = self.get_json(url)
         old_user = response.json[(len(response.json) / 2) - 1]
         get_id = old_user['id']
 
         # Get that user again, this time via it's PK
         url = UserResource.get_member_path(get_id)
-        response = self.app.get(url)
+        response = self.get_json(url)
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
@@ -104,34 +101,34 @@ class UserResourceTest(FunctionalTestCase):
     def test_delete_single_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
-        response = self.app.get(url)
+        response = self.get_json(url)
         old_user = response.json[(len(response.json) / 2) + 1]
         get_id = old_user['id']
 
         # Delete that user again, this time via it's PK
         url = UserResource.get_member_path(get_id)
-        response = self.app.delete_json(url)
+        response = self.delete_json(url)
 
         # assert it went ok
         self.assertEqual(response.status, '200 OK')
 
         # try getting it again, make sure it's gone
         with self.assertRaises(NotFound):
-            self.app.get(url, status=404)
+            self.get_json(url, status=404)
 
     @unittest.skip("showing class skipping")
     def test_create_multiple_users(self):
         # Check that no users exist
         url = UserResource.get_collection_path()
-        response = self.app.get(url)
+        response = self.get_json(url)
         self.assertEqual(len(response.json), 0)
 
         # Create three users at the same time
-        users = [ClientUserData.dr_schiwago.json_data(),
-                ClientUserData.max_adler.json_data(),
-                ClientUserData.humphrey_bogart.json_data()]
+        users = [ClientUserData.dr_schiwago.to_dict(),
+                 ClientUserData.max_adler.to_dict(),
+                 ClientUserData.humphrey_bogart.to_dict()]
 
-        response = self.app.post_json(url, users)
+        response = self.post_json(url, users)
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
@@ -139,7 +136,7 @@ class UserResourceTest(FunctionalTestCase):
         
 
         # assert now only three users exist
-        response = self.app.get(url)
+        response = self.get_json(url)
         self.assertEqual(len(response.json), 3)
 
 
