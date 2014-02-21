@@ -8,7 +8,7 @@ from cement.core import controller
 from cement.core import handler
 
 from sandglass.time import _
-from sandglass.time import setup
+from sandglass.time import install
 from sandglass.time.utils import is_valid_email
 from sandglass.time.models.user import User
 from sandglass.time.models.group import Group
@@ -39,7 +39,7 @@ class ManageController(controller.CementBaseController):
         Insert initial database records to a newly created database.
 
         """
-        setup.init_database_data()
+        install.database_insert_default_data()
         print(_("Sandglass is ready to run now"))
 
     @controller.expose(help="create a new user")
