@@ -6,7 +6,7 @@ import pytz
 
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.config import Configurator
-from pyramid.renderers import JSON
+from pyramid.renderers import JSONP
 from sqlalchemy import engine_from_config
 
 from sandglass.time.auth import basic
@@ -59,9 +59,10 @@ def prepare_application(config):
     config.add_translation_dirs('sandglass.time:locales/')
     config.add_directive('add_rest_resource', add_rest_resource)
     # Add a renderer for dates in JSON (de)serialization
-    json_renderer = JSON()
+    json_renderer = JSONP(param_name='callback')
     json_renderer.add_adapter(datetime.datetime, json_datetime_adapter)
     config.add_renderer('json', json_renderer)
+
     # Authentication support
     acl_auth = ACLAuthorizationPolicy()
     config.set_authorization_policy(acl_auth)
