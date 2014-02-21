@@ -44,7 +44,7 @@ class PermissionData(DataSet):
         return tuple(data_list)
 
 
-def init_database_data():
+def database_insert_default_data():
     """
     Insert initial database data.
 

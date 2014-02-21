@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
 
-from sandglass.time import setup
+from sandglass.time import install
 from sandglass.time import models
 from sandglass.time.api.v1.user import UserResource
 from sandglass.time.models import client
@@ -133,7 +133,7 @@ class BaseTestCase(unittest.TestCase):
         # Initialize Pyramid testing environment support
         cls.config = testing.setUp(settings=cls.settings, request=request)
         cls.config.include('sandglass.time')
-        setup.init_database_data()
+        install.database_insert_default_data()
 
     @classmethod
     def cleanup_application(cls):
