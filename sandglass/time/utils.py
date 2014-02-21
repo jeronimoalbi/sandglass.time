@@ -99,18 +99,22 @@ class mixedmethod(object):
     Decorator that allows a method to be both a class method
     and an instance method at the same time.
 
+    Note: To avoid pylint warnings in decorated methods use
+          first method argument as a keyword.
+
     """
     def __init__(self, method):
         self.method = method
 
     def __get__(self, obj=None, objtype=None):
         @functools.wraps(self.method)
-        def _wrapper(*args, **kwargs):
+        def method_wrapper(*args, **kwargs):
             if obj is not None:
                 return self.method(obj, *args, **kwargs)
             else:
                 return self.method(objtype, *args, **kwargs)
-        return _wrapper
+
+        return method_wrapper
 
 
 def route_path(route_name, request=None, **kwargs):

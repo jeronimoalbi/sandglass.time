@@ -1,7 +1,5 @@
 import datetime
 
-import transaction
-
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
@@ -69,7 +67,6 @@ class UserResource(ModelResource):
         if not admin_group:
             # Admin group is created running `sandglass manage init-database`
             msg = _("Administrators group does not exist")
-            transaction.doom()
             return error_response(msg)
 
         user.groups.append(admin_group)

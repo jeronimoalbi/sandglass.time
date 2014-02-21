@@ -1,12 +1,14 @@
-# pylint: disable=W0201,W0223
+# pylint: disable=W0201,W0223,W0613
 
 import json
 import weakref
+import transaction
 
 from datetime import datetime
 from functools import wraps
 from inspect import isclass
 
+from pyramid import response
 from pyramid.security import ALL_PERMISSIONS
 from pyramid.security import Allow
 from pyramid.security import Authenticated
@@ -54,7 +56,11 @@ DEFAULT_ACL = [
 
 def initialize_database(engine):
     """
-    TODO
+    Initialize database, session factory and new create tables.
+
+    Global session factory is attached to given `engine`, and then
+    database is created if it does not exists already, and finally
+    all tables that does not exists are created.
 
     """
     META.bind = engine
@@ -66,8 +72,7 @@ class JSON(TypeDecorator):
     """
     Represents an immutable structure as a json-encoded string.
 
-    Usage:
-        JSONEncodedDict(255)
+    Usage: JSONEncodedDict(255)
 
     """
     impl = VARCHAR
@@ -75,16 +80,19 @@ class JSON(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is not None:
             value = json.dumps(value)
+
         return value
 
     def process_result_value(self, value, dialect):
         if value is not None:
             value = json.loads(value)
+
         return value
 
 
 def execute(sql, **kwargs):
-    """Execute an SQL statement in global session context
+    """
+    Execute an SQL statement in global session context
 
     SQL parameters are given as keyword arguments.
     Parameter inside SQL statement are given using variable names
@@ -107,7 +115,13 @@ def transactional(method):
     @wraps(method)
     def transactional_wrap(self):
         session = DBSESSION()
-        return method(self, session)
+        result = method(self, session=session)
+        # When an error response is returned rollback transaction
+        is_response = isinstance(result, response.Response)
+        if is_response and result.status_int == 500:
+            transaction.doom()
+
+        return result
 
     return transactional_wrap
 
@@ -239,7 +253,8 @@ class BaseModel(object):
 
     @staticmethod
     def new_session():
-        """Create a new Session
+        """
+        Create a new Session.
 
         New Sessions must be finished by calling commit()
         or rollback() session methods.
@@ -248,7 +263,7 @@ class BaseModel(object):
         return DBSESSION()
 
     @mixedmethod
-    def query(obj, session=None):
+    def query(obj=None, session=None):
         """
         Get a query instance for current model class or instance.
 
@@ -290,9 +305,8 @@ class BaseModel(object):
         columns = cls.__table__.columns
         attr_list = []
         for name in field_names:
-            # Skip non column field
-            if name not in columns:
-                # TODO: Skip non public fields lile user "salt"
+            # Skip non column and private fields
+            if name not in columns or name.startswith('_'):
                 continue
 
             attr = getattr(cls, name)
