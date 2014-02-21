@@ -61,11 +61,11 @@ class ClientTest(sandglass.time.tests.FunctionalTestCase):
             [self.client_list[3]])
 
         # Delete that user again
-        self.app.delete_json(
+        self.delete_json(
             '/time/api/v1/clients/{}/'.format(created_id), status=200)
         
         with self.assertRaises(NotFound): 
-            self.app.get('/time/api/v1/clients/{}/'.format(created_id))
+            self.get_json('/time/api/v1/clients/{}/'.format(created_id))
 
 
 
@@ -82,13 +82,13 @@ class ClientTest(sandglass.time.tests.FunctionalTestCase):
         }
 
         # Update that user
-        update_response = self.app.put_json(
+        update_response = self.put_json(
             '/time/api/v1/clients/{}/'.format(created_id),
             update,
             status=200
         )
 
-        get_response = self.app.get(
+        get_response = self.get_json(
             '/time/api/v1/clients/{}/'.format(created_id), status=200)
 
         json = get_response.json
@@ -104,7 +104,7 @@ class ClientTest(sandglass.time.tests.FunctionalTestCase):
             '/time/api/v1/clients/',
             [self.client_list[5]])
 
-        get_response = self.app.get(
+        get_response = self.get_json(
             '/time/api/v1/clients/{}/'.format(created_id), status=200)
 
         json = get_response.json
