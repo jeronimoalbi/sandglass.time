@@ -1,0 +1,12 @@
+ipython
+ipdb
+pep8
+flake8
+pylint
+nose
+nose-selecttests
+coverage
+WebTest
+PasteDeploy
+tox
+virtualenv>=1.11.2
