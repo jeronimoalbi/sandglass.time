@@ -3,6 +3,8 @@ import inspect
 import os
 import unittest
 
+from functools import wraps
+
 from fixture import SQLAlchemyFixture
 from fixture import DataSet
 from fixture.style import NamedDataStyle
@@ -71,11 +73,18 @@ def fixture(*datasets):
     Test method decorator that sets up a fixture before test is run.
 
     """
-    def fixture_wrapper(func):
-        wrapper = FIXTURE.with_data(*datasets)
-        return wrapper(func)
+    def wrapper(func):
+        @wraps(func)
+        def call_func(data, self, *args, **kwargs):
+            # Wrapper for function to correct the order of self argument.
+            # This function is needed because Fixture uses data as first
+            # argument, instead of using self.
+            return func(self, data, *args, **kwargs)
 
-    return fixture_wrapper
+        wrapper = FIXTURE.with_data(*datasets)
+        return wrapper(call_func)
+
+    return wrapper
 
 
 class BaseFixture(object):
