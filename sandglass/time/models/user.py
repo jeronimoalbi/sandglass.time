@@ -4,8 +4,10 @@ from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import synonym
+from sqlalchemy.orm.util import has_identity
 from sqlalchemy.types import Text
 from sqlalchemy.types import UnicodeText
+
 
 from sandglass.time import utils
 from sandglass.time.models import BaseModel
@@ -36,13 +38,18 @@ class User(TimestampMixin, BaseModel):
         return self._password
 
     def set_password(self, value):
+        
+        is_new = has_identity(self)
+
         # Set password as a hash
         self._password = utils.generate_hash(value, hash='sha1')
         # (Re)generate API token and key after password is updated
-        salt = (self.email or '') + self.salt + value
-        self.token = utils.generate_random_hash(salt=salt, hash='sha256')
-        salt = value + self.salt
-        self.key = utils.generate_random_hash(salt=salt, hash='sha256')
+        if is_new or not self.token:
+            salt = (self.email or '') + self.salt + value
+            self.token = utils.generate_random_hash(salt=salt, hash='sha256')
+        if is_new or not self.key:
+            salt = value + self.salt
+            self.key = utils.generate_random_hash(salt=salt, hash='sha256')
 
     @declared_attr
     def password(cls):

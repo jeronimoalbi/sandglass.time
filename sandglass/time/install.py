@@ -16,6 +16,7 @@ class GroupData(DataSet):
     """
     class Admins:
         name = Administrators
+        id = 1
         description = _("Administrators")
 
 
