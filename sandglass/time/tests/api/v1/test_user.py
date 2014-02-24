@@ -14,9 +14,11 @@ class UserResourceTest(FunctionalTestCase):
     """
 
     def setUp(self):
+        self.require_authorization = True
         super(UserResourceTest, self).setUp()
 
     def tearDown(self):
+        self.require_authorization = False
         super(UserResourceTest, self).tearDown()
 
     @fixture(UserData)
@@ -25,15 +27,13 @@ class UserResourceTest(FunctionalTestCase):
         user = ClientUserData.dr_schiwago
         url = UserResource.get_collection_path()
 
-        self.require_authorization = True
         response = self.post_json(url, user.to_dict())
         created_id = response.json['id']
 
         # Get newly created user based on ID
         url = UserResource.get_member_path(created_id)
         response = self.get_json(url)
-        self.require_authorization = False
-
+        
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
 
@@ -43,8 +43,13 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(new_user['last_name'], user.last_name)
         self.assertEqual(new_user['email'], user.email)
 
+        # Cleanup - delete created user
+        url = UserResource.get_member_path(created_id)
+        response = self.delete_json(url)
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+
     @fixture(UserData)
-    @unittest.skip("showing class skipping")
     def test_update_single_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -55,7 +60,7 @@ class UserResourceTest(FunctionalTestCase):
         # Change it to Humphrey Bogart
         url = UserResource.get_member_path(update_id)
         user = ClientUserData.humphrey_bogart
-        data = user.data()
+        data = user.to_dict()
         data['id'] = update_id
         response = self.put_json(url, data)
 
@@ -74,7 +79,6 @@ class UserResourceTest(FunctionalTestCase):
 
 
     @fixture(UserData)
-    @unittest.skip("showing class skipping")
     def test_get_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -97,7 +101,6 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(old_user['email'], get_user['email'])
 
     @fixture(UserData)
-    @unittest.skip("showing class skipping")
     def test_delete_single_user(data, self):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -116,12 +119,13 @@ class UserResourceTest(FunctionalTestCase):
         with self.assertRaises(NotFound):
             self.get_json(url, status=404)
 
-    @unittest.skip("showing class skipping")
     def test_create_multiple_users(self):
-        # Check that no users exist
+        # Check that only the one testuser exist
         url = UserResource.get_collection_path()
         response = self.get_json(url)
-        self.assertEqual(len(response.json), 0)
+        self.assertEqual(len(response.json), 1)
+        self.assertEqual(response.json[0]['first_name'], 'test')
+        self.assertEqual(response.json[0]['last_name'], 'user')
 
         # Create three users at the same time
         users = [ClientUserData.dr_schiwago.to_dict(),
@@ -133,11 +137,18 @@ class UserResourceTest(FunctionalTestCase):
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(len(response.json), 3)
-        
 
-        # assert now only three users exist
-        response = self.get_json(url)
-        self.assertEqual(len(response.json), 3)
+        # assert now only four users exist
+        response_get = self.get_json(url)
+        self.assertEqual(len(response_get.json), 4)
+
+        # Cleanup the custom created users
+        for user in response.json:
+            url = UserResource.get_member_path(user['id'])
+            
+            response_delete = self.delete_json(url)
+            # assert it went ok
+            self.assertEqual(response_delete.status, '200 OK')
 
 
     @unittest.skip("showing class skipping")
