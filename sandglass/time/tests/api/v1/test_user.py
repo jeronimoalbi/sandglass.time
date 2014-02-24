@@ -16,16 +16,11 @@ class UserResourceTest(FunctionalTestCase):
 
     """
 
-    def setUp(self):
-        self.require_authorization = True
-        super(UserResourceTest, self).setUp()
-
-    def tearDown(self):
-        self.require_authorization = False
-        super(UserResourceTest, self).tearDown()
+    # Use authentication for each request by default
+    require_authorization = True
 
     @fixture(AuthData)
-    def test_create_single_user(data, self):
+    def test_create_single_user(self, data):
         # Create first Test User
         user = ClientUserData.dr_schiwago
         url = UserResource.get_collection_path()
@@ -54,7 +49,7 @@ class UserResourceTest(FunctionalTestCase):
 
     @fixture(UserData, AuthData)
     @unittest.skip("showing class skipping")
-    def test_update_single_user(data, self):
+    def test_update_single_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -83,7 +78,7 @@ class UserResourceTest(FunctionalTestCase):
 
     @fixture(UserData, AuthData)
     @unittest.skip("showing class skipping")
-    def test_get_user(data, self):
+    def test_get_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -106,7 +101,7 @@ class UserResourceTest(FunctionalTestCase):
 
     @fixture(UserData, AuthData)
     @unittest.skip("showing class skipping")
-    def test_delete_single_user(data, self):
+    def test_delete_single_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
