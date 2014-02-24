@@ -11,6 +11,7 @@ from sandglass.time.tests.fixtures import UserData
 
 
 class UserResourceTest(FunctionalTestCase):
+
     """
     Functional tests for User resource.
 
@@ -48,7 +49,6 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(response.status, '200 OK')
 
     @fixture(UserData, AuthData)
-    @unittest.skip("showing class skipping")
     def test_update_single_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -77,7 +77,6 @@ class UserResourceTest(FunctionalTestCase):
         self.assertNotEqual(old_user['email'], new_user['email'])
 
     @fixture(UserData, AuthData)
-    @unittest.skip("showing class skipping")
     def test_get_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -120,14 +119,13 @@ class UserResourceTest(FunctionalTestCase):
             self.get_json(url, status=404)
 
     @fixture(AuthData)
-    @unittest.skip("showing class skipping")
-    def test_create_multiple_users(self):
+    def test_create_multiple_users(self, data):
         # Check that only the one testuser exist
         url = UserResource.get_collection_path()
         response = self.get_json(url)
         self.assertEqual(len(response.json), 1)
-        self.assertEqual(response.json[0]['first_name'], 'test')
-        self.assertEqual(response.json[0]['last_name'], 'user')
+        self.assertEqual(response.json[0]['first_name'], 'Test')
+        self.assertEqual(response.json[0]['last_name'], 'User')
 
         # Create three users at the same time
         users = [ClientUserData.dr_schiwago.to_dict(),
@@ -152,14 +150,83 @@ class UserResourceTest(FunctionalTestCase):
             # assert it went ok
             self.assertEqual(response_delete.status, '200 OK')
 
-    @unittest.skip("showing class skipping")
-    def test_update_multiple_users(self):
-        self.fail()
+    @fixture(UserData, AuthData)
+    def test_update_multiple_users(self, data):
+        # Get two random users from DB
+        url = UserResource.get_collection_path()
+        response = self.get_json(url)
+        old_user_1 = response.json[(len(response.json) / 2)]
+        old_user_2 = response.json[(len(response.json) / 2) + 1]
+        update_ids = [old_user_1['id'], old_user_2['id']]
 
-    @unittest.skip("showing class skipping")
-    def test_get_user_by_credentials(self):
-        self.fail()
+        # Change them to Humphrey Bogart and Max Adler
+        #url = UserResource.get_member_path(update_id)
+        new_user_1 = ClientUserData.humphrey_bogart
+        new_user_2 = ClientUserData.max_adler
+        data = [new_user_1.to_dict(), new_user_2.to_dict()]
+        data[0]['id'] = update_ids[0]
+        data[1]['id'] = update_ids[1]
+        response = self.put_json(url, data)
 
-    @unittest.skip("showing class skipping")
-    def test_delete_multiple_users(self):
-        self.fail()
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+
+        # Assert equal/different
+        response_users = response.json
+        self.assertEqual(response_users[0]
+                         ['first_name'], new_user_1.first_name)
+        self.assertEqual(response_users[0]['last_name'], new_user_1.last_name)
+        self.assertEqual(response_users[0]['email'], new_user_1.email)
+
+        self.assertEqual(response_users[1]
+                         ['first_name'], new_user_2.first_name)
+        self.assertEqual(response_users[1]['last_name'], new_user_2.last_name)
+        self.assertEqual(response_users[1]['email'], new_user_2.email)
+
+    @fixture(UserData, AuthData)
+    def test_sign_in(self, data):
+        self.require_authorization = False
+
+        user = UserData.james_william_elliot
+
+        # Try and log in with the testuser
+        url = UserResource.get_collection_path() + "@signin"
+        response = self.post_json(url, user.to_dict(), expect_errors=True)
+
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+
+        self.assertTrue('token' in response.json)
+        self.assertTrue('key' in response.json)
+
+        self.assertIsNotNone(response.json['token'])
+        self.assertIsNotNone(response.json['key'])
+
+        self.require_authorization = True
+
+    @fixture(UserData, AuthData)
+    def test_delete_multiple_users(self, data):
+
+        # Get two random users from DB
+        url = UserResource.get_collection_path()
+        response = self.get_json(url)
+        old_user_1 = response.json[(len(response.json) / 2)]
+        old_user_2 = response.json[(len(response.json) / 2) + 1]
+        data = [old_user_1, old_user_2]
+        delete_ids = [old_user_1['id'], old_user_2['id']]
+
+        response = self.delete_json(url, data)
+
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.body, '2')
+
+        # Get amount of users left in DB
+        # Get two random users from DB
+        url = UserResource.get_collection_path()
+        response = self.get_json(url)
+        users_total = len(response.json)
+
+        response = self.delete_json(url)
+
+        self.assertEqual(response.body,str(users_total))

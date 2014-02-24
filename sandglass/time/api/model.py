@@ -35,6 +35,7 @@ def use_schema(schema):
 
 
 class ModelResource(BaseResource):
+
     """
     Base class for REST resources that use a Model to get data.
 
@@ -207,8 +208,35 @@ class ModelResource(BaseResource):
         Delete all model objects.
 
         """
-        query = self.model.query()
-        count = query.delete()
+        if not self.request.is_body_readable:
+            delete_all = True
+        else:
+            is_dict = isinstance(self.request_data, dict)
+            is_list = isinstance(self.request_data, list)
+            is_empty = (is_dict or is_list) and len(self.request_data) == 0
+
+            delete_all = (not is_dict and not is_list) or is_empty
+
+        # Get submited JSON data from the request body
+        if delete_all:
+            query = self.model.query()
+            count = query.delete()
+            return count
+        elif is_dict:
+            # When POSTed data is an object deserialize it
+            # and create a list with this single object
+            data_list = [self.submitted_member_data]
+        else:
+            # By default assume that request data is a list of objects
+            data_list = self.request_data
+
+        id_list = []
+        for data in data_list:
+            id_list.append(data['id'])
+
+        query = self.model.query().filter(self.model.id.in_(id_list))
+        count = query.delete(False)
+
         # TODO: Return a proper Response instance
         return count
 
