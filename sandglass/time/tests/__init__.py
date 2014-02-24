@@ -1,9 +1,12 @@
+# pylint: disable=0903
+
 import base64
 import inspect
 import os
 import unittest
 
 from fixture import SQLAlchemyFixture
+from fixture import DataSet
 from fixture.style import NamedDataStyle
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
@@ -13,13 +16,15 @@ from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from sandglass.time import install
+from sandglass.time.install import GroupData
 from sandglass.time import models
-from sandglass.time.api.v1.user import UserResource
 from sandglass.time.models import client
+from sandglass.time.models import group
 from sandglass.time.models import project
 from sandglass.time.models import tag
 from sandglass.time.models import task
 from sandglass.time.models import user
+from sandglass.time.models import activity
 
 
 def get_static_test_dir():
@@ -57,12 +62,14 @@ SETTINGS = appconfig('config:' + get_config_file_path())
 # Create the db-fixtures
 FIXTURE = SQLAlchemyFixture(
     env={
+        'Group': group.Group,
         'User': user.User,
+        'Auth': user.User,
         'Client': client.Client,
         'Project': project.Project,
         'Tag': tag.Tag,
         'Task': task.Task,
-        'Activity': models.activity.Activity,
+        'Activity': activity.Activity,
     },
     style=NamedDataStyle(),
     engine=engine_from_config(SETTINGS, prefix='database.'),
@@ -105,6 +112,19 @@ class BaseFixture(object):
 
         return data
 
+# Testuser for Auth
+class AuthData(DataSet):
+
+    class testuser(BaseFixture):
+        first_name = u"test"
+        last_name = u"user"
+        email = u"testuser@wienfluss.net"
+        password = "1234"
+        token = "058bb38b25ddefa3f20537fd8762633dd2c3472f36f9b6628662624fffc7cbc2"
+        key = "56f750326fe58c2266e864d4cd95c6ea2877ce9aa5da0b73ef57f2e8774433a4"
+        salt = "a66a328e85e9d74da8dac441cb6f5578c530c70f"
+        groups = [GroupData.Admins]
+
 
 class BaseTestCase(unittest.TestCase):
     """
@@ -133,7 +153,7 @@ class BaseTestCase(unittest.TestCase):
         # Initialize Pyramid testing environment support
         cls.config = testing.setUp(settings=cls.settings, request=request)
         cls.config.include('sandglass.time')
-        install.database_insert_default_data()
+        #install.database_insert_default_data()
 
     @classmethod
     def cleanup_application(cls):
@@ -202,7 +222,7 @@ class FunctionalTestCase(BaseTestCase):
 
     def setUp(self):
         self.app = TestApp(self.wsgi_app)
-        self.init_test_user()
+        # self.init_test_user()
 
         super(FunctionalTestCase, self).setUp()
 
@@ -214,30 +234,10 @@ class FunctionalTestCase(BaseTestCase):
 
         """
         header = {}
-        auth_string = "{}:{}".format(self.token, self.key)
+        auth_string = "{}:{}".format(AuthData.testuser.token, AuthData.testuser.key)
         auth_string_enc = base64.b64encode(auth_string)
         header['Authorization'] = "Basic {}".format(auth_string_enc)
         return header
-
-    def init_test_user(self):
-        # TODO: Move to othes test class or avoid using a fixture
-        from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
-        user = ClientUserData.testuser
-
-        # Try and log in with the testuser
-        url = UserResource.get_collection_path() + "@signin"
-        response = self.post_json(url, user.to_dict(), expect_errors=True)
-        if response.status_code == 200:
-            self.token = response.json['token']
-            self.key = response.json['key']
-            return
-
-        # Create a testuser for us to use with the tests
-        url = UserResource.get_collection_path() + "@signup"
-        response = self.post_json(url, user.to_dict())
-        if response.status_code == 200:
-            self.token = response.json['token']
-            self.key = response.json['key']
 
     def update_headers(self, headers):
         """
