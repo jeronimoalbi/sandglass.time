@@ -1,20 +1,20 @@
-from sandglass.time.api.v1.user import UserResource
-from sandglass.time.tests import FunctionalTestCase
-from sandglass.time.tests.fixtures import UserData
-from sandglass.time.tests import AuthData
-from client_fixtures import ClientUserData
-from sandglass.time.tests import fixture
 import unittest
+
 from pyramid.exceptions import NotFound
+
+from sandglass.time.api.v1.user import UserResource
+from sandglass.time.tests import AuthData
+from sandglass.time.tests import fixture
+from sandglass.time.tests import FunctionalTestCase
+from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
+from sandglass.time.tests.fixtures import UserData
 
 
 class UserResourceTest(FunctionalTestCase):
-
     """
     Functional tests for User resource.
 
     """
-
 
     def setUp(self):
         self.require_authorization = True
