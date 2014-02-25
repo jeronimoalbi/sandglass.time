@@ -30,6 +30,7 @@ setup(
         'pytz',
         # Command line support
         'cement',
+        'PasteScript',
     ],
     entry_points={
         'paste.app_factory': [
