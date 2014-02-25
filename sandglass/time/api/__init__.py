@@ -17,11 +17,12 @@ REQUEST_METHODS = ('GET', 'POST', 'PUT', 'DELETE')
 REST_ROUTE_INFO = {
     # GET: List all items
     # POST: Create new item(s)
+    # PUT: Update item(s)
     # DELETE: Delete all items
     'collection': {
         'route_name': 'api.rest.collection',
         'pattern': r'/{member}/',
-        'methods': ('GET', 'POST', 'DELETE'),
+        'methods': REQUEST_METHODS,
         # Note: Require `resource_action_predicate` during view attachment
         'action': {
             'pattern': r'/{member}/@{action}',

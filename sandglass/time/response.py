@@ -22,15 +22,29 @@ def error_response(message, data=None):
 
     """
     # TODO: Define error codes for the API and use them in response body
-    error_info = {'message': message}
-    if data:
-        error_info['error'] = data
-    else:
-        error_info['error'] = True
-
+    error_info = {
+        'message': message,
+        'error': (data if data is not None else True),
+    }
     body = json.dumps(error_info)
-    response = Response(body=body, status_code=500)
-    return response
+    return Response(body=body, status_code=500)
+
+
+def info_response(message, data=None):
+    """
+    Create a JSON info response.
+
+    Extra values can be given using `data` argument.
+
+    Return a Response.
+
+    """
+    info = {
+        'message': message,
+        'info': (data if data is not None else True),
+    }
+    body = json.dumps(info)
+    return Response(body=body, status_code=200)
 
 
 def redirect(url):

@@ -6,11 +6,14 @@ import transaction
 
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
+from sqlalchemy.sql.expression import bindparam
 
 from sandglass.time import _
 from sandglass.time.api import BaseResource
 from sandglass.time.models import transactional
 from sandglass.time.response import error_response
+from sandglass.time.response import info_response
+
 
 LOG = logging.getLogger(__name__)
 
@@ -190,6 +193,47 @@ class ModelResource(BaseResource):
         else:
             return obj_list
 
+    @transactional
+    def put_collection(self, session):
+        """
+        Update one or multiple objects.
+
+        Each object MUST contain its original pk value.
+
+        """
+        is_single_object = isinstance(self.request_data, dict)
+        # Get submited JSON data from the request body
+        if is_single_object:
+            # When POSTed data is an object deserialize it
+            # and create a list with this single object
+            data_list = [self.submitted_member_data]
+        else:
+            # By default assume that request data is a list of objects
+            data_list = self.submitted_collection_data
+
+        # Rename `id` to `_id` to allow binding id for bulk update
+        for data in data_list:
+            data['_id'] = data.pop('id')
+
+        # Create a "bulk" update query
+        query = self.model.__table__.update()
+        query = query.where(self.model.id == bindparam('_id'))
+        query = query.values()
+
+        # Update all members in data list
+        try:
+            result = session.execute(query, data_list)
+        except:
+            LOG.exception('Error updating object(s) during PUT request')
+            transaction.doom()
+            return error_response(_("Object(s) update failed"))
+
+        if not result.rowcount:
+            return error_response(_("No object(s) updated"))
+
+        msg = _("Object(s) updated successfully")
+        return info_response(msg, data={'row_count': result.rowcount})
+
     def get_collection(self):
         """
         Get all model objects.
@@ -237,8 +281,12 @@ class ModelResource(BaseResource):
         query = self.model.query().filter(self.model.id.in_(id_list))
         count = query.delete(False)
 
-        # TODO: Return a proper Response instance
-        return count
+        if not count:
+            msg = _("No objects were deleted")
+        else:
+            msg = _("Object(s) deleted successfully")
+
+        return info_response(msg, data={'row_count': count})
 
     def get_member(self):
         """
