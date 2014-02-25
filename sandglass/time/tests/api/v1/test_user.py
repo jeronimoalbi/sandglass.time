@@ -99,7 +99,6 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(old_user['email'], get_user['email'])
 
     @fixture(UserData, AuthData)
-    @unittest.skip("showing class skipping")
     def test_delete_single_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -196,6 +195,27 @@ class UserResourceTest(FunctionalTestCase):
         # Try and log in with the testuser
         url = UserResource.get_collection_path() + "@signin"
         response = self.post_json(url, user.to_dict(), expect_errors=True)
+
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+
+        self.assertTrue('token' in response.json)
+        self.assertTrue('key' in response.json)
+
+        self.assertIsNotNone(response.json['token'])
+        self.assertIsNotNone(response.json['key'])
+
+        self.require_authorization = True
+
+    @fixture(UserData, AuthData)
+    def test_sign_un(self, data):
+        self.require_authorization = False
+
+        user = ClientUserData.max_adler
+
+        # Try and sign up with the testuser
+        url = UserResource.get_collection_path() + "@signup"
+        response = self.post_json(url, user.to_dict())
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')

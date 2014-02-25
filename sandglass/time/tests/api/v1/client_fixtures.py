@@ -28,3 +28,6 @@ class ClientClientData(DataSet):
 
     class irene_adler(BaseFixture):
         name = 'Irene Adler'
+
+    class violet_hunter(BaseFixture):
+        name = 'Violet Hunter'
