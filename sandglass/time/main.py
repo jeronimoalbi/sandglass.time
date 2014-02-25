@@ -12,6 +12,8 @@ from sqlalchemy import engine_from_config
 from sandglass.time.auth import basic
 from sandglass.time.directives import add_rest_resource
 from sandglass.time.models import initialize_database
+from sandglass.time.request import extend_request_object
+#from sandglass.time.request import extend_request_object
 
 
 def json_datetime_adapter(obj, request):
@@ -69,6 +71,9 @@ def prepare_application(config):
     # Add HTTP basic authentication
     # TODO: Make authentication default when no other auth is on
     basic.initialize_auth(config)
+
+    extend_request_object(config)
+
     # Attach sandglass.time to '/time' URL path prefix
     config.include(init_app_modules, route_prefix='time')
 
