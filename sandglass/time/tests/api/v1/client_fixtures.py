@@ -23,3 +23,8 @@ class ClientUserData(DataSet):
         last_name = u"Adler"
         email = u"heldenintirol@wienfluss.net"
         password = "1234"
+
+class ClientClientData(DataSet):
+
+    class irene_adler(BaseFixture):
+        name = 'Irene Adler'
