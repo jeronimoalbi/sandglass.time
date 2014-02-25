@@ -113,7 +113,10 @@ class BaseFixture(object):
             is_attribute = not inspect.ismethod(value)
             name_is_valid = attr_name not in ('_dataset', 'ref')
             if is_public and is_attribute and name_is_valid:
-                data[attr_name] = value
+                if value.__class__ == type and BaseFixture in value.mro():
+                    data[attr_name] = value.to_dict()
+                else:    
+                    data[attr_name] = value
 
         return data
 
