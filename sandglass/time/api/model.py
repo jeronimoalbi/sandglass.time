@@ -208,25 +208,19 @@ class ModelResource(BaseResource):
         Delete all model objects.
 
         """
-        if not self.request.is_body_readable:
-            delete_all = True
-        else:
-            is_dict = isinstance(self.request_data, dict)
-            is_list = isinstance(self.request_data, list)
-            is_empty = (is_dict or is_list) and len(self.request_data) == 0
 
-            delete_all = (not is_dict and not is_list) or is_empty
+        if (not self.request.is_body_readable or 
+            self.request.is_empty or
+            (not self.request.is_member and not self.request.is_collection)):
+            return error_response(_("Missing request body - cannot delete all!"))
+        
 
-        # Get submited JSON data from the request body
-        if delete_all:
-            query = self.model.query()
-            count = query.delete()
-            return count
-        elif is_dict:
+        if self.request.is_member:
             # When POSTed data is an object deserialize it
             # and create a list with this single object
-            data_list = [self.submitted_member_data]
-        else:
+
+            data_list = [self.request_data]
+        elif self.request.is_collection:
             # By default assume that request data is a list of objects
             data_list = self.request_data
 
