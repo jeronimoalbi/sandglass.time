@@ -171,17 +171,21 @@ class UserResourceTest(FunctionalTestCase):
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
 
-        # Assert equal/different
-        response_users = response.json
-        self.assertEqual(response_users[0]
-                         ['first_name'], new_user_1.first_name)
-        self.assertEqual(response_users[0]['last_name'], new_user_1.last_name)
-        self.assertEqual(response_users[0]['email'], new_user_1.email)
+        # Assert two were updated
+        self.assertEqual(response.json_body['info']['row_count'], 2)
 
-        self.assertEqual(response_users[1]
-                         ['first_name'], new_user_2.first_name)
-        self.assertEqual(response_users[1]['last_name'], new_user_2.last_name)
-        self.assertEqual(response_users[1]['email'], new_user_2.email)
+        url = UserResource.get_member_path(update_ids[0])
+        response_user = self.get_json(url).json
+
+        self.assertEqual(response_user['first_name'], new_user_1.first_name)
+        self.assertEqual(response_user['last_name'], new_user_1.last_name)
+        self.assertEqual(response_user['email'], new_user_1.email)
+
+        url = UserResource.get_member_path(update_ids[1])
+        response_user = self.get_json(url).json
+        self.assertEqual(response_user['first_name'], new_user_2.first_name)
+        self.assertEqual(response_user['last_name'], new_user_2.last_name)
+        self.assertEqual(response_user['email'], new_user_2.email)
 
     @fixture(UserData, AuthData)
     def test_sign_in(self, data):
@@ -219,7 +223,7 @@ class UserResourceTest(FunctionalTestCase):
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
-        self.assertEqual(response.body, '2')
+        self.assertEqual(response.json_body['info']['row_count'], 2)
 
         # assert they are actually deleted
         # try getting it again, make sure it's gone
@@ -227,7 +231,6 @@ class UserResourceTest(FunctionalTestCase):
             for del_id in delete_ids:
                 url = UserResource.get_member_path(id)
                 self.get_json(url, status=404)
- 
 
         # Get amount of users left in DB
         url = UserResource.get_collection_path()
