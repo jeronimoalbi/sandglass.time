@@ -211,28 +211,28 @@ class ModelResource(BaseResource):
             # By default assume that request data is a list of objects
             data_list = self.submitted_collection_data
 
-        # Rename `id` to `_id` to allow binding id for bulk update
-        for data in data_list:
-            data['_id'] = data.pop('id')
-
-        # Create a "bulk" update query
-        query = self.model.__table__.update()
-        query = query.where(self.model.id == bindparam('_id'))
-        query = query.values()
-
         # Update all members in data list
+        count = 0
+        query = session.query(self.model)
         try:
-            result = session.execute(query, data_list)
+            for data in data_list:
+                pk_value = data.pop('id')
+                update_query = query.filter(self.model.id == pk_value)
+                update_query.update(data)
+                count += 1
         except:
             LOG.exception('Error updating object(s) during PUT request')
             transaction.doom()
             return error_response(_("Object(s) update failed"))
 
-        if not result.rowcount:
+        if not count:
             return error_response(_("No object(s) updated"))
 
         msg = _("Object(s) updated successfully")
-        return info_response(msg, data={'row_count': result.rowcount})
+        # TODO: Check support for rowcount
+        # http://docs.sqlalchemy.org/en/latest/core/connections.html
+        #                             #sqlalchemy.engine.ResultProxy.rowcount
+        return info_response(msg, data={'count': count})
 
     def get_collection(self):
         """
@@ -252,21 +252,13 @@ class ModelResource(BaseResource):
         Delete all model objects.
 
         """
-
-        if (not self.request.is_body_readable or 
-            self.request.is_empty or
-            (not self.request.is_member and not self.request.is_collection)):
-            return error_response(_("Missing request body - cannot delete all!"))
-        
-
         if self.request.is_member:
             # When POSTed data is an object deserialize it
             # and create a list with this single object
-
-            data_list = [self.request_data]
-        elif self.request.is_collection:
+            data_list = [self.submitted_member_data]
+        else:
             # By default assume that request data is a list of objects
-            data_list = self.request_data
+            data_list = self.submitted_collection_data
 
         id_list = []
         for data in data_list:
@@ -280,7 +272,7 @@ class ModelResource(BaseResource):
         else:
             msg = _("Object(s) deleted successfully")
 
-        return info_response(msg, data={'row_count': count})
+        return info_response(msg, data={'count': count})
 
     def get_member(self):
         """

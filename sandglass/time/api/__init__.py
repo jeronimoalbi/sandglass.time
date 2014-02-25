@@ -57,7 +57,7 @@ REST_ROUTE_INFO = {
 def add_action_info(func, name=None, type='*', permission=None, methods=None,
                     extra=None):
     """
-    TODO
+    Add API action info to a method.
 
     """
     if type not in ('*', 'member', 'collection'):
