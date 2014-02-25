@@ -1,40 +1,39 @@
-import sandglass.time
-import unittest
-# TODO Improve Tests: Tests for multiple deletion, multiple getting
+from sandglass.time.api.v1.project import ProjectResource
 
-@unittest.skip("showing class skipping")
-class ProjectTest(sandglass.time.tests.FunctionalTestCase):
+from sandglass.time.tests import FunctionalTestCase
+from sandglass.time.tests import fixture
+from sandglass.time.tests.fixtures import ProjectData, ClientData, UserData
+from sandglass.time.tests import AuthData
 
-    client_list = []
-    client_list.append({'name': 'Henry Knight'})
 
-    project_list = []
-    project_list.append({
-        "name": "Mysterious Hound",
-        "parent_id": "0",
-        "client_id": "0",
-        "user_id": "1",
-    })
+class ProjectResourceTest(FunctionalTestCase):
 
-    def test_project_create(self):
+    # Use authentication for each request by default
+    require_authorization = True
+
+    @fixture(AuthData, ClientData, UserData)
+    def test_project_create_single(self, data):
         """
         Test creation of a project
         """
+        project = ProjectData.baskerville_hound
+        project.client_id = data.data['ClientData']['mycroft_holmes']['id']
+        project.user_id = data.data['UserData']['shepherd_book']['id']
 
-        # first we need a client for that project
-        (client_id, json) = self._create(
-            '/time/api/v1/clients/',
-            [self.client_list[0]])
+        url = ProjectResource.get_collection_path()
 
-        self.project_list[0]['client_id'] = client_id
+        response = self.post_json(url,project.to_dict())
+        created_id = response.json['id']
 
-        # now we create that project
-        (created_id, json) = self._create(
-            '/time/api/v1/projects/',
-            [self.project_list[0]])
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
 
-        self.failUnless(created_id.__class__ == int)
+        url = ProjectResource.get_member_path(created_id)
+        response = self.get_json(url)
 
-        self.assertTrue(json[0]['name'] == self.project_list[0]['name'],
-                        'Name should have been "{}", was "{}"'
-                        .format(self.project_list[0]['name'], json[0]['name']))
+        # assert response is ok
+        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.json['name'], project.name)
+
+        # Cleanup: Delete Project
+        response = self.delete_json(url)
