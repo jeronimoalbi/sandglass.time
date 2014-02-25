@@ -7,26 +7,32 @@ Extending the request objects with utility functions
 
 
 def is_member(request):
-    if request.is_body_readable:
-        return isinstance(request.json_body, dict)
+    """
+    Check if current request body contains member data.
+
+    Returns a Boolean.
+
+    """
+    body = (request.json_body if request.is_body_readable else None)
+    return isinstance(body, dict)
 
 
 def is_collection(request):
-    if request.is_body_readable:
-        return isinstance(request.json_body, list)
+    """
+    Check if current request body contains collection data.
 
+    Returns a Boolean.
 
-def is_empty(request):
-    if (request.is_body_readable and 
-        (request.is_collection or request.is_member)):
-        return len(request.json_body) == 0
+    """
+    body = (request.json_body if request.is_body_readable else None)
+    return isinstance(body, list)
 
 
 def extend_request_object(config):
     """
-    Add extension methods to request object
+    Add extra methods to request objects.
+
     """
-    config.add_request_method(callable=is_member, property=False, reify=True)
-    config.add_request_method(
-        callable=is_collection, property=False, reify=True)
-    config.add_request_method(callable=is_empty, property=False, reify=True)
+    default_kwargs = {'property': False, 'reify': True}
+    config.add_request_method(callable=is_member, **default_kwargs)
+    config.add_request_method(callable=is_collection, **default_kwargs)

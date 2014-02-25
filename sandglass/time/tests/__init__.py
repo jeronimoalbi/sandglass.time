@@ -168,8 +168,8 @@ class BaseTestCase(unittest.TestCase):
 
     @classmethod
     def cleanup_application(cls):
-        # Drop all database tables when tests are finished
-        cls.meta.drop_all()
+        # Delete data fro all tables
+        models.clear_tables()
         # Cleanup Pyramid testing environment
         testing.tearDown()
 
@@ -186,11 +186,11 @@ class UnitTestCase(BaseTestCase):
     """
     def setUp(self):
         self.setup_application()
-        super(UnitTestCase, self).setUp()
+        super(BaseTestCase, self).setUp()
 
     def tearDown(self):
         self.cleanup_application()
-        super(UnitTestCase, self).tearDown()
+        super(BaseTestCase, self).tearDown()
 
 
 class IntegrationTestCase(BaseTestCase):
@@ -216,8 +216,6 @@ class FunctionalTestCase(BaseTestCase):
     tables are dropped when all tests are finished.
 
     """
-    key = None
-    token = None
     require_authorization = False
 
     @classmethod
@@ -231,10 +229,14 @@ class FunctionalTestCase(BaseTestCase):
         cls.cleanup_application()
         super(FunctionalTestCase, cls).tearDownClass()
 
-    def setUp(self):
-        self.app = TestApp(self.wsgi_app)
-        # self.init_test_user()
+    def tearDown(self):
+        # Delete data from all tables
+        models.clear_tables()
+        super(FunctionalTestCase, self).tearDown()
 
+    def setUp(self):
+        # self.init_test_user()
+        self.app = TestApp(self.wsgi_app)
         super(FunctionalTestCase, self).setUp()
 
     def get_authorization_header(self):

@@ -90,21 +90,6 @@ class JSON(TypeDecorator):
         return value
 
 
-def execute(sql, **kwargs):
-    """
-    Execute an SQL statement in global session context
-
-    SQL parameters are given as keyword arguments.
-    Parameter inside SQL statement are given using variable names
-    prefixed with a ":" character.
-
-    Example statement:
-        SELECT * FROM some_table WHERE id = :id
-
-    """
-    return DBSESSION.execute(sql, kwargs)
-
-
 def transactional(method):
     """
     Decorator to add implicit session support to a method.

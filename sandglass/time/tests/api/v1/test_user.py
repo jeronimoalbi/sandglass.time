@@ -171,7 +171,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(response.status, '200 OK')
 
         # Assert two were updated
-        self.assertEqual(response.json_body['info']['row_count'], 2)
+        self.assertEqual(response.json_body['info']['count'], 2)
 
         url = UserResource.get_member_path(update_ids[0])
         response_user = self.get_json(url).json
@@ -243,7 +243,7 @@ class UserResourceTest(FunctionalTestCase):
 
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
-        self.assertEqual(response.json_body['info']['row_count'], 2)
+        self.assertEqual(response.json_body['info']['count'], 2)
 
         # assert they are actually deleted
         # try getting it again, make sure it's gone

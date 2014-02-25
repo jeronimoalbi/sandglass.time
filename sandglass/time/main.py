@@ -13,7 +13,6 @@ from sandglass.time.auth import basic
 from sandglass.time.directives import add_rest_resource
 from sandglass.time.models import initialize_database
 from sandglass.time.request import extend_request_object
-#from sandglass.time.request import extend_request_object
 
 
 def json_datetime_adapter(obj, request):
@@ -72,6 +71,7 @@ def prepare_application(config):
     # TODO: Make authentication default when no other auth is on
     basic.initialize_auth(config)
 
+    # Add custom request methods
     extend_request_object(config)
 
     # Attach sandglass.time to '/time' URL path prefix
