@@ -221,12 +221,18 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(response.status, '200 OK')
         self.assertEqual(response.body, '2')
 
+        # assert they are actually deleted
+        # try getting it again, make sure it's gone
+        with self.assertRaises(NotFound):
+            for del_id in delete_ids:
+                url = UserResource.get_member_path(id)
+                self.get_json(url, status=404)
+ 
+
         # Get amount of users left in DB
-        # Get two random users from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
-        users_total = len(response.json)
 
-        response = self.delete_json(url)
-
-        self.assertEqual(response.body,str(users_total))
+        response = self.delete_json(url, expect_errors=True)
+        # assert response is error
+        self.assertEqual(response.status_int, 500)
