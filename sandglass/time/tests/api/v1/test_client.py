@@ -9,7 +9,6 @@ from pyramid.exceptions import NotFound
 
 
 class ClientResourceTest(FunctionalTestCase):
-
     """
     Functional tests for Client resource.
 
@@ -169,7 +168,6 @@ class ClientResourceTest(FunctionalTestCase):
         response_client = self.get_json(url).json
         self.assertEqual(response_client['name'], new_client_2.name)
 
-
     @fixture(ClientData, AuthData)
     def test_client_delete_multiple(self, data):
 
@@ -190,7 +188,7 @@ class ClientResourceTest(FunctionalTestCase):
         # assert they are actually deleted
         # try getting it again, make sure it's gone
         with self.assertRaises(NotFound):
-            for del_id in delete_ids:
+            for pk_value in delete_ids:
                 url = ClientResource.get_member_path(id)
                 self.get_json(url, status=404)
 

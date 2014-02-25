@@ -2,6 +2,7 @@ import base64
 import inspect
 import os
 import unittest
+import warnings
 
 from functools import wraps
 
@@ -12,12 +13,17 @@ from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from sqlalchemy import engine_from_config
 from sqlalchemy.orm import sessionmaker
+from webtest import lint
 from webtest import TestApp
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from sandglass.time import models
 from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.install import GroupData
+
+
+# Filter WebTest warnings regarding WSGI
+warnings.filterwarnings('ignore', category=lint.WSGIWarning)
 
 
 def get_static_test_dir():

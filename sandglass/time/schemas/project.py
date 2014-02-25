@@ -1,3 +1,4 @@
+from colander import Boolean
 from colander import drop
 from colander import Integer
 from colander import Length
@@ -24,6 +25,9 @@ class ProjectSchema(BaseModelSchema):
         missing=drop)
     user_id = SchemaNode(
         Integer())
+    id_public = SchemaNode(
+        Boolean(),
+        missing=drop)
 
 
 class ProjectListSchema(SequenceSchema):

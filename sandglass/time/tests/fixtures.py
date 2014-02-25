@@ -47,22 +47,22 @@ class UserData(DataSet):
 class ClientData(DataSet):
 
     class sherlock_holmes(BaseFixture):
-        name = 'Sherlock Holmes'
+        name = u'Sherlock Holmes'
 
     class mycroft_holmes(BaseFixture):
-        name = 'Mycroft Holmes'
+        name = u'Mycroft Holmes'
 
     class john_watson(BaseFixture):
-        name = 'Dr. John Watson'
+        name = u'Dr. John Watson'
 
     class greg_lestrade(BaseFixture):
-        name = 'DI Greg Lestrade'
+        name = u'DI Greg Lestrade'
 
     class james_moriarty(BaseFixture):
-        name = 'James Moriarty'
+        name = u'James Moriarty'
 
     class charles_magnussen(BaseFixture):
-        name = 'Charles Augustus Magnussen'
+        name = u'Charles Augustus Magnussen'
 
 
 class ProjectData(DataSet):
