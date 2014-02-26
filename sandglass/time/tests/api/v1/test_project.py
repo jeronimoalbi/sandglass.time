@@ -1,6 +1,5 @@
 from sandglass.time.api.v1.project import ProjectResource
 
-from sandglass.time.tests import AuthData
 from sandglass.time.tests import FunctionalTestCase
 from sandglass.time.tests import fixture
 from sandglass.time.tests.fixtures import ClientData
@@ -13,12 +12,13 @@ class ProjectResourceTest(FunctionalTestCase):
     # Use authentication for each request by default
     require_authorization = True
 
-    @fixture(AuthData, ClientData, UserData, data=True)
-    def test_project_create_single(self, data):
+    @fixture(ClientData, UserData)
+    def test_project_create_single(self):
         """
         Test creation of a project.
 
         """
+        data = self.fixture_data
         project = ProjectData.baskerville_hound
         project.client_id = data.data['ClientData']['mycroft_holmes']['id']
         project.user_id = data.data['UserData']['shepherd_book']['id']

@@ -64,7 +64,7 @@ SETTINGS = appconfig('config:' + get_config_file_path())
 # be vailable for the fixtures.
 FIXTURE_ENV = MODEL_REGISTRY
 FIXTURE_ENV.update({
-    'Auth': MODEL_REGISTRY['User'],
+    'AdminUser': MODEL_REGISTRY['User'],
 })
 
 # Create the db-fixtures
@@ -75,28 +75,23 @@ FIXTURE = SQLAlchemyFixture(
 )
 
 
-def fixture(*datasets, **kwargs):
+def fixture(*datasets):
     """
     Test method decorator that sets up a fixture before test is run.
 
-    Decorated method receives `data` as second argument when `data=True`
-    is used as keyword argument. By default, no fixture data is used
-    as argument.
+    Fixture data can be accessed during test as `fixture_data` attribute
+    of the test instance.
 
     """
-    enable_data_arg = kwargs.pop('data', False)
-
     def wrapper(func):
         @wraps(func)
         def call_func(data, self, *args, **kwargs):
-            if enable_data_arg:
-                # Wrapper for function to correct the order of self argument.
-                # This function is needed because Fixture uses data as first
-                # argument, instead of using self.
-                return func(self, data, *args, **kwargs)
-            else:
-                # Skip data argument when is not needed
+            # Skip data argument when is not needed
+            self.fixture_data = data
+            try:
                 return func(self, *args, **kwargs)
+            finally:
+                del self.fixture_data
 
         wrapper = FIXTURE.with_data(*datasets)
         return wrapper(call_func)
@@ -138,16 +133,15 @@ AUTH_TOKEN = "058bb38b25ddefa3f20537fd8762633dd2c3472f36f9b6628662624fffc7cbc2"
 AUTH_KEY = "56f750326fe58c2266e864d4cd95c6ea2877ce9aa5da0b73ef57f2e8774433a4"
 
 
-class AuthData(DataSet):
+class AdminUserData(DataSet):
     """
-    Fixture dataset with authentication user definitions.
+    Fixture dataset with test admin user definitions.
 
     """
-
-    class TestUser(BaseFixture):
-        first_name = u"Test"
+    class Admin(BaseFixture):
+        first_name = u"Admin"
         last_name = u"User"
-        email = u"testuser@sandglass.net"
+        email = u"admin@sandglass.net"
         password = "1234"
         token = AUTH_TOKEN
         key = AUTH_KEY
@@ -182,10 +176,6 @@ class BaseTestCase(unittest.TestCase):
         # Initialize Pyramid testing environment support
         cls.config = testing.setUp(settings=cls.settings, request=request)
         cls.config.include('sandglass.time')
-        # NOTE: Commented to avoid duplication with some test fixtures
-        # TODO: Check if is needed, or how to have same behavior during
-        #       test setup.
-        #install.database_insert_default_data()
 
     @classmethod
     def cleanup_application(cls):
@@ -193,6 +183,26 @@ class BaseTestCase(unittest.TestCase):
         models.clear_tables()
         # Cleanup Pyramid testing environment
         testing.tearDown()
+
+    def setup_default_data(self):
+        from sandglass.time.install import DEFAULT_DATASETS
+
+        # Add authorization data to defaults
+        datasets = list(DEFAULT_DATASETS)
+        datasets.append(AdminUserData)
+        # Insert default data into database
+        self.default_fixture_data = FIXTURE.data(*datasets)
+        self.default_fixture_data.setup()
+
+    def teardown_default_data(self):
+        # Remove all model object instances from loader session.
+        # This is called here because the fixture teardown does
+        # not expunge and because of that there are conflict
+        # with model instances loaded in `setup_default_data`.
+        self.default_fixture_data.loader.session.expunge_all()
+
+        # Unload all datasets
+        self.default_fixture_data.teardown()
 
     def setUp(self):
         # Disable logging during tests
@@ -217,9 +227,11 @@ class UnitTestCase(BaseTestCase):
     """
     def setUp(self):
         self.setup_application()
+        self.setup_default_data()
         super(UnitTestCase, self).setUp()
 
     def tearDown(self):
+        self.teardown_default_data()
         self.cleanup_application()
         super(UnitTestCase, self).tearDown()
 
@@ -232,6 +244,15 @@ class IntegrationTestCase(BaseTestCase):
     tables are dropped when all tests are finished.
 
     """
+    def setUp(self):
+        self.setup_application()
+        self.setup_default_data()
+        super(IntegrationTestCase, self).setUp()
+
+    def tearDown(self):
+        self.teardown_default_data()
+        self.cleanup_application()
+        super(IntegrationTestCase, self).tearDown()
 
 
 class FunctionalTestCase(BaseTestCase):
@@ -260,14 +281,16 @@ class FunctionalTestCase(BaseTestCase):
         cls.cleanup_application()
         super(FunctionalTestCase, cls).tearDownClass()
 
+    def setUp(self):
+        self.setup_default_data()
+        self.app = TestApp(self.wsgi_app)
+        super(FunctionalTestCase, self).setUp()
+
     def tearDown(self):
+        self.teardown_default_data()
         # Delete data from all tables
         models.clear_tables()
         super(FunctionalTestCase, self).tearDown()
-
-    def setUp(self):
-        self.app = TestApp(self.wsgi_app)
-        super(FunctionalTestCase, self).setUp()
 
     def get_authorization_header(self):
         """

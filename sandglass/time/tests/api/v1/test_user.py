@@ -1,7 +1,6 @@
 from pyramid.exceptions import NotFound
 
 from sandglass.time.api.v1.user import UserResource
-from sandglass.time.tests import AuthData
 from sandglass.time.tests import fixture
 from sandglass.time.tests import FunctionalTestCase
 from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
@@ -17,7 +16,6 @@ class UserResourceTest(FunctionalTestCase):
     # Use authentication for each request by default
     require_authorization = True
 
-    @fixture(AuthData)
     def test_create_single_user(self):
         # Create first Test User
         user = ClientUserData.dr_schiwago
@@ -49,8 +47,8 @@ class UserResourceTest(FunctionalTestCase):
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
 
-    @fixture(UserData, AuthData, data=True)
-    def test_update_single_user(self, data):
+    @fixture(UserData)
+    def test_update_single_user(self):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -77,7 +75,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertNotEqual(old_user['last_name'], new_user['last_name'])
         self.assertNotEqual(old_user['email'], new_user['email'])
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData)
     def test_get_user(self):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -99,7 +97,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(old_user['last_name'], get_user['last_name'])
         self.assertEqual(old_user['email'], get_user['email'])
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData)
     def test_delete_single_user(self):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -118,13 +116,12 @@ class UserResourceTest(FunctionalTestCase):
         with self.assertRaises(NotFound):
             self.get_json(url, status=404)
 
-    @fixture(AuthData)
     def test_create_multiple_users(self):
         # Check that only the one testuser exist
         url = UserResource.get_collection_path()
         response = self.get_json(url)
         self.assertEqual(len(response.json), 1)
-        self.assertEqual(response.json[0]['first_name'], 'Test')
+        self.assertEqual(response.json[0]['first_name'], 'Admin')
         self.assertEqual(response.json[0]['last_name'], 'User')
 
         # Create three users at the same time
@@ -150,8 +147,8 @@ class UserResourceTest(FunctionalTestCase):
             # assert it went ok
             self.assertEqual(response_delete.status, '200 OK')
 
-    @fixture(UserData, AuthData, data=True)
-    def test_update_multiple_users(self, data):
+    @fixture(UserData)
+    def test_update_multiple_users(self):
         # Get two random users from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -187,7 +184,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(response_user['last_name'], new_user_2.last_name)
         self.assertEqual(response_user['email'], new_user_2.email)
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData)
     def test_sign_in(self):
         self.require_authorization = False
 
@@ -208,7 +205,7 @@ class UserResourceTest(FunctionalTestCase):
 
         self.require_authorization = True
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData)
     def test_sign_un(self):
         self.require_authorization = False
 
@@ -229,8 +226,8 @@ class UserResourceTest(FunctionalTestCase):
 
         self.require_authorization = True
 
-    @fixture(UserData, AuthData, data=True)
-    def test_delete_multiple_users(self, data):
+    @fixture(UserData)
+    def test_delete_multiple_users(self):
         # Get two random users from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
