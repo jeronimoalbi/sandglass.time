@@ -8,7 +8,6 @@ from sandglass.time.models.activity import ACTIVITY_WORKING
 from sandglass.time.schemas.activity import ActivitySchema
 
 
-@unittest.skip("showing class skipping")
 class FormActivityTest(unittest.TestCase):
     """
     Test class for activity schema.

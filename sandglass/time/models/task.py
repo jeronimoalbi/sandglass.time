@@ -1,5 +1,6 @@
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.types import Integer
@@ -35,8 +36,7 @@ class Task(BaseModel):
         lazy=True,
         join_depth=1,
         # Resolve remote side field using an inline callable
-        remote_side=(lambda: Task.id),
-        backref="parent")
+        backref=backref("parent", remote_side=(lambda: Task.id)))
 
     @declared_attr
     def __table_args__(cls):
