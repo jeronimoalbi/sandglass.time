@@ -18,12 +18,16 @@ class ClientResourceTest(FunctionalTestCase):
     require_authorization = True
 
     @fixture(AuthData)
-    def test_client_create_single(self, data):
+    def test_client_create_single(self):
         client = ClientData.charles_magnussen
         url = ClientResource.get_collection_path()
 
         response = self.post_json(url, client.to_dict())
-        created_id = response.json['id']
+        # All post to collection returns a collection
+        self.assertTrue(isinstance(response.json, list))
+        # User updated information is returned a single item in a list
+        client_data = response.json[0]
+        created_id = client_data['id']
 
         # Asserts
         self.assertEqual(response.status, '200 OK')
@@ -43,7 +47,7 @@ class ClientResourceTest(FunctionalTestCase):
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
 
-    @fixture(ClientData, AuthData)
+    @fixture(ClientData, AuthData, data=True)
     def test_client_update_single(self, data):
         # Get random user from DB
         url = ClientResource.get_collection_path()
@@ -68,7 +72,7 @@ class ClientResourceTest(FunctionalTestCase):
         self.assertNotEqual(old_client['name'], new_client['name'])
 
     @fixture(ClientData, AuthData)
-    def test_client_get(self, data):
+    def test_client_get(self):
         # Get random user from DB
         url = ClientResource.get_collection_path()
         response = self.get_json(url)
@@ -88,7 +92,7 @@ class ClientResourceTest(FunctionalTestCase):
         self.assertEqual(old_client['name'], get_client['name'])
 
     @fixture(ClientData, AuthData)
-    def test_client_delete_single(self, data):
+    def test_client_delete_single(self):
         # Get random user from DB
         url = ClientResource.get_collection_path()
         response = self.get_json(url)
@@ -107,7 +111,7 @@ class ClientResourceTest(FunctionalTestCase):
             self.get_json(url, status=404)
 
     @fixture(AuthData)
-    def test_client_create_multiple(self, data):
+    def test_client_create_multiple(self):
         # Check that only the one testuser exist
         url = ClientResource.get_collection_path()
         response = self.get_json(url)
@@ -136,7 +140,7 @@ class ClientResourceTest(FunctionalTestCase):
             # assert it went ok
             self.assertEqual(response_delete.status, '200 OK')
 
-    @fixture(ClientData, AuthData)
+    @fixture(ClientData, AuthData, data=True)
     def test_update_multiple_users(self, data):
         # Get two random users from DB
         url = ClientResource.get_collection_path()
@@ -168,7 +172,7 @@ class ClientResourceTest(FunctionalTestCase):
         response_client = self.get_json(url).json
         self.assertEqual(response_client['name'], new_client_2.name)
 
-    @fixture(ClientData, AuthData)
+    @fixture(ClientData, AuthData, data=True)
     def test_client_delete_multiple(self, data):
 
         # Get two random users from DB
@@ -189,7 +193,7 @@ class ClientResourceTest(FunctionalTestCase):
         # try getting it again, make sure it's gone
         with self.assertRaises(NotFound):
             for pk_value in delete_ids:
-                url = ClientResource.get_member_path(id)
+                url = ClientResource.get_member_path(pk_value)
                 self.get_json(url, status=404)
 
         # Get amount of users left in DB

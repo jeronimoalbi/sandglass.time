@@ -1,5 +1,6 @@
 import base64
 import inspect
+import logging
 import os
 import unittest
 import warnings
@@ -74,18 +75,28 @@ FIXTURE = SQLAlchemyFixture(
 )
 
 
-def fixture(*datasets):
+def fixture(*datasets, **kwargs):
     """
     Test method decorator that sets up a fixture before test is run.
 
+    Decorated method receives `data` as second argument when `data=True`
+    is used as keyword argument. By default, no fixture data is used
+    as argument.
+
     """
+    enable_data_arg = kwargs.pop('data', False)
+
     def wrapper(func):
         @wraps(func)
         def call_func(data, self, *args, **kwargs):
-            # Wrapper for function to correct the order of self argument.
-            # This function is needed because Fixture uses data as first
-            # argument, instead of using self.
-            return func(self, data, *args, **kwargs)
+            if enable_data_arg:
+                # Wrapper for function to correct the order of self argument.
+                # This function is needed because Fixture uses data as first
+                # argument, instead of using self.
+                return func(self, data, *args, **kwargs)
+            else:
+                # Skip data argument when is not needed
+                return func(self, *args, **kwargs)
 
         wrapper = FIXTURE.with_data(*datasets)
         return wrapper(call_func)
@@ -113,9 +124,10 @@ class BaseFixture(object):
             is_attribute = not inspect.ismethod(value)
             name_is_valid = attr_name not in ('_dataset', 'ref')
             if is_public and is_attribute and name_is_valid:
-                if value.__class__ == type and BaseFixture in value.mro():
+                if inspect.isclass(value) and issubclass(value, BaseFixture):
+                    # Save related fixtures as dictionaries
                     data[attr_name] = value.to_dict()
-                else:    
+                else:
                     data[attr_name] = value
 
         return data
@@ -182,6 +194,16 @@ class BaseTestCase(unittest.TestCase):
         # Cleanup Pyramid testing environment
         testing.tearDown()
 
+    def setUp(self):
+        # Disable logging during tests
+        logging.disable(logging.CRITICAL)
+        super(BaseTestCase, self).setUp()
+
+    def tearDown(self):
+        # Enable logging after tests
+        logging.disable(logging.NOTSET)
+        super(BaseTestCase, self).tearDown()
+
 
 class UnitTestCase(BaseTestCase):
     """
@@ -195,11 +217,11 @@ class UnitTestCase(BaseTestCase):
     """
     def setUp(self):
         self.setup_application()
-        super(BaseTestCase, self).setUp()
+        super(UnitTestCase, self).setUp()
 
     def tearDown(self):
         self.cleanup_application()
-        super(BaseTestCase, self).tearDown()
+        super(UnitTestCase, self).tearDown()
 
 
 class IntegrationTestCase(BaseTestCase):
@@ -244,7 +266,6 @@ class FunctionalTestCase(BaseTestCase):
         super(FunctionalTestCase, self).tearDown()
 
     def setUp(self):
-        # self.init_test_user()
         self.app = TestApp(self.wsgi_app)
         super(FunctionalTestCase, self).setUp()
 
@@ -320,31 +341,3 @@ class FunctionalTestCase(BaseTestCase):
         """
         kwargs['headers'] = self.update_headers(kwargs.get('headers'))
         return self.app.delete_json(*args, **kwargs)
-
-    def init_test_user(self):
-        # TODO: Move to othes test class or avoid using a fixture
-        from sandglass.time.api.v1.user import UserResource
-        from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
-        user = ClientUserData.TestUser
-
-        # Try and log in with the testuser
-        url = UserResource.get_collection_path() + "@signin"
-        response = self.post_json(url, user.to_dict(), expect_errors=True)
-        if response.status_code == 200:
-            self.token = response.json['token']
-            self.key = response.json['key']
-            return
-
-        # Create a testuser for us to use with the tests
-        url = UserResource.get_collection_path() + "@signup"
-        response = self.post_json(url, user.to_dict())
-        if response.status_code == 200:
-            self.token = response.json['token']
-            self.key = response.json['key']
-
-    def _create(self, path, content=None, status=200):
-        create_response = self.post_json(path, content, status=status)
-        created_id = create_response.json[0]['id']
-        json = create_response.json
-
-        return (created_id, json)
