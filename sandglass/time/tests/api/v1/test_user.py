@@ -1,5 +1,3 @@
-import unittest
-
 from pyramid.exceptions import NotFound
 
 from sandglass.time.api.v1.user import UserResource
@@ -11,7 +9,6 @@ from sandglass.time.tests.fixtures import UserData
 
 
 class UserResourceTest(FunctionalTestCase):
-
     """
     Functional tests for User resource.
 
@@ -21,13 +18,17 @@ class UserResourceTest(FunctionalTestCase):
     require_authorization = True
 
     @fixture(AuthData)
-    def test_create_single_user(self, data):
+    def test_create_single_user(self):
         # Create first Test User
         user = ClientUserData.dr_schiwago
         url = UserResource.get_collection_path()
 
         response = self.post_json(url, user.to_dict())
-        created_id = response.json['id']
+        # All post to collection returns a collection
+        self.assertTrue(isinstance(response.json, list))
+        # User updated information is returned a single item in a list
+        user_data = response.json[0]
+        created_id = user_data['id']
 
         # Get newly created user based on ID
         url = UserResource.get_member_path(created_id)
@@ -48,7 +49,7 @@ class UserResourceTest(FunctionalTestCase):
         # assert response is ok
         self.assertEqual(response.status, '200 OK')
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData, AuthData, data=True)
     def test_update_single_user(self, data):
         # Get random user from DB
         url = UserResource.get_collection_path()
@@ -77,7 +78,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertNotEqual(old_user['email'], new_user['email'])
 
     @fixture(UserData, AuthData)
-    def test_get_user(self, data):
+    def test_get_user(self):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -99,7 +100,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(old_user['email'], get_user['email'])
 
     @fixture(UserData, AuthData)
-    def test_delete_single_user(self, data):
+    def test_delete_single_user(self):
         # Get random user from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -118,7 +119,7 @@ class UserResourceTest(FunctionalTestCase):
             self.get_json(url, status=404)
 
     @fixture(AuthData)
-    def test_create_multiple_users(self, data):
+    def test_create_multiple_users(self):
         # Check that only the one testuser exist
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -149,7 +150,7 @@ class UserResourceTest(FunctionalTestCase):
             # assert it went ok
             self.assertEqual(response_delete.status, '200 OK')
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData, AuthData, data=True)
     def test_update_multiple_users(self, data):
         # Get two random users from DB
         url = UserResource.get_collection_path()
@@ -187,7 +188,7 @@ class UserResourceTest(FunctionalTestCase):
         self.assertEqual(response_user['email'], new_user_2.email)
 
     @fixture(UserData, AuthData)
-    def test_sign_in(self, data):
+    def test_sign_in(self):
         self.require_authorization = False
 
         user = UserData.james_william_elliot
@@ -208,7 +209,7 @@ class UserResourceTest(FunctionalTestCase):
         self.require_authorization = True
 
     @fixture(UserData, AuthData)
-    def test_sign_un(self, data):
+    def test_sign_un(self):
         self.require_authorization = False
 
         user = ClientUserData.max_adler
@@ -228,9 +229,8 @@ class UserResourceTest(FunctionalTestCase):
 
         self.require_authorization = True
 
-    @fixture(UserData, AuthData)
+    @fixture(UserData, AuthData, data=True)
     def test_delete_multiple_users(self, data):
-
         # Get two random users from DB
         url = UserResource.get_collection_path()
         response = self.get_json(url)
@@ -248,8 +248,8 @@ class UserResourceTest(FunctionalTestCase):
         # assert they are actually deleted
         # try getting it again, make sure it's gone
         with self.assertRaises(NotFound):
-            for del_id in delete_ids:
-                url = UserResource.get_member_path(id)
+            for pk_value in delete_ids:
+                url = UserResource.get_member_path(pk_value)
                 self.get_json(url, status=404)
 
         # Get amount of users left in DB

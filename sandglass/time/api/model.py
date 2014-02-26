@@ -6,7 +6,6 @@ import transaction
 
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
-from sqlalchemy.sql.expression import bindparam
 
 from sandglass.time import _
 from sandglass.time.api import BaseResource
@@ -155,11 +154,19 @@ class ModelResource(BaseResource):
 
         Data is deserialized from current request body.
 
+        When submitted data is a songle member, it is deserialized
+        and returned as a single object in a list.
+
         Return a List of dictionaries.
 
         """
-        list_schema = self.list_schema()
-        return list_schema.deserialize(self.request_data)
+        if self.request.is_member:
+            # When POSTed data is an object deserialize it
+            # and create a list with this single object
+            return [self.submitted_member_data]
+        else:
+            list_schema = self.list_schema()
+            return list_schema.deserialize(self.request_data)
 
     @transactional
     def post_collection(self, session):
@@ -169,18 +176,8 @@ class ModelResource(BaseResource):
         Request body can be a JSON object or a list of objects.
 
         """
-        is_single_object = isinstance(self.request_data, dict)
-        # Get submited JSON data from the request body
-        if is_single_object:
-            # When POSTed data is an object deserialize it
-            # and create a list with this single object
-            data_list = [self.submitted_member_data]
-        else:
-            # By default assume that request data is a list of objects
-            data_list = self.submitted_collection_data
-
         obj_list = []
-        for data in data_list:
+        for data in self.submitted_collection_data:
             obj = self.model(**data)
             session.add(obj)
             obj_list.append(obj)
@@ -188,10 +185,7 @@ class ModelResource(BaseResource):
         # Flush to generate IDs
         session.flush()
 
-        if is_single_object:
-            return obj_list[0]
-        else:
-            return obj_list
+        return obj_list
 
     @transactional
     def put_collection(self, session):
@@ -201,16 +195,7 @@ class ModelResource(BaseResource):
         Each object MUST contain its original pk value.
 
         """
-        is_single_object = isinstance(self.request_data, dict)
-        # Get submited JSON data from the request body
-        if is_single_object:
-            # When POSTed data is an object deserialize it
-            # and create a list with this single object
-            data_list = [self.submitted_member_data]
-        else:
-            # By default assume that request data is a list of objects
-            data_list = self.submitted_collection_data
-
+        data_list = self.submitted_collection_data
         # Update all members in data list
         count = 0
         query = session.query(self.model)
@@ -252,18 +237,7 @@ class ModelResource(BaseResource):
         Delete all model objects.
 
         """
-        if self.request.is_member:
-            # When POSTed data is an object deserialize it
-            # and create a list with this single object
-            data_list = [self.submitted_member_data]
-        else:
-            # By default assume that request data is a list of objects
-            data_list = self.submitted_collection_data
-
-        id_list = []
-        for data in data_list:
-            id_list.append(data['id'])
-
+        id_list = [data['id'] for data in self.submitted_collection_data]
         query = self.model.query().filter(self.model.id.in_(id_list))
         count = query.delete(False)
 
