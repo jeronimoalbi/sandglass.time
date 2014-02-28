@@ -1,4 +1,5 @@
 from pyramid.authentication import BasicAuthAuthenticationPolicy
+from pyramid.httpexceptions import HTTPForbidden
 from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid.security import forget
 
@@ -13,7 +14,11 @@ def handle_basic_auth_challenge(request):
     user name and password.
 
     """
-    response = HTTPUnauthorized()
+    if request.is_xhr:
+        response = HTTPForbidden()
+    else:
+        response = HTTPUnauthorized()
+
     response.headers.update(forget(request))
     return response
 
