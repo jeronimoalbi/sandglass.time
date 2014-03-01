@@ -1,7 +1,7 @@
 """
 Request module
 
-Extending the request objects with utility functions
+Extending the request objects with utility functions.
 
 """
 

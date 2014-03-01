@@ -1,14 +1,18 @@
-# pylint: disable=W0201,W0223,W0613
+# pylint: disable=W0201,W0223,W0613,C0111
 
 import json
-import weakref
+import os
 import transaction
+import weakref
 
 from datetime import datetime
 from functools import wraps
 from inspect import isclass
 
+import venusian
+
 from pyramid import response
+from pyramid.path import DottedNameResolver
 from pyramid.security import ALL_PERMISSIONS
 from pyramid.security import Allow
 from pyramid.security import Authenticated
@@ -36,10 +40,15 @@ from sandglass.time.utils import mixedmethod
 
 META = MetaData()
 
-DBSESSION = scoped_session(
-    # Integrate transaction manager with SQLAlchemy
-    sessionmaker(extension=ZopeTransactionExtension())
-)
+# Check if unittest is being run before creating session
+if not os.environ.get('TESTING'):
+    DBSESSION = scoped_session(
+        # Integrate transaction manager with SQLAlchemy
+        sessionmaker(extension=ZopeTransactionExtension())
+    )
+else:
+    # When unittests are run use a non scoped session
+    DBSESSION = sessionmaker(extension=ZopeTransactionExtension())
 
 # Dictionary used to map model class names to class definitions
 MODEL_REGISTRY = weakref.WeakValueDictionary()
@@ -52,6 +61,19 @@ DEFAULT_ACL = [
     # Last rule to deny all if no rule matched before
     (Deny, Everyone, ALL_PERMISSIONS)
 ]
+
+
+def scan_models(module):
+    """
+    Scan a models module to force Model registration.
+
+    Argument `module` can be a models module or a Python dotted string.
+
+    """
+    resolver = DottedNameResolver()
+    module = resolver.maybe_resolve(module)
+    scanner = venusian.Scanner()
+    scanner.scan(module)
 
 
 def initialize_database(engine):

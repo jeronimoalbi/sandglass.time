@@ -40,7 +40,7 @@ def auth_callback(username, password, request):
     return [unicode(group) for group in user.groups]
 
 
-def initialize_auth(config):
+def setup_basic_http_auth(config):
     """
     Initialize HTTP Basic Auth support.
 

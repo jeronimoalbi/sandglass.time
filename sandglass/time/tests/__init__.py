@@ -1,7 +1,11 @@
+import os
+
+# Set TESTING environmental variable as soon as test is imported
+os.environ['TESTING'] = 'true'
+
 import base64
 import inspect
 import logging
-import os
 import unittest
 import warnings
 
@@ -56,8 +60,11 @@ def get_config_file_path():
     return os.path.join(file_path)
 
 
-# Load tests settings
 SETTINGS = appconfig('config:' + get_config_file_path())
+
+# Scan sandglass time models to for registration
+# before FIXTURE_ENV is initialized
+models.scan_models('sandglass.time.models')
 
 # Init fixture to database mappings environment.
 # This registers all current Model definitions to
@@ -91,6 +98,8 @@ def fixture(*datasets):
             try:
                 return func(self, *args, **kwargs)
             finally:
+                # Clear all tables to avoid conflict with used fixtures
+                models.clear_tables()
                 del self.fixture_data
 
         wrapper = FIXTURE.with_data(*datasets)
@@ -156,33 +165,18 @@ class BaseTestCase(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        from sandglass.time.models import META
-
-        # Make global database session a non scoped session
-        models.DBSESSION = sessionmaker(extension=ZopeTransactionExtension())
-
-        # Initialize some useful class variables
-        # to be available in all test classes
-        cls.meta = META
-        cls.Session = models.DBSESSION
         cls.settings = SETTINGS
-        cls.engine = engine_from_config(cls.settings, prefix='database.')
-
         super(BaseTestCase, cls).setUpClass()
 
-    @classmethod
-    def setup_application(cls):
-        request = testing.DummyRequest()
-        # Initialize Pyramid testing environment support
-        cls.config = testing.setUp(settings=cls.settings, request=request)
-        cls.config.include('sandglass.time')
+    def setUp(self):
+        # Disable logging during tests
+        logging.disable(logging.CRITICAL)
+        super(BaseTestCase, self).setUp()
 
-    @classmethod
-    def cleanup_application(cls):
-        # Delete data fro all tables
-        models.clear_tables()
-        # Cleanup Pyramid testing environment
-        testing.tearDown()
+    def tearDown(self):
+        # Enable logging during tests
+        logging.disable(logging.NOTSET)
+        super(BaseTestCase, self).tearDown()
 
     def setup_default_data(self):
         from sandglass.time.install import DEFAULT_DATASETS
@@ -190,8 +184,10 @@ class BaseTestCase(unittest.TestCase):
         # Add authorization data to defaults
         datasets = list(DEFAULT_DATASETS)
         datasets.append(AdminUserData)
+
         # Insert default data into database
         self.default_fixture_data = FIXTURE.data(*datasets)
+        # self.default_fixture_data = FIXTURE.data(AdminUserData)
         self.default_fixture_data.setup()
 
     def teardown_default_data(self):
@@ -203,16 +199,6 @@ class BaseTestCase(unittest.TestCase):
 
         # Unload all datasets
         self.default_fixture_data.teardown()
-
-    def setUp(self):
-        # Disable logging during tests
-        logging.disable(logging.CRITICAL)
-        super(BaseTestCase, self).setUp()
-
-    def tearDown(self):
-        # Enable logging after tests
-        logging.disable(logging.NOTSET)
-        super(BaseTestCase, self).tearDown()
 
 
 class UnitTestCase(BaseTestCase):
@@ -226,17 +212,24 @@ class UnitTestCase(BaseTestCase):
 
     """
     def setUp(self):
-        self.setup_application()
-        self.setup_default_data()
         super(UnitTestCase, self).setUp()
+        # Initialize Pyramid testing environment support
+        request = testing.DummyRequest()
+        config = testing.setUp(settings=self.settings, request=request)
+        config.include('sandglass.time.config')
+        self.setup_default_data()
 
     def tearDown(self):
+        # Clear all table data to avoid conflicts when using fixtures
+        # and to start next test with a clean database
+        models.clear_tables()
         self.teardown_default_data()
-        self.cleanup_application()
+        # Cleanup Pyramid testing environment
+        testing.tearDown()
         super(UnitTestCase, self).tearDown()
 
 
-class IntegrationTestCase(BaseTestCase):
+class IntegrationTestCase(UnitTestCase):
     """
     Base class for integration tests.
 
@@ -244,15 +237,6 @@ class IntegrationTestCase(BaseTestCase):
     tables are dropped when all tests are finished.
 
     """
-    def setUp(self):
-        self.setup_application()
-        self.setup_default_data()
-        super(IntegrationTestCase, self).setUp()
-
-    def tearDown(self):
-        self.teardown_default_data()
-        self.cleanup_application()
-        super(IntegrationTestCase, self).tearDown()
 
 
 class FunctionalTestCase(BaseTestCase):
@@ -273,12 +257,16 @@ class FunctionalTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(FunctionalTestCase, cls).setUpClass()
-        cls.setup_application()
+        # Initialize Pyramid testing environment support
+        request = testing.DummyRequest()
+        cls.config = testing.setUp(settings=cls.settings, request=request)
+        cls.config.include('sandglass.time.config')
         cls.wsgi_app = cls.config.make_wsgi_app()
 
     @classmethod
     def tearDownClass(cls):
-        cls.cleanup_application()
+        # Cleanup Pyramid testing environment
+        testing.tearDown()
         super(FunctionalTestCase, cls).tearDownClass()
 
     def setUp(self):
@@ -288,7 +276,7 @@ class FunctionalTestCase(BaseTestCase):
 
     def tearDown(self):
         self.teardown_default_data()
-        # Delete data from all tables
+        # Clear all table data to start next test with a clean database
         models.clear_tables()
         super(FunctionalTestCase, self).tearDown()
 

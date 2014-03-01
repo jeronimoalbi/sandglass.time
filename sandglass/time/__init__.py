@@ -47,21 +47,4 @@ def get_available_languages():
     return settings['available_languages'].split()
 
 
-def includeme(config):
-    """
-    Default Sandglass time application initialization function.
-
-    Pyramid uses this function as entry point for `sandglass.time`.
-
-    """
-    import sandglass.time.main
-
-    # Init application dependencies
-    config.include('pyramid_tm')
-    config.include('pyramid_mailer')
-    # Prepare application and initialize database
-    sandglass.time.main.prepare_application(config)
-    sandglass.time.main.init_database(config.registry.settings)
-
-
 __version__ = guess_version('sandglass.time', __file__)

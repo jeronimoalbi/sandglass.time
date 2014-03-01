@@ -190,7 +190,7 @@ class BaseResource(object):
         Return a String.
 
         """
-        route_info = REST_ROUTE_INFO['member']
+        route_info = REST_ROUTE_INFO['related']
         route_name = route_info['route_name']
         member = cls.get_route_prefix()
         return route_path(
@@ -394,7 +394,7 @@ def load_api_v1(config):
         config.add_rest_resource('sandglass.time.api.v1.' + name)
 
 
-def init_api_versions(config):
+def include_api_versions(config):
     """
     Initialize all supported API versions.
 
