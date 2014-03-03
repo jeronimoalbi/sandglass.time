@@ -8,11 +8,11 @@ from sqlalchemy.orm.util import has_identity
 from sqlalchemy.types import Text
 from sqlalchemy.types import UnicodeText
 
-
 from sandglass.time import utils
 from sandglass.time.models import BaseModel
 from sandglass.time.models import JSON
 from sandglass.time.models import TimestampMixin
+from sandglass.time.models.group import user_association_table
 
 
 class User(TimestampMixin, BaseModel):
@@ -30,15 +30,18 @@ class User(TimestampMixin, BaseModel):
     # JSON field to support saving extra user data
     data = Column(JSON(255))
 
-    tags = relationship("Tag", backref="user")
-    projects = relationship("Project", backref="user")
-    tasks = relationship("Task", backref="user")
+    tags = relationship("Tag", back_populates="user")
+    projects = relationship("Project", back_populates="user")
+    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    groups = relationship(
+        "Group",
+        secondary=user_association_table,
+        back_populates="users")
 
     def get_password(self):
         return self._password
 
     def set_password(self, value):
-        
         is_new = has_identity(self)
 
         # Set password as a hash

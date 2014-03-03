@@ -250,10 +250,6 @@ class BaseModel(object):
 
         return self
 
-    def __str__(self):
-        # Call unicode to get value and encode str as UTF8
-        return unicode(self).encode('utf8')
-
     def __json__(self, request):
         data = dict(self)
         return self.update_json_data(data)
