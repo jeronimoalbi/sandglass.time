@@ -7,8 +7,8 @@ from sandglass.time.models import BaseModel
 
 class Client(BaseModel):
     """
-    TODO
+    Model definition for company clients.
 
     """
     name = Column(Unicode(50), nullable=False)
-    projects = relationship("Project", backref="client")
+    projects = relationship("Project", back_populates="client")

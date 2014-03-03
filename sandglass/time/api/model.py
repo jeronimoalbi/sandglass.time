@@ -183,7 +183,12 @@ class ModelResource(BaseResource):
             obj_list.append(obj)
 
         # Flush to generate IDs
-        session.flush()
+        try:
+            session.flush()
+        except:
+            msg = "Unable to flush POST collectiond data for /%s"
+            LOG.exception(msg, self.get_route_prefix())
+            return error_response(_("Error creating object(s)"))
 
         return obj_list
 

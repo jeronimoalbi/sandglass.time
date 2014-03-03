@@ -24,7 +24,7 @@ TAG_TYPES = (TAG_TYPE_SYSTEM, TAG_TYPE_ACCOUNTING, TAG_TYPE_ACTIVITY)
 
 class Tag(BaseModel):
     """
-    TODO
+    Model definition for tags.
 
     """
     name = Column(
@@ -46,6 +46,7 @@ class Tag(BaseModel):
         nullable=False,
         doc="User that created the tag")
 
+    user = relationship("User", back_populates="tags")
     aliases = relationship(
         "Tag",
         lazy=True,

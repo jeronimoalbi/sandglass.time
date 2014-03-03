@@ -38,11 +38,14 @@ class Group(BaseModel):
     users = relationship(
         "User",
         secondary=user_association_table,
-        backref='groups')
+        back_populates='groups')
     permissions = relationship(
         "Permission",
         secondary=permission_association_table,
-        backref='groups')
+        back_populates='groups')
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        return self.name.encode('utf8')

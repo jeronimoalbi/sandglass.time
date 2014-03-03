@@ -39,7 +39,9 @@ class Project(ActivePeriodMixin, BaseModel):
         Boolean,
         default=False)
 
-    tasks = relationship("Task", backref="project")
+    user = relationship("User", back_populates="projects")
+    client = relationship("Client", back_populates="projects")
+    tasks = relationship("Task", back_populates="project")
     children = relationship(
         "Project",
         lazy=True,
