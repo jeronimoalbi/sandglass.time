@@ -56,7 +56,7 @@ class SandglassCliApp(foundation.CementApp):
         # Initialize pylons configurator
         self.log.debug("Initializing Pylons configurator")
         self._config = Configurator(settings=settings)
-        self._config.include('sandglass.time')
+        self._config.include('sandglass.time.config')
         self._config.commit()
 
     @staticmethod

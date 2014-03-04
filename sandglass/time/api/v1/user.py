@@ -18,6 +18,8 @@ from sandglass.time.response import error_response
 from sandglass.time.security import Administrators
 from sandglass.time.security import PUBLIC
 
+from .errors import APIV1Error
+
 
 class UserResource(ModelResource):
     """
@@ -39,7 +41,7 @@ class UserResource(ModelResource):
         data = self.submitted_member_data
         user = User.query().filter_by(email=data['email']).first()
         if (not user) or not user.is_valid_password(data['password']):
-            return error_response(_("Invalid sign in credentials"))
+            raise APIV1Error('INVALID_SIGNIN')
 
         return user
 
@@ -54,7 +56,7 @@ class UserResource(ModelResource):
         data = self.submitted_member_data
         if User.query().filter_by(email=data['email']).count():
             msg = _("A user with the same E-Mail already exists")
-            return error_response(msg)
+            raise APIV1Error('USER_EMAIL_EXISTS')
 
         user = User(**data)
         session = User.new_session()
@@ -94,7 +96,7 @@ class UserResource(ModelResource):
             if user:
                 return user
 
-        return error_response(_("No users found"))
+        raise APIV1Error('USER_NOT_FOUND')
 
     @member_action(methods='GET')
     def activities(self):

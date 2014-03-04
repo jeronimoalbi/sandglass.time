@@ -20,9 +20,9 @@ class ClientResourceTest(FunctionalTestCase):
         client = ClientData.charles_magnussen
         url = ClientResource.get_collection_path()
 
-        response = self.post_json(url, client.to_dict())
+        response = self.post_json(url, [client.to_dict()])
         # All post to collection returns a collection
-        self.assertTrue(isinstance(response.json, list))
+        self.assertTrue(isinstance(response.json_body, list))
         # User updated information is returned a single item in a list
         client_data = response.json[0]
         created_id = client_data['id']

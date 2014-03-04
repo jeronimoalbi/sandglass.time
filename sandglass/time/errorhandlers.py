@@ -1,3 +1,5 @@
+# pylint: disable=W0613,C0103
+
 import logging
 
 import colander
@@ -7,11 +9,25 @@ import transaction
 #from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.view import view_config
 
-from sandglass.time import _
 from sandglass.time.api import APIRequestDataError
+from sandglass.time.api import errors
 from sandglass.time.response import error_response
 
 LOG = logging.getLogger(__name__)
+
+
+@view_config(context=errors.APIError)
+def handle_api_errors(err, request):
+    """
+    Generic error handler API errors.
+
+    """
+    # Add schema validation information
+    data = {
+        'code': err.code,
+        'details': err.details,
+    }
+    return error_response(err.msg, data=data)
 
 
 @view_config(context=colander.Invalid)
@@ -22,10 +38,12 @@ def handle_schema_validation_errors(err, request):
     """
     # Add schema validation information
     data = {
+        'code': 'VALIDATION_ERROR',
         'fields': err.asdict(),
-        'message': unicode(err),
+        'details': unicode(err),
     }
-    return error_response(_('Submitted data is not valid'), data=data)
+    message = errors.CODES.get(data['code'])
+    return error_response(message, data=data)
 
 
 @view_config(context=sqlalchemy.exc.IntegrityError)
@@ -39,9 +57,13 @@ def handle_database_integrity_errors(exc, request):
     # Mark current transaction to be aborted ath the end of request
     transaction.doom()
     # Add exception message to response
-    exc_message = exc.message.replace('(IntegrityError)', '')
-    data = {'message': exc_message.strip()}
-    return error_response(_('Data integrity error'), data=data)
+    details = exc.message.replace('(IntegrityError)', '')
+    data = {
+        'code': 'DATA_INTEGRITY_ERROR',
+        'details': details.strip(),
+    }
+    message = errors.CODES.get(data['code'])
+    return error_response(message, data=data)
 
 
 @view_config(context=APIRequestDataError)
@@ -50,4 +72,6 @@ def handle_api_request_data_errors(err, request):
     Generic error handler for request with invalid JSON data.
 
     """
-    return error_response(_('Request contains invalid JSON data'))
+    data = {'code': 'INVALID_JSON_DATA'}
+    message = errors.CODES.get(data['code'])
+    return error_response(message, data=data)

@@ -25,9 +25,9 @@ class ProjectResourceTest(FunctionalTestCase):
 
         url = ProjectResource.get_collection_path()
 
-        response = self.post_json(url, project.to_dict())
+        response = self.post_json(url, [project.to_dict()])
         # All post to collection returns a collection
-        self.assertTrue(isinstance(response.json, list))
+        self.assertTrue(isinstance(response.json_body, list))
         # User updated information is returned a single item in a list
         project_data = response.json[0]
         created_id = project_data['id']
