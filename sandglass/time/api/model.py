@@ -9,6 +9,7 @@ from pyramid.exceptions import NotFound
 
 from sandglass.time import _
 from sandglass.time.api import BaseResource
+from sandglass.time.api.errors import APIError
 from sandglass.time.models import transactional
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
@@ -34,6 +35,33 @@ def use_schema(schema):
         return wrapper_use_schema
 
     return inner_use_schema
+
+
+def handle_collection_rest_modes(func):
+    """
+    Method decorator that handles results for collection requests.
+
+    When request contains a collection, and result is a single object,
+    it is returned as an object when REST collection mode is 'permissive',
+    otherwise it is returned as a list with a single object to comply
+    with REST specifications for collection requests.
+
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        # When result is a list and a single object was submitted
+        # check if "permissive" mode is enabled for rest requests
+        # and if so return a single object instead of a collection.
+        request = self.request
+        is_collection_result = isinstance(result, list)
+        is_permissive = (request.rest_collection_mode == 'permissive')
+        if is_collection_result and is_permissive and request.is_member:
+            return result[0]
+
+        return result
+
+    return wrapper
 
 
 class ModelResource(BaseResource):
@@ -154,20 +182,28 @@ class ModelResource(BaseResource):
 
         Data is deserialized from current request body.
 
-        When submitted data is a songle member, it is deserialized
-        and returned as a single object in a list.
+        When submitted data is a single member, it is deserialized
+        and returned as a single object in a list when REST collection
+        mode is not 'strict'. By default mode is 'default'.
 
         Return a List of dictionaries.
 
         """
-        if self.request.is_member:
+        # Conver single object to a list when 'strict' mode is off,
+        # if not treat request data as a collection/list.
+        strict_mode_off = (self.request.rest_collection_mode != 'strict')
+        if strict_mode_off and self.request.is_member:
             # When POSTed data is an object deserialize it
             # and create a list with this single object
             return [self.submitted_member_data]
         else:
+            if not isinstance(self.request_data, list):
+                raise APIError('COLLECTION_EXPECTED')
+
             list_schema = self.list_schema()
             return list_schema.deserialize(self.request_data)
 
+    @handle_collection_rest_modes
     @transactional
     def post_collection(self, session):
         """

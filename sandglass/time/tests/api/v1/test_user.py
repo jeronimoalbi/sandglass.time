@@ -21,9 +21,9 @@ class UserResourceTest(FunctionalTestCase):
         user = ClientUserData.dr_schiwago
         url = UserResource.get_collection_path()
 
-        response = self.post_json(url, user.to_dict())
+        response = self.post_json(url, [user.to_dict()])
         # All post to collection returns a collection
-        self.assertTrue(isinstance(response.json, list))
+        self.assertTrue(isinstance(response.json_body, list))
         # User updated information is returned a single item in a list
         user_data = response.json[0]
         created_id = user_data['id']
@@ -206,7 +206,7 @@ class UserResourceTest(FunctionalTestCase):
         self.require_authorization = True
 
     @fixture(UserData)
-    def test_sign_un(self):
+    def test_sign_up(self):
         self.require_authorization = False
 
         user = ClientUserData.max_adler

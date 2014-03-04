@@ -258,8 +258,8 @@ class FunctionalTestCase(BaseTestCase):
     def setUpClass(cls):
         super(FunctionalTestCase, cls).setUpClass()
         # Initialize Pyramid testing environment support
-        request = testing.DummyRequest()
-        cls.config = testing.setUp(settings=cls.settings, request=request)
+        cls.request = testing.DummyRequest()
+        cls.config = testing.setUp(settings=cls.settings, request=cls.request)
         cls.config.include('sandglass.time.config')
         cls.wsgi_app = cls.config.make_wsgi_app()
 
@@ -321,6 +321,8 @@ class FunctionalTestCase(BaseTestCase):
 
         """
         kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        if 'expect_errors' not in kwargs:
+            kwargs['expect_errors'] = True
         return self.app.get(*args, **kwargs)
 
     def post_json(self, *args, **kwargs):
@@ -331,6 +333,8 @@ class FunctionalTestCase(BaseTestCase):
 
         """
         kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        if 'expect_errors' not in kwargs:
+            kwargs['expect_errors'] = True
         return self.app.post_json(*args, **kwargs)
 
     def put_json(self, *args, **kwargs):
@@ -341,6 +345,8 @@ class FunctionalTestCase(BaseTestCase):
 
         """
         kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        if 'expect_errors' not in kwargs:
+            kwargs['expect_errors'] = True
         return self.app.put_json(*args, **kwargs)
 
     def delete_json(self, *args, **kwargs):
@@ -351,4 +357,6 @@ class FunctionalTestCase(BaseTestCase):
 
         """
         kwargs['headers'] = self.update_headers(kwargs.get('headers'))
+        if 'expect_errors' not in kwargs:
+            kwargs['expect_errors'] = True
         return self.app.delete_json(*args, **kwargs)
