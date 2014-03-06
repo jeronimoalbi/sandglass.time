@@ -6,6 +6,7 @@ from colander import drop
 from colander import SequenceSchema
 
 from sandglass.time.schemas import BaseModelSchema
+from sandglass.time.schemas import Dictionary
 
 
 class UserSchema(BaseModelSchema):
@@ -27,8 +28,7 @@ class UserSchema(BaseModelSchema):
         validator=Length(max=255),
         missing=drop)
     data = SchemaNode(
-        String(),
-        validator=Length(max=255),
+        Dictionary(),
         missing=drop)
 
 

@@ -94,7 +94,7 @@ class JSON(TypeDecorator):
     """
     Represents an immutable structure as a json-encoded string.
 
-    Usage: JSONEncodedDict(255)
+    Usage: JSON(255)
 
     """
     impl = VARCHAR

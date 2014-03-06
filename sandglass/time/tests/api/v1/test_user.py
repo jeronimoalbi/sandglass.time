@@ -256,3 +256,30 @@ class UserResourceTest(FunctionalTestCase):
         response = self.delete_json(url, expect_errors=True)
         # assert response is error
         self.assertEqual(response.status_int, 500)
+
+    @fixture(UserData)
+    def test_user_data_field(self):
+        """
+        Test for user data (JSON) field.
+
+        """
+        # Get the first user in list
+        url = UserResource.get_collection_path()
+        response = self.get_json(url)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, list))
+        user = response.json_body[0]
+
+        # Update user data field
+        user['data'] = {'test_field': 'test_value'}
+        url = UserResource.get_member_path(user['id'])
+        response = self.put_json(url, user)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, dict))
+
+        # Check that user has the new data values
+        user = response.json_body
+        self.assertTrue(isinstance(user['data'], dict))
+        self.assertTrue('test_field' in user['data'])
+        self.assertEqual(user['data']['test_field'], 'test_value')
+        self.assertEqual(len(user['data']), 1)
