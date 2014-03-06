@@ -296,6 +296,19 @@ class BaseModel(object):
         return query
 
     @classmethod
+    def has_field(cls, field_name):
+        """
+        Check if model class has a field defined.
+
+        Returns a Boolean.
+
+        """
+        mapper = cls.__mapper__
+        has_field = field_name in mapper.columns
+        has_relationship = field_name in mapper.relationships
+        return has_field or has_relationship
+
+    @classmethod
     def get_attributes_by_name(cls, *field_names):
         """
         Get a list of Model field attributes for the given names.
