@@ -240,12 +240,7 @@ class BaseResource(object):
         return pk_value
 
     def _get_related_name(self):
-        related_name = self.request.matchdict.get('related_name')
-        # Check that related name is in fact a relationship
-        if related_name not in self.model.__mapper__.relationships:
-            raise NotFound()
-
-        return related_name
+        return self.request.matchdict.get('related_name')
 
     @property
     def is_member_request(self):

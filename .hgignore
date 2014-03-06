@@ -11,5 +11,6 @@ coverage
 *.EGG
 *.EGG-INFO
 *.db
+*.ini
 .coverage
 .tox

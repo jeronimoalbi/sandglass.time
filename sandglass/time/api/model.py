@@ -6,16 +6,70 @@ import transaction
 
 from pyramid.decorator import reify
 from pyramid.exceptions import NotFound
+from sqlalchemy.orm import joinedload
 
 from sandglass.time import _
 from sandglass.time.api import BaseResource
 from sandglass.time.api.errors import APIError
+from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 
 
 LOG = logging.getLogger(__name__)
+
+
+class ResourceSerializerProxy(object):
+    """
+    Class definition to handle serialization of BaseModel objects.
+
+    This class handles loading of related resources.
+
+    """
+    def __init__(self, resource, obj):
+        self.resource = resource
+        self.obj = obj
+
+    def __json__(self, request):
+        data = dict(self.obj)
+        if self.resource.related_query_mode:
+            data = self.load_related_data(data)
+
+        return data
+
+    def load_related_data(self, data):
+        """
+        Load related field values into data dictionary.
+
+        Returns a Dictionary.
+
+        """
+        for field_name, mode in self.resource.related_query_mode.items():
+            # Skip non existing or private fields
+            is_private = field_name.startswith('_')
+            if is_private or not self.obj.has_field(field_name):
+                continue
+
+            field_value = getattr(self.obj, field_name, None)
+            data[field_name] = self.parse_value(field_value, mode, field_name)
+
+        return data
+
+    def parse_value(self, value, mode, field_name):
+        if not value:
+            return value
+        elif isinstance(value, BaseModel):
+            if mode == 'pk':
+                return value.id
+            else:
+                return dict(value)
+        elif isinstance(value, list):
+            return [self.parse_value(item, mode, field_name) for item in value]
+        else:
+            msg = ("Related value %s for field %s.%s is not an"
+                   "instance of BaseModel or a list of BaseModel")
+            LOG.error(msg, value, self.obj.__class__.__name__, field_name)
 
 
 def use_schema(schema):
@@ -72,9 +126,28 @@ class ModelResource(BaseResource):
     """
     model = None
 
+    # Serialization class to use for converting model
+    # and list of model resources to a dictionary
+    serializer_cls = ResourceSerializerProxy
+
     # Schemas to use for (de)serialization of model data
     schema = None
     list_schema = None
+
+    # Modes used to load related member data
+    related_query_modes = ('pk', 'full')
+
+    @classmethod
+    def _get_model_relationships(cls):
+        return cls.model.__mapper__.relationships
+
+    def _get_related_name(self):
+        related_name = super(ModelResource, self)._get_related_name()
+        # Check that related name is in fact a relationship
+        if related_name not in self._get_model_relationships():
+            raise NotFound()
+
+        return related_name
 
     def _get_object(self, check=True, session=None):
         if not self.model:
@@ -82,22 +155,43 @@ class ModelResource(BaseResource):
 
         obj = None
         if self.pk_value:
-            obj = self.model.get(self.pk_value, session=session)
+            query = self.get_model_query(session=session)
+            obj = query.first()
 
         if check and not obj:
             raise NotFound()
 
         return obj
 
-    def _get_related_query_mode(self):
-        # Dont use query modes when include is missing or when
-        # current request is not querying for an object
-        if ('include' not in self.request.GET) or not self.pk_value:
+    def _get_related_query_mode(self, default_mode='pk'):
+        """
+        Get a dictionary of related field name and query mode.
+
+        Returns a Dictionary.
+
+        """
+        # Dont use query modes when include is missing
+        if 'include' not in self.request.GET:
             return {}
 
-        include_items = self.request.GET['include'].split(',')
-        # Create a dictionary of related field name and query mode
-        return dict([item.strip().split(':') for item in include_items])
+        query_modes = {}
+        # TODO: Make query modes work with POST requests ??
+        for item in self.request.GET['include'].split(','):
+            if ':' in item:
+                (field_name, mode) = item.split(':')
+            else:
+                field_name = item
+                mode = default_mode
+
+            # Skip field when mode is invalid
+            if mode not in self.related_query_modes:
+                msg = "Invalid related query mode %s for field %s"
+                LOG.warning(msg, mode, field_name)
+                continue
+
+            query_modes[field_name] = mode
+
+        return query_modes
 
     @reify
     def is_valid_object(self):
@@ -144,10 +238,11 @@ class ModelResource(BaseResource):
         Get query modes for related objects.
 
         Supported mode values:
-            - full (load all fields; Default one)
+            - full (load all fields)
             - pk (only load pk values)
 
         By default no related objects are loaded.
+        When no mode is given then `pk` is used as default.
 
         Loading of related object in the same request is specified
         using a GET parameter called `include`.
@@ -159,7 +254,6 @@ class ModelResource(BaseResource):
         Return a Dictionary.
 
         """
-        # TODO: Implement query/serialization of related objects
         return self._get_related_query_mode()
 
     @reify
@@ -202,6 +296,44 @@ class ModelResource(BaseResource):
 
             list_schema = self.list_schema()
             return list_schema.deserialize(self.request_data)
+
+    def get_model_query(self, session=None):
+        """
+        Get a query for current model.
+
+        When request is a member request, query filter results for current
+        member PK value.
+        Related query modes are also processed and added to the query.
+
+        Returns a Query.
+
+        """
+        relationships = self._get_model_relationships()
+        # Initialize loading options for related fields
+        load_options = []
+        for field_name, mode in self.related_query_mode.items():
+            if field_name not in relationships:
+                msg = "Field %s does not exist in model %s"
+                LOG.debug(msg, field_name, self.model.__class__.__name__)
+                continue
+
+            load_mode = joinedload(field_name)
+            if mode == 'pk':
+                # Only load PK field values in model query
+                load_mode = load_mode.load_only('id')
+
+            load_options.append(load_mode)
+
+        # Create the base model query
+        query = self.model.query(session=session)
+        if self.is_member_request:
+            query = query.filter_by(id=self.pk_value)
+
+        # Add load options
+        if load_options:
+            query = query.options(*load_options)
+
+        return query
 
     @handle_collection_rest_modes
     @transactional
@@ -265,13 +397,19 @@ class ModelResource(BaseResource):
         Get all model objects.
 
         """
-        query = self.model.query()
+        query = self.get_model_query()
         if self.return_fields:
             # TODO: Force to always return id field ?
             attributes = self.model.get_attributes_by_name(*self.return_fields)
             return [row._asdict() for row in query.values(*attributes)]
         else:
-            return query.all()
+            # TODO: Implement a serializer for collections
+            collection = []
+            for obj in query.all():
+                serializer = self.serializer_cls(self, obj)
+                collection.append(serializer)
+
+            return collection
 
     def delete_collection(self):
         """
@@ -298,9 +436,7 @@ class ModelResource(BaseResource):
             if not self.pk_value:
                 raise NotFound()
 
-            # Create a query to get the object for current PK value
-            query = self.model.query().filter_by(id=self.pk_value)
-
+            query = self.get_model_query()
             attributes = self.model.get_attributes_by_name(*self.return_fields)
             try:
                 # Get first result
@@ -309,9 +445,10 @@ class ModelResource(BaseResource):
                 raise NotFound()
 
             # Return a dictionary with result fields
+            # TODO: Implement loading of related data
             return row._asdict()
         else:
-            return self.object
+            return self.serializer_cls(self, self.object)
 
     def put_member(self):
         """
