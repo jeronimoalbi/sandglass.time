@@ -255,6 +255,20 @@ class BaseResource(object):
         """
         return self.pk_value is not None
 
+    @property
+    def is_related_request(self):
+        """
+        Check if current request is a related request.
+
+        Method checks if pk_value is not None. When no pk value is
+        available it means the current is a collection request.
+        It also checks that related_name is available.
+
+        Return a Boolean.
+
+        """
+        return self.is_member_request and self.related_name
+
     @reify
     def request_data(self):
         """

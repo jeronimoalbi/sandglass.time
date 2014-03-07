@@ -153,8 +153,9 @@ class ModelResource(BaseResource):
     def _get_related_name(self):
         related_name = super(ModelResource, self)._get_related_name()
         # Check that related name is in fact a relationship
-        if related_name not in self._get_model_relationships():
-            raise NotFound()
+        if related_name:
+            if related_name not in self._get_model_relationships():
+                raise NotFound()
 
         return related_name
 
@@ -324,7 +325,7 @@ class ModelResource(BaseResource):
 
         """
         relationships = self._get_model_relationships()
-        # Initialize loading options for related fields
+        # Initialize loading options for included related fields
         load_options = []
         for field_name, mode in self.related_query_mode.items():
             if field_name not in relationships:
@@ -337,6 +338,12 @@ class ModelResource(BaseResource):
                 # Only load PK field values in model query
                 load_mode = load_mode.load_only('id')
 
+            load_options.append(load_mode)
+
+        # When request is made to get a related value from a member
+        # add a joinedload for that field to avoid another query
+        if self.related_name:
+            load_mode = joinedload(self.related_name)
             load_options.append(load_mode)
 
         # Create the base model query
@@ -504,7 +511,18 @@ class ModelResource(BaseResource):
         Get a list of related objects for current object.
 
         """
-        return getattr(self.object, self.related_name) or []
+        related = getattr(self.object, self.related_name) or []
+        if not isinstance(related, list):
+            # Return a single object
+            return self.serializer_cls(self, related)
+
+        # When related is a list serialize each object
+        collection = []
+        for obj in related:
+            serializer = self.serializer_cls(self, obj)
+            collection.append(serializer)
+
+        return collection
 
     def delete_related(self):
         """
