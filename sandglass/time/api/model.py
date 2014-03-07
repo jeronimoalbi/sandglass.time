@@ -20,6 +20,7 @@ from sandglass.time.response import info_response
 LOG = logging.getLogger(__name__)
 
 
+# TODO: Implement a serializer for collections
 class ResourceSerializerProxy(object):
     """
     Class definition to handle serialization of BaseModel objects.
@@ -32,6 +33,15 @@ class ResourceSerializerProxy(object):
         self.obj = obj
 
     def __json__(self, request):
+        return self.serialize()
+
+    def serialize(self):
+        """
+        Get current object serialized.
+
+        Returns a Dictionary.
+
+        """
         data = dict(self.obj)
         if self.resource.related_query_mode:
             data = self.load_related_data(data)
@@ -119,7 +129,6 @@ def handle_collection_rest_modes(func):
 
 
 class ModelResource(BaseResource):
-
     """
     Base class for REST resources that use a Model to get data.
 
@@ -230,7 +239,12 @@ class ModelResource(BaseResource):
         if not field_names:
             return []
 
-        return [name.strip() for name in field_names.split(',')]
+        fields = [name.strip() for name in field_names.split(',')]
+        # Always return the ID value
+        if 'id' not in fields:
+            fields.insert(0, 'id')
+
+        return fields
 
     @reify
     def related_query_mode(self):
@@ -303,7 +317,8 @@ class ModelResource(BaseResource):
 
         When request is a member request, query filter results for current
         member PK value.
-        Related query modes are also processed and added to the query.
+
+        Related query modes are also processed and added to query.
 
         Returns a Query.
 
@@ -397,19 +412,25 @@ class ModelResource(BaseResource):
         Get all model objects.
 
         """
+        collection = []
         query = self.get_model_query()
+        object_list = query.all()
         if self.return_fields:
-            # TODO: Force to always return id field ?
-            attributes = self.model.get_attributes_by_name(*self.return_fields)
-            return [row._asdict() for row in query.values(*attributes)]
+            for obj in object_list:
+                serializer = self.serializer_cls(self, obj)
+                member = serializer.serialize()
+                # Remove fields that are not needed from member
+                for field_name in member.keys():
+                    if field_name not in self.return_fields:
+                        del member[field_name]
+
+                collection.append(member)
         else:
-            # TODO: Implement a serializer for collections
-            collection = []
-            for obj in query.all():
+            for obj in object_list:
                 serializer = self.serializer_cls(self, obj)
                 collection.append(serializer)
 
-            return collection
+        return collection
 
     def delete_collection(self):
         """
@@ -432,23 +453,19 @@ class ModelResource(BaseResource):
         Get object for current request.
 
         """
+        obj = self.object
         if self.return_fields:
-            if not self.pk_value:
-                raise NotFound()
+            serializer = self.serializer_cls(self, obj)
+            member = serializer.serialize()
+            # Remove fields that are not needed from member
+            for field_name in member.keys():
+                if field_name not in self.return_fields:
+                    del member[field_name]
 
-            query = self.get_model_query()
-            attributes = self.model.get_attributes_by_name(*self.return_fields)
-            try:
-                # Get first result
-                row = query.values(*attributes).next()
-            except StopIteration:
-                raise NotFound()
-
-            # Return a dictionary with result fields
-            # TODO: Implement loading of related data
-            return row._asdict()
+            # Return a dictionary only with requested fields
+            return member
         else:
-            return self.serializer_cls(self, self.object)
+            return self.serializer_cls(self, obj)
 
     def put_member(self):
         """
@@ -502,4 +519,6 @@ class ModelResource(BaseResource):
         for related_object in related_object_list:
             session.delete(related_object)
 
-        return len(related_object_list)
+        count = len(related_object_list)
+        msg = _("Object(s) deleted successfully")
+        return info_response(msg, data={'count': count})
