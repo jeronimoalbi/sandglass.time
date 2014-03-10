@@ -2,9 +2,11 @@ from sandglass.time.api.v1.project import ProjectResource
 
 from sandglass.time.tests import FunctionalTestCase
 from sandglass.time.tests import fixture
-from sandglass.time.tests.fixtures import ClientData
-from sandglass.time.tests.fixtures import ProjectData
-from sandglass.time.tests.fixtures import UserData
+
+from .fixtures import ClientData
+from .fixtures import GroupData
+from .fixtures import ProjectData
+from .fixtures import UserData
 
 
 class ProjectResourceTest(FunctionalTestCase):
@@ -18,10 +20,10 @@ class ProjectResourceTest(FunctionalTestCase):
         Test creation of a project.
 
         """
-        data = self.fixture_data
-        project = ProjectData.baskerville_hound
-        project.client_id = data.data['ClientData']['mycroft_holmes']['id']
-        project.user_id = data.data['UserData']['shepherd_book']['id']
+        data = self.fixture_data.data
+        project = ProjectData.BaskervilleHound
+        project.client_id = data['ClientData']['MycroftHolmes']['id']
+        project.user_id = data['UserData']['ShepherdBook']['id']
 
         url = ProjectResource.get_collection_path()
 
@@ -44,3 +46,24 @@ class ProjectResourceTest(FunctionalTestCase):
 
         # Cleanup: Delete Project
         response = self.delete_json(url)
+
+    @fixture(GroupData, ProjectData)
+    def test_project_groups(self):
+        """
+        Test projects grouping.
+
+        """
+        data = self.fixture_data.data
+        project = data['ProjectData']['PublicProject']
+        groups = project['groups']
+        group_id_list = [group.id for group in groups]
+        # Get groups for a project
+        url = ProjectResource.get_related_path(project['id'], 'groups')
+        response = self.get_json(url)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, list))
+        # Check that response got the right number of groups
+        self.assertEqual(len(response.json_body), len(group_id_list))
+        # Check returned groups are the ones assigned to current project
+        for group in response.json_body:
+            self.assertTrue(group['id'] in group_id_list)

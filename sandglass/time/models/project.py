@@ -10,6 +10,7 @@ from sqlalchemy.types import UnicodeText
 from sandglass.time.models import ActivePeriodMixin
 from sandglass.time.models import BaseModel
 from sandglass.time.models import create_index
+from sandglass.time.models.group import project_association_table
 
 
 class Project(ActivePeriodMixin, BaseModel):
@@ -39,15 +40,25 @@ class Project(ActivePeriodMixin, BaseModel):
         Boolean,
         default=False)
 
-    user = relationship("User", back_populates="projects")
-    client = relationship("Client", back_populates="projects")
-    tasks = relationship("Task", back_populates="project")
+    user = relationship(
+        "User",
+        back_populates="projects")
+    client = relationship(
+        "Client",
+        back_populates="projects")
+    tasks = relationship(
+        "Task",
+        back_populates="project")
     children = relationship(
         "Project",
         lazy=True,
         join_depth=1,
         # Resolve remote side field using an inline callable
         backref=backref("parent", remote_side=(lambda: Project.id)))
+    groups = relationship(
+        "Group",
+        secondary=project_association_table,
+        back_populates="projects")
 
     @declared_attr
     def __table_args__(cls):
@@ -64,4 +75,4 @@ class Project(ActivePeriodMixin, BaseModel):
         Return a Boolean.
 
         """
-        return (self.client is None)
+        return self.client is None
