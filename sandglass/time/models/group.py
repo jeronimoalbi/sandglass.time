@@ -9,7 +9,6 @@ from sqlalchemy.types import UnicodeText
 from sandglass.time.models import BaseModel
 from sandglass.time.models import META
 
-
 # Table definition to relate groups and users
 user_association_table = Table(
     'time_group_user',
@@ -24,6 +23,14 @@ permission_association_table = Table(
     META,
     Column('group_id', Integer, ForeignKey('time_group.id')),
     Column('permission_id', Integer, ForeignKey('time_permission.id')),
+)
+
+# Table definition to relate groups and projects
+project_association_table = Table(
+    'time_group_project',
+    META,
+    Column('group_id', Integer, ForeignKey('time_group.id')),
+    Column('project_id', Integer, ForeignKey('time_project.id')),
 )
 
 
@@ -42,6 +49,10 @@ class Group(BaseModel):
     permissions = relationship(
         "Permission",
         secondary=permission_association_table,
+        back_populates='groups')
+    projects = relationship(
+        "Project",
+        secondary=project_association_table,
         back_populates='groups')
 
     def __unicode__(self):

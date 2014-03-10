@@ -30,9 +30,16 @@ class User(TimestampMixin, BaseModel):
     # JSON field to support saving extra user data
     data = Column(JSON(255))
 
-    tags = relationship("Tag", back_populates="user")
-    projects = relationship("Project", back_populates="user")
-    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    tags = relationship(
+        "Tag",
+        back_populates="user")
+    projects = relationship(
+        "Project",
+        back_populates="user")
+    tasks = relationship(
+        "Task",
+        back_populates="user",
+        cascade="all, delete-orphan")
     groups = relationship(
         "Group",
         secondary=user_association_table,
