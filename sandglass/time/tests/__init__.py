@@ -17,10 +17,8 @@ from fixture.style import NamedDataStyle
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from sqlalchemy import engine_from_config
-from sqlalchemy.orm import sessionmaker
 from webtest import lint
 from webtest import TestApp
-from zope.sqlalchemy import ZopeTransactionExtension
 
 from sandglass.time import models
 from sandglass.time.models import MODEL_REGISTRY
@@ -74,12 +72,23 @@ FIXTURE_ENV.update({
     'AdminUser': MODEL_REGISTRY['User'],
 })
 
-# Create the db-fixtures
-FIXTURE = SQLAlchemyFixture(
-    env=FIXTURE_ENV,
-    style=NamedDataStyle(),
-    engine=engine_from_config(SETTINGS, prefix='database.'),
-)
+# Create test database engine
+ENGINE = engine_from_config(SETTINGS, prefix='database.')
+
+
+def insert_fixtures(*datasets):
+    """
+    Insert fixtures into test database.
+
+    Returns fixture data.
+
+    """
+    style = NamedDataStyle()
+    manager = SQLAlchemyFixture(env=FIXTURE_ENV, style=style, engine=ENGINE)
+    data = manager.data(*datasets)
+    data.setup()
+    manager.dispose()
+    return data
 
 
 def fixture(*datasets):
@@ -92,18 +101,16 @@ def fixture(*datasets):
     """
     def wrapper(func):
         @wraps(func)
-        def call_func(data, self, *args, **kwargs):
+        def call_func(self, *args, **kwargs):
             # Skip data argument when is not needed
-            self.fixture_data = data
+            self.fixture_data = insert_fixtures(*datasets)
             try:
                 return func(self, *args, **kwargs)
             finally:
                 # Clear all tables to avoid conflict with used fixtures
-                models.clear_tables()
                 del self.fixture_data
 
-        wrapper = FIXTURE.with_data(*datasets)
-        return wrapper(call_func)
+        return call_func
 
     return wrapper
 
@@ -184,21 +191,11 @@ class BaseTestCase(unittest.TestCase):
         # Add authorization data to defaults
         datasets = list(DEFAULT_DATASETS)
         datasets.append(AdminUserData)
-
         # Insert default data into database
-        self.default_fixture_data = FIXTURE.data(*datasets)
-        # self.default_fixture_data = FIXTURE.data(AdminUserData)
-        self.default_fixture_data.setup()
+        self.default_fixture_data = insert_fixtures(*datasets)
 
     def teardown_default_data(self):
-        # Remove all model object instances from loader session.
-        # This is called here because the fixture teardown does
-        # not expunge and because of that there are conflict
-        # with model instances loaded in `setup_default_data`.
-        self.default_fixture_data.loader.session.expunge_all()
-
-        # Unload all datasets
-        self.default_fixture_data.teardown()
+        del self.default_fixture_data
 
 
 class UnitTestCase(BaseTestCase):

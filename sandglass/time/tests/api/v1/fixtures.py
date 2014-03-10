@@ -3,6 +3,24 @@ from fixture import DataSet
 from sandglass.time.tests import BaseFixture
 
 
+class GroupData(DataSet):
+    """
+    User groups data fixture.
+
+    """
+    class Manager(BaseFixture):
+        name = u"Managers"
+        description = u"Group of managers"
+
+    class Employee(BaseFixture):
+        name = u"Employee"
+        description = u"Group of employees"
+
+    class Developer(BaseFixture):
+        name = u"Developer"
+        description = u"Group of dvelopers"
+
+
 class UserData(DataSet):
     """
     User data fixture.
@@ -13,18 +31,21 @@ class UserData(DataSet):
         last_name = u"Who"
         email = u"timeywimey@wienfluss.net"
         password = "1234"
+        groups = [GroupData.Employee, GroupData.Developer]
 
     class JamesWilliamElliot(BaseFixture):
         email = u"humpdydumpdy@wienfluss.net"
         first_name = u"James William"
         last_name = u"Elliot"
         password = "1234"
+        groups = [GroupData.Manager]
 
     class RickCastle(BaseFixture):
         email = u"ruggedlyhandsome@wienfluss.net"
         first_name = u"Rick"
         last_name = u"Castle"
         password = "1234"
+        groups = [GroupData.Developer]
 
     class TheTardis(BaseFixture):
         email = u"wibblywobbly@wienfluss.net"
@@ -84,12 +105,14 @@ class ProjectData(DataSet):
         is_public = True
         client = ClientData.MycroftHolmes
         user = UserData.ShepherdBook
+        groups = [GroupData.Employee, GroupData.Developer]
 
     class PrivateProject(BaseFixture):
         name = u"The Private Project"
         is_public = False
         client = ClientData.MycroftHolmes
         user = UserData.ShepherdBook
+        groups = [GroupData.Manager]
 
 
 class TaskData(DataSet):
