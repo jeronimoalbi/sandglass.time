@@ -25,7 +25,7 @@ class ProjectSchema(BaseModelSchema):
         missing=drop)
     user_id = SchemaNode(
         Integer())
-    id_public = SchemaNode(
+    is_public = SchemaNode(
         Boolean(),
         missing=drop)
 

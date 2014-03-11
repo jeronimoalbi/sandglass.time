@@ -138,6 +138,8 @@ class BaseFixture(object):
                 if inspect.isclass(value) and issubclass(value, BaseFixture):
                     # Save related fixtures as dictionaries
                     data[attr_name] = value.to_dict()
+                elif isinstance(value, list):
+                    data[attr_name] = [item.to_dict() for item in value]
                 else:
                     data[attr_name] = value
 
@@ -155,6 +157,7 @@ class AdminUserData(DataSet):
 
     """
     class Admin(BaseFixture):
+        id = 1
         first_name = u"Admin"
         last_name = u"User"
         email = u"admin@sandglass.net"

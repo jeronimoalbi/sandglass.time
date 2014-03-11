@@ -21,7 +21,7 @@ class ProjectResourceTest(FunctionalTestCase):
 
         """
         data = self.fixture_data.data
-        project = ProjectData.BaskervilleHound
+        project = ProjectData.PublicProject
         project.client_id = data['ClientData']['MycroftHolmes']['id']
         project.user_id = data['UserData']['ShepherdBook']['id']
 

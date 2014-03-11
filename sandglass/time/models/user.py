@@ -1,5 +1,6 @@
 import hashlib
 
+from pyramid.decorator import reify
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
@@ -13,6 +14,7 @@ from sandglass.time.models import BaseModel
 from sandglass.time.models import JSON
 from sandglass.time.models import TimestampMixin
 from sandglass.time.models.group import user_association_table
+from sandglass.time.security import Administrators
 
 
 class User(TimestampMixin, BaseModel):
@@ -45,6 +47,11 @@ class User(TimestampMixin, BaseModel):
         secondary=user_association_table,
         back_populates="users")
 
+    def __init__(self, *args, **kwargs):
+        # Generate user salt during creation
+        self.generate_salt()
+        super(User, self).__init__(*args, **kwargs)
+
     def get_password(self):
         return self._password
 
@@ -66,10 +73,21 @@ class User(TimestampMixin, BaseModel):
         descriptor = property(cls.get_password, cls.set_password)
         return synonym('_password', descriptor=descriptor)
 
-    def __init__(self, *args, **kwargs):
-        # Generate user salt during creation
-        self.generate_salt()
-        super(User, self).__init__(*args, **kwargs)
+    @reify
+    def is_admin(self):
+        """
+        Check if user is an administrator.
+
+        Note: Groups will be loaded from database if they are not loaded.
+
+        Returns a Boolean.
+
+        """
+        for group in self.groups:
+            if group.name == Administrators:
+                return True
+
+        return False
 
     @classmethod
     def get_by_email(cls, email):
