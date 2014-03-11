@@ -143,6 +143,9 @@ class ModelResource(BaseResource):
     schema = None
     list_schema = None
 
+    # N-Tuple of QueryFilter to apply to current model query
+    query_filters = None
+
     # Modes used to load related member data
     related_query_modes = ('pk', 'full')
 
@@ -312,6 +315,35 @@ class ModelResource(BaseResource):
             list_schema = self.list_schema()
             return list_schema.deserialize(self.request_data)
 
+    def get_query_filters(self):
+        """
+        Get query filters for current resource.
+
+        Return an N-Tuple of QueryFilter.
+
+        """
+        return self.query_filters
+
+    def apply_model_query_filters(self, query_filters, query):
+        """
+        Apply a list of QueryFilter to a Query.
+
+        Filters are applied sequentially.
+
+        Returns a Query.
+
+        """
+        # TODO: Check that a user is valid
+        user = self.request.authenticated_user
+        for filter in query_filters:
+            # Dont apply filter if current user is admin
+            if user.is_admin and not filter.applies_to_admin:
+                continue
+
+            query = filter.filter_query(query, self.request, self)
+
+        return query
+
     def get_model_query(self, session=None):
         """
         Get a query for current model.
@@ -350,6 +382,11 @@ class ModelResource(BaseResource):
         query = self.model.query(session=session)
         if self.is_member_request:
             query = query.filter_by(id=self.pk_value)
+
+        # Apply model query filters
+        query_filters = self.get_query_filters()
+        if query_filters:
+            query = self.apply_model_query_filters(query_filters, query)
 
         # Add load options
         if load_options:

@@ -4,7 +4,15 @@ Request module
 Extending the request objects with utility functions.
 
 """
+import logging
+
+from pyramid.security import authenticated_userid
+from sqlalchemy.orm import joinedload
+
+from sandglass.time.models.user import User
 from sandglass.time.utils import get_settings
+
+LOG = logging.getLogger(__name__)
 
 
 def is_member(request):
@@ -54,6 +62,27 @@ def rest_collection_mode(request):
     return mode
 
 
+def authenticated_user(request):
+    """
+    Get authenticated user object.
+
+    Returns a User.
+
+    """
+    user = None
+    token = authenticated_userid(request)
+    query = User.query().filter(User.token == token)
+    query = query.options(
+        joinedload('groups').joinedload('permissions')
+    )
+    try:
+        user = query.first()
+    except:
+        LOG.exception("Unable to get authenticated user")
+
+    return user
+
+
 def extend_request_object(config):
     """
     Add extra methods to request objects.
@@ -62,3 +91,4 @@ def extend_request_object(config):
     config.add_request_method(callable=is_member, reify=True)
     config.add_request_method(callable=is_collection, reify=True)
     config.add_request_method(callable=rest_collection_mode, reify=True)
+    config.add_request_method(callable=authenticated_user, reify=True)
