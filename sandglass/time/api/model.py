@@ -549,7 +549,9 @@ class ModelResource(BaseResource):
 
         """
         related = getattr(self.object, self.related_name) or []
-        if not isinstance(related, list):
+        if related is None:
+            return
+        elif not isinstance(related, list):
             # Return a single object
             return self.serializer_cls(self, related)
 
@@ -561,19 +563,72 @@ class ModelResource(BaseResource):
 
         return collection
 
+    def put_related(self):
+        """
+        Update related object data.
+
+        """
+
     def delete_related(self):
         """
-        Delete related objects from current object.
+        Remove related objects from current object.
+
+        Removal is only allowed for related objects that are collections.
+
+        DELETE request body must contain a list of integer values with the
+        IDs of the related object to remove, or instead it must contain a
+        When an object or list of objects is submitted, the only needed
+        mandatory field is the `id` field; All other fields are ignored.
+
+        So, a request could contain a list of objects:
+
+            [{'id': 1, ..}, {'id': 99, ..}, ..]
+
+        or a list of integers:
+
+            [1, 99, ..]
 
         """
-        session = self.object.current_session
-        # Get related objects and delete one by one
-        # NOTE: They are really deleted during session.flush()
-        # TODO: Reimplement using a single delete statement
-        related_object_list = getattr(self.object, self.related_name) or ()
-        for related_object in related_object_list:
-            session.delete(related_object)
+        related = getattr(self.object, self.related_name, None)
+        if not related:
+            return info_response(_("Nothing to delete"), data={'count': 0})
+        elif not isinstance(related, list):
+            raise APIError('OBJECT_NOT_ALLOWED')
+        else:
+            # Related is a collection of objects
+            related_list = related
 
-        count = len(related_object_list)
-        msg = _("Object(s) deleted successfully")
-        return info_response(msg, data={'count': count})
+            # Get IDs for the related members to remove
+            if self.request.is_member:
+                request_data = [self.request.json_body]
+            elif self.request.is_collection:
+                request_data = self.request.json_body
+            else:
+                # Request body contains invalid data
+                raise APIError('VALIDATION_ERROR')
+
+            # Get ID values for the related object that has to be removed
+            remove_id_list = []
+            for item in request_data:
+                # Each submitted item must be an object or an integer.
+                # When is an object it has to contain an 'id' field,
+                # else it has to be the value of an object ID.
+                if not isinstance(item, (dict, int)):
+                    raise APIError('VALIDATION_ERROR')
+
+                is_dict = isinstance(item, dict)
+                item_id = (item.get('id') if is_dict else item)
+                if not item_id:
+                    LOG.error("Item %s does not have an ID value", item)
+                    continue
+                else:
+                    remove_id_list.append(item_id)
+
+            count = 0
+            for obj in related_list[:]:
+                if obj.id in remove_id_list:
+                    related_list.remove(obj)
+                    count += 1
+
+            msg = _("Object(s) deleted successfully")
+            return info_response(msg, data={'count': count})
