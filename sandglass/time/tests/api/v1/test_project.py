@@ -10,7 +10,10 @@ from .fixtures import UserData
 
 
 class ProjectResourceTest(FunctionalTestCase):
+    """
+    Functional test case for project resources.
 
+    """
     # Use authentication for each request by default
     require_authorization = True
 
@@ -57,6 +60,7 @@ class ProjectResourceTest(FunctionalTestCase):
         project = data['ProjectData']['PublicProject']
         groups = project['groups']
         group_id_list = [group.id for group in groups]
+
         # Get groups for a project
         url = ProjectResource.get_related_path(project['id'], 'groups')
         response = self.get_json(url)

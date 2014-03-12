@@ -9,6 +9,10 @@ CODES = {
     'COLLECTION_EXPECTED': _("Submitted data is not a collection"),
     'DATA_INTEGRITY_ERROR': _("Data integrity error"),
     'VALIDATION_ERROR': _("Submitted data is not valid"),
+    'OBJECT_NOT_ALLOWED': _(
+        "This operation is not allowed for single objects"),
+    'COLLECTION_NOT_ALLOWED': _(
+        "This operation is not allowed for collections"),
 }
 
 

@@ -18,7 +18,11 @@ class GroupData(DataSet):
 
     class Developer(BaseFixture):
         name = u"Developer"
-        description = u"Group of dvelopers"
+        description = u"Group of developers"
+
+    class Other(BaseFixture):
+        name = u"Other"
+        description = u"Group of others"
 
 
 class UserData(DataSet):
@@ -96,18 +100,21 @@ class ProjectData(DataSet):
 
     """
     class BaskervilleHound(BaseFixture):
+        id = 1
         name = u"The Hound Of Baskerville"
         client = ClientData.MycroftHolmes
         user = UserData.ShepherdBook
 
     class PublicProject(BaseFixture):
+        id = 2
         name = u"The Public Project"
         is_public = True
         client = ClientData.MycroftHolmes
         user = UserData.ShepherdBook
-        groups = [GroupData.Employee, GroupData.Developer]
+        groups = [GroupData.Employee, GroupData.Developer, GroupData.Other]
 
     class PrivateProject(BaseFixture):
+        id = 3
         name = u"The Private Project"
         is_public = False
         client = ClientData.MycroftHolmes
