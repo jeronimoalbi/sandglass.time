@@ -46,7 +46,10 @@ class Tag(BaseModel):
         nullable=False,
         doc="User that created the tag")
 
-    user = relationship("User", back_populates="tags")
+    user = relationship(
+        "User",
+        uselist=False,
+        back_populates="tags")
     aliases = relationship(
         "Tag",
         lazy=True,

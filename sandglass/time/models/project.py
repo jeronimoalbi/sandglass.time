@@ -42,9 +42,11 @@ class Project(ActivePeriodMixin, BaseModel):
 
     user = relationship(
         "User",
+        uselist=False,
         back_populates="projects")
     client = relationship(
         "Client",
+        uselist=False,
         back_populates="projects")
     tasks = relationship(
         "Task",

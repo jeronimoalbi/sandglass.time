@@ -31,8 +31,14 @@ class Task(BaseModel):
         ForeignKey('time_user.id'),
         nullable=False)
 
-    user = relationship("User", back_populates="tasks")
-    project = relationship("Project", back_populates="tasks")
+    user = relationship(
+        "User",
+        uselist=False,
+        back_populates="tasks")
+    project = relationship(
+        "Project",
+        uselist=False,
+        back_populates="tasks")
     children = relationship(
         "Task",
         lazy=True,
