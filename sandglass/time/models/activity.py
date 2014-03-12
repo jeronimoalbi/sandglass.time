@@ -80,7 +80,7 @@ class Activity(BaseModel):
         ForeignKey('time_user.id'),
         nullable=False)
 
-    project = relationship("Project", lazy=True)
-    task = relationship("Task", lazy=True)
-    user = relationship("User", lazy=True)
+    project = relationship("Project", uselist=False, lazy=True)
+    task = relationship("Task", uselist=False, lazy=True)
+    user = relationship("User", uselist=False, lazy=True)
     tags = relationship("Tag", secondary=tag_association_table)
