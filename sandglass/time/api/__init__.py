@@ -45,11 +45,12 @@ REST_ROUTE_INFO = {
         },
     },
     # GET: List all related items
+    # PUT: Append related item(s)
     # DELETE: Delete related item(s)
     'related': {
         'route_name': 'api.rest.related',
         'pattern': r'/{member}/{pk:\d+}/{related_name}/',
-        'methods': ('GET', 'DELETE'),
+        'methods': ('GET', 'PUT', 'DELETE'),
     },
 }
 

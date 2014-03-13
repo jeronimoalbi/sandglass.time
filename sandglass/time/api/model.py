@@ -563,11 +563,68 @@ class ModelResource(BaseResource):
 
         return collection
 
+    def _get_submitted_related_id_list(self):
+        # Get IDs for the related members to remove
+        if self.request.is_collection:
+            request_data = self.request.json_body
+        elif self.request.is_member:
+            raise APIError('OBJECT_NOT_ALLOWED')
+        else:
+            # Request body contains invalid data
+            raise APIError('VALIDATION_ERROR')
+
+        # Get ID values for the related object(s)
+        id_list = []
+        for item in request_data:
+            # Each submitted item must be an object or an integer.
+            # When is an object it has to contain an 'id' field,
+            # else it has to be the value of an object ID.
+            if not isinstance(item, (dict, int)):
+                raise APIError('VALIDATION_ERROR')
+
+            is_dict = isinstance(item, dict)
+            item_id = (item.get('id') if is_dict else item)
+            if not item_id:
+                LOG.error("Item %s does not have an ID value", item)
+                continue
+            else:
+                id_list.append(item_id)
+
+        return id_list
+
     def put_related(self):
         """
-        Update related object data.
+        Update related object collection.
+
+        A request could contain a list of objects:
+
+            [{'id': 1, ..}, {'id': 99, ..}, ..]
+
+        or a list of integers:
+
+            [1, 99, ..]
 
         """
+        related = getattr(self.object, self.related_name)
+        model_relationships = self._get_model_relationships()
+        relationship = model_relationships[self.related_name]
+        # Check that relationship is using a list and not a single object
+        if not relationship.uselist:
+            raise APIError('OBJECT_NOT_ALLOWED')
+
+        # Create a query to get related objects to be appended
+        update_id_list = self._get_submitted_related_id_list()
+        related_class = relationship.mapper.class_
+        query = related_class.query(session=self.object.current_session)
+        query = query.filter(related_class.id.in_(update_id_list))
+        # Add related objects to current member
+        count = 0
+        for obj in query.all():
+            related.append(obj)
+            count += 1
+
+        msg = _("Object(s) added successfully")
+        return info_response(msg, data={'count': count})
 
     def delete_related(self):
         """
@@ -580,7 +637,7 @@ class ModelResource(BaseResource):
         When an object or list of objects is submitted, the only needed
         mandatory field is the `id` field; All other fields are ignored.
 
-        So, a request could contain a list of objects:
+        A request could contain a list of objects:
 
             [{'id': 1, ..}, {'id': 99, ..}, ..]
 
@@ -597,33 +654,7 @@ class ModelResource(BaseResource):
         else:
             # Related is a collection of objects
             related_list = related
-
-            # Get IDs for the related members to remove
-            if self.request.is_member:
-                request_data = [self.request.json_body]
-            elif self.request.is_collection:
-                request_data = self.request.json_body
-            else:
-                # Request body contains invalid data
-                raise APIError('VALIDATION_ERROR')
-
-            # Get ID values for the related object that has to be removed
-            remove_id_list = []
-            for item in request_data:
-                # Each submitted item must be an object or an integer.
-                # When is an object it has to contain an 'id' field,
-                # else it has to be the value of an object ID.
-                if not isinstance(item, (dict, int)):
-                    raise APIError('VALIDATION_ERROR')
-
-                is_dict = isinstance(item, dict)
-                item_id = (item.get('id') if is_dict else item)
-                if not item_id:
-                    LOG.error("Item %s does not have an ID value", item)
-                    continue
-                else:
-                    remove_id_list.append(item_id)
-
+            remove_id_list = self._get_submitted_related_id_list()
             count = 0
             for obj in related_list[:]:
                 if obj.id in remove_id_list:
