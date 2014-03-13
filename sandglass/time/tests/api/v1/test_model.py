@@ -63,6 +63,13 @@ class ModelResourceTest(FunctionalTestCase):
         self.assertEqual(len(response.json_body), len(group_id_list) - 1)
         id_list = [group['id'] for group in response.json_body]
         self.assertTrue(delete_id_list[0] not in id_list)
+        # Try to delete an object that does not exist
+        response = self.delete_json(groups_url, delete_id_list)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, dict))
+        self.assertTrue('info' in response.json_body)
+        info = response.json_body['info']
+        self.assertEqual(info.get('count'), 0)
 
         # Remove the other 2 groups by ID
         delete_id_list = group_id_list[1:]
@@ -98,8 +105,8 @@ class ModelResourceTest(FunctionalTestCase):
         self.assertEqual(len(group_id_list), 3)
 
         # Remove a single group by ID
-        delete_id_list = [{'id': value} for value in group_id_list[:1]]
-        response = self.delete_json(groups_url, delete_id_list)
+        delete_list = [{'id': value} for value in group_id_list[:1]]
+        response = self.delete_json(groups_url, delete_list)
         self.assertEqual(response.status_int, 200)
         self.assertTrue(isinstance(response.json_body, dict))
         self.assertTrue('info' in response.json_body)
@@ -111,11 +118,18 @@ class ModelResourceTest(FunctionalTestCase):
         self.assertTrue(isinstance(response.json_body, list))
         self.assertEqual(len(response.json_body), len(group_id_list) - 1)
         id_list = [group['id'] for group in response.json_body]
-        self.assertTrue(delete_id_list[0]['id'] not in id_list)
+        self.assertTrue(delete_list[0]['id'] not in id_list)
+        # Try to delete an object that does not exist
+        response = self.delete_json(groups_url, delete_list)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, dict))
+        self.assertTrue('info' in response.json_body)
+        info = response.json_body['info']
+        self.assertEqual(info.get('count'), 0)
 
         # Remove the other 2 groups by ID
-        delete_id_list = [{'id': value} for value in group_id_list[1:]]
-        response = self.delete_json(groups_url, delete_id_list)
+        delete_list = [{'id': value} for value in group_id_list[1:]]
+        response = self.delete_json(groups_url, delete_list)
         self.assertEqual(response.status_int, 200)
         self.assertTrue(isinstance(response.json_body, dict))
         self.assertTrue('info' in response.json_body)
@@ -127,7 +141,7 @@ class ModelResourceTest(FunctionalTestCase):
         self.assertTrue(isinstance(response.json_body, list))
         self.assertEqual(len(response.json_body), len(group_id_list) - 3)
         id_list = [group['id'] for group in response.json_body]
-        for value in delete_id_list:
+        for value in delete_list:
             self.assertTrue(value['id'] not in id_list)
 
     @fixture(ProjectData)
@@ -180,6 +194,13 @@ class ModelResourceTest(FunctionalTestCase):
         self.assertTrue('info' in response.json_body)
         info = response.json_body['info']
         self.assertEqual(info.get('count'), 1)
+        # Try to append an existing group
+        response = self.put_json(groups_url, append_id_list)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, dict))
+        self.assertTrue('info' in response.json_body)
+        info = response.json_body['info']
+        self.assertEqual(info.get('count'), 1)
 
         # Append the other 2 groups by ID
         append_id_list = group_id_list[1:]
@@ -226,6 +247,13 @@ class ModelResourceTest(FunctionalTestCase):
 
         # Append a single group by ID
         append_list = group_list[:1]
+        response = self.put_json(groups_url, append_list)
+        self.assertEqual(response.status_int, 200)
+        self.assertTrue(isinstance(response.json_body, dict))
+        self.assertTrue('info' in response.json_body)
+        info = response.json_body['info']
+        self.assertEqual(info.get('count'), 1)
+        # Try to append an existing group
         response = self.put_json(groups_url, append_list)
         self.assertEqual(response.status_int, 200)
         self.assertTrue(isinstance(response.json_body, dict))
