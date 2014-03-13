@@ -596,6 +596,11 @@ class ModelResource(BaseResource):
         """
         Update related object collection.
 
+        Update is only allowed for related objects that are collections.
+
+        When an object or list of objects is submitted, the only needed
+        mandatory field is the `id` field; All other fields are ignored.
+
         A request could contain a list of objects:
 
             [{'id': 1, ..}, {'id': 99, ..}, ..]
@@ -632,8 +637,6 @@ class ModelResource(BaseResource):
 
         Removal is only allowed for related objects that are collections.
 
-        DELETE request body must contain a list of integer values with the
-        IDs of the related object to remove, or instead it must contain a
         When an object or list of objects is submitted, the only needed
         mandatory field is the `id` field; All other fields are ignored.
 
