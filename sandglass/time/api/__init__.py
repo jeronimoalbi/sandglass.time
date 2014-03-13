@@ -395,6 +395,8 @@ def load_api_v1(config):
     resources = (
         'activity.ActivityResource',
         'client.ClientResource',
+        'group.GroupResource',
+        'permission.PermissionResource',
         'project.ProjectResource',
         'tag.TagResource',
         'task.TaskResource',

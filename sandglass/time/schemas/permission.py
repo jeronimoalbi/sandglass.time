@@ -7,12 +7,11 @@ from colander import SequenceSchema
 from sandglass.time.schemas import BaseModelSchema
 
 
-class GroupSchema(BaseModelSchema):
+class PermissionSchema(BaseModelSchema):
     """
-    Schema definition for group model.
+    Schema definition for permission model.
 
     """
-    # TODO: Validate that name does not contain spaces
     name = SchemaNode(
         String(),
         validator=Length(min=3, max=50))
@@ -21,5 +20,5 @@ class GroupSchema(BaseModelSchema):
         missing=drop)
 
 
-class GroupListSchema(SequenceSchema):
-    permission = GroupSchema()
+class PermissionListSchema(SequenceSchema):
+    permission = PermissionSchema()
