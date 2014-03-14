@@ -9,11 +9,11 @@ from pyramid.exceptions import NotFound
 from sqlalchemy.orm import joinedload
 
 from sandglass.time import _
-from sandglass.time.api import BaseResource
-from sandglass.time.api.errors import APIError
+from sandglass.time.api.error import APIError
 from sandglass.time.filters import QueryFilterError
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
+from sandglass.time.resource import BaseResource
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 

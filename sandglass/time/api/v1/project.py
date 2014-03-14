@@ -1,10 +1,10 @@
 from sqlalchemy import or_
 
-from sandglass.time.api.model import ModelResource
 from sandglass.time.filters import QueryFilter
+from sandglass.time.models.project import Project
+from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.project import ProjectListSchema
 from sandglass.time.schemas.project import ProjectSchema
-from sandglass.time.models.project import Project
 
 
 class ByUserOrPublic(QueryFilter):

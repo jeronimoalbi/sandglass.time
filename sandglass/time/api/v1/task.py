@@ -1,7 +1,7 @@
-from sandglass.time.api.model import ModelResource
+from sandglass.time.models.task import Task
+from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.task import TaskListSchema
 from sandglass.time.schemas.task import TaskSchema
-from sandglass.time.models.task import Task
 
 
 class TaskResource(ModelResource):
