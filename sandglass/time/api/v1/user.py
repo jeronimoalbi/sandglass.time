@@ -1,5 +1,8 @@
 import datetime
 
+from colander import DateTime
+from colander import SchemaNode
+from colander import String
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
@@ -7,6 +10,7 @@ from sandglass.time.api import collection_action
 from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
 from sandglass.time.api.model import use_schema
+from sandglass.time.filters import BySearchFields
 from sandglass.time.schemas.user import UserListSchema
 from sandglass.time.schemas.user import UserSigninSchema
 from sandglass.time.schemas.user import UserSignupSchema
@@ -30,6 +34,16 @@ class UserResource(ModelResource):
     model = User
     schema = UserSchema
     list_schema = UserListSchema
+    query_filters = (
+        # Allow searching of users
+        BySearchFields(User, {
+            'email': SchemaNode(String()),
+            'first_name': SchemaNode(String()),
+            'last_name': SchemaNode(String()),
+            'token': SchemaNode(String()),
+            'created': SchemaNode(DateTime()),
+        }),
+    )
 
     @use_schema(UserSigninSchema)
     @collection_action(methods='POST', permission=PUBLIC)
