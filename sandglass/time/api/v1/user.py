@@ -5,24 +5,24 @@ from colander import String
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
-from sandglass.time.api import collection_action
-from sandglass.time.api import member_action
-from sandglass.time.api.model import ModelResource
-from sandglass.time.api.model import use_schema
 from sandglass.time.filters.search import BySearchFields
 from sandglass.time.filters.search import Filter
+from sandglass.time.models.activity import Activity
+from sandglass.time.models.group import Group
+from sandglass.time.models.user import User
+from sandglass.time.resource import collection_action
+from sandglass.time.resource import member_action
+from sandglass.time.resource.model import ModelResource
+from sandglass.time.resource.model import use_schema
+from sandglass.time.response import error_response
 from sandglass.time.schemas.user import UserListSchema
 from sandglass.time.schemas.user import UserSigninSchema
 from sandglass.time.schemas.user import UserSignupSchema
 from sandglass.time.schemas.user import UserSchema
-from sandglass.time.models.activity import Activity
-from sandglass.time.models.group import Group
-from sandglass.time.models.user import User
-from sandglass.time.response import error_response
 from sandglass.time.security import Administrators
 from sandglass.time.security import PUBLIC
 
-from .errors import APIV1Error
+from .error import APIV1Error
 
 SEARCH_FILTERS = {
     'email': Filter(

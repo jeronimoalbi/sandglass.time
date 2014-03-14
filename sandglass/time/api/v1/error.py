@@ -1,5 +1,5 @@
 from sandglass.time import _
-from sandglass.time.api.errors import APIError
+from sandglass.time.api.error import APIError
 
 
 # API error codes and messages

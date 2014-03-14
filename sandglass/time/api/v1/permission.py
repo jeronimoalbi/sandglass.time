@@ -1,7 +1,7 @@
-from sandglass.time.api.model import ModelResource
+from sandglass.time.models.permission import Permission
+from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.permission import PermissionListSchema
 from sandglass.time.schemas.permission import PermissionSchema
-from sandglass.time.models.permission import Permission
 
 
 class PermissionResource(ModelResource):

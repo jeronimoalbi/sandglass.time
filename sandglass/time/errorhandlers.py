@@ -9,14 +9,14 @@ import transaction
 #from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.view import view_config
 
-from sandglass.time.api import APIRequestDataError
-from sandglass.time.api import errors
+from sandglass.time.api import error
+from sandglass.time.resource import APIRequestDataError
 from sandglass.time.response import error_response
 
 LOG = logging.getLogger(__name__)
 
 
-@view_config(context=errors.APIError)
+@view_config(context=error.APIError)
 def handle_api_errors(err, request):
     """
     Generic error handler API errors.
@@ -42,7 +42,7 @@ def handle_schema_validation_errors(err, request):
         'fields': err.asdict(),
         'details': unicode(err),
     }
-    message = errors.CODES.get(data['code'])
+    message = error.CODES.get(data['code'])
     return error_response(message, data=data)
 
 
@@ -62,7 +62,7 @@ def handle_database_integrity_errors(exc, request):
         'code': 'DATA_INTEGRITY_ERROR',
         'details': details.strip(),
     }
-    message = errors.CODES.get(data['code'])
+    message = error.CODES.get(data['code'])
     return error_response(message, data=data)
 
 
@@ -73,5 +73,5 @@ def handle_api_request_data_errors(err, request):
 
     """
     data = {'code': 'INVALID_JSON_DATA'}
-    message = errors.CODES.get(data['code'])
+    message = error.CODES.get(data['code'])
     return error_response(message, data=data)

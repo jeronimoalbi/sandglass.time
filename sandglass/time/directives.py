@@ -5,8 +5,8 @@ from functools import wraps
 from pyramid.httpexceptions import HTTPMethodNotAllowed
 from pyramid.path import DottedNameResolver
 
-from sandglass.time.api import REQUEST_METHODS
-from sandglass.time.api import REST_ROUTE_INFO
+from sandglass.time.resource import REQUEST_METHODS
+from sandglass.time.resource import REST_ROUTE_INFO
 
 
 # Added REST API resources are saved here
