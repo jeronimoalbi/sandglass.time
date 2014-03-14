@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.tag import Tag
 from sandglass.time.resource import member_action
@@ -61,3 +62,6 @@ class ActivityResource(ModelResource):
             removed_tag_list.append(tag)
 
         return removed_tag_list
+
+
+API.register('v1', ActivityResource)

@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.permission import Permission
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.permission import PermissionListSchema
@@ -13,3 +14,6 @@ class PermissionResource(ModelResource):
     model = Permission
     schema = PermissionSchema
     list_schema = PermissionListSchema
+
+
+API.register('v1', PermissionResource)

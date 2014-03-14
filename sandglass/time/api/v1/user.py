@@ -5,6 +5,7 @@ from colander import String
 from pyramid.exceptions import NotFound
 
 from sandglass.time import _
+from sandglass.time.api import API
 from sandglass.time.filters.search import BySearchFields
 from sandglass.time.filters.search import Filter
 from sandglass.time.models.activity import Activity
@@ -158,3 +159,6 @@ class UserResource(ModelResource):
             query = query.filter(Activity.start < to_date)
 
         return query.all()
+
+
+API.register('v1', UserResource)

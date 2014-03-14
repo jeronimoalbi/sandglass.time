@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.client import Client
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.client import ClientListSchema
@@ -13,3 +14,6 @@ class ClientResource(ModelResource):
     model = Client
     schema = ClientSchema
     list_schema = ClientListSchema
+
+
+API.register('v1', ClientResource)

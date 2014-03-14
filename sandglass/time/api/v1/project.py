@@ -1,5 +1,6 @@
 from sqlalchemy import or_
 
+from sandglass.time.api import API
 from sandglass.time.filters import QueryFilter
 from sandglass.time.models.project import Project
 from sandglass.time.resource.model import ModelResource
@@ -33,3 +34,6 @@ class ProjectResource(ModelResource):
     query_filters = (
         ByUserOrPublic(),
     )
+
+
+API.register('v1', ProjectResource)
