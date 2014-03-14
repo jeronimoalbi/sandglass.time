@@ -13,6 +13,7 @@ CODES = {
         "This operation is not allowed for single objects"),
     'COLLECTION_NOT_ALLOWED': _(
         "This operation is not allowed for collections"),
+    'INVALID_FILTER': _("Filter is not valid"),
 }
 
 

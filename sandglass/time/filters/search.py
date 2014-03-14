@@ -1,64 +1,47 @@
-from pyramid.security import authenticated_userid
-from sqlalchemy import or_
+from colander import SchemaNode
 
-# Gobal to avoild "linting" errors defining filter conditions
-NULL = None
+from sandglass.time.filters import NULL
+from sandglass.time.filters import QueryFilter
+from sandglass.time.filters import QueryFilterError
+
+# List of filter operations
+FILTER_OPERATIONS = (
+    # Equal / not equal
+    'eq',
+    'neq',
+    # In / not in
+    'in',
+    'nin',
+    # Greater than / equal
+    'gt',
+    'gte',
+    # Lower than / equal
+    'lt',
+    'lte',
+    # Contains (%like%)
+    'contains',
+    'starts',
+    'ends',
+    # Is null / not null
+    'null',
+    'notnull',
+)
 
 
-class QueryFilter(object):
+class Filter(object):
     """
-    Base class for ORM Query filtering.
-
-    """
-    # When this value is True, apply filter to admin users too.
-    # By default no filtering is done for admin users.
-    applies_to_admin = False
-
-    def applies_to(self, resource):
-        """
-        Check if filter applies to a resource.
-
-        Returns a Boolean.
-
-        """
-        # TODO: Check that a user is valid
-        user = resource.request.authenticated_user
-        return user.is_admin and self.applies_to_admin
-
-    def filter_query(self, query, request, resource):
-        """
-        Method called to filter a query for a request and resource.
-
-        Returns a Query.
-
-        """
-        raise NotImplementedError()
-
-
-class ByCurrentUser(QueryFilter):
-    """
-    Filter query results for current user.
-
-    By default `user_id` field is used for filtering results
-    for current user.
-
-    By default results without user are not filtered.
+    Base class for search field filter fields.
 
     """
-    user_field_name = 'user_id'
+    def __init__(self, field_type, ops=None):
+        self.valid_ops = ops or FILTER_OPERATIONS
+        self.node = SchemaNode(field_type, missing=None)
 
-    def __init__(self, filter_nulls=False, *args, **kwargs):
-        super(ByCurrentUser, self).__init__(*args, **kwargs)
-        self.filter_nulls = filter_nulls
+    def valid_operation(self, operation):
+        return operation in self.valid_ops
 
-    def filter_query(self, query, request, resource):
-        model = resource.model
-        field = getattr(model, self.user_field_name)
-        filters = field == authenticated_userid(request)
-        if not self.filter_nulls:
-            filters = or_(filters, field == NULL)
-
-        return query.filter(filters)
+    def deserialize(self, raw_value):
+        return self.node.deserialize(raw_value)
 
 
 class BySearchFields(QueryFilter):
@@ -78,44 +61,12 @@ class BySearchFields(QueryFilter):
     supported_methods = ('GET', )
 
     # Available filter operations
-    filter_operations = (
-        # Equal / not equal
-        'eq',
-        'neq',
-        # In / not in
-        'in',
-        'nin',
-        # Greater than / equal
-        'gt',
-        'gte',
-        # Lower than / equal
-        'lt',
-        'lte',
-        # Contains (%like%)
-        'contains',
-        'starts',
-        'ends',
-        # Is null / not null
-        'null',
-        'notnull',
-    )
+    filter_operations = FILTER_OPERATIONS
 
     def __init__(self, model, fields, *args, **kwargs):
         super(BySearchFields, self).__init__(*args, **kwargs)
         self.fields = fields
         self.model = model
-
-    @property
-    def fields(self):
-        return self._fields
-
-    @fields.setter
-    def fields(self, value):
-        self._fields = value
-        # Change field properties to make filtering work
-        for field in value.values():
-            # Allow empty values to support NULL filters
-            field.missing = None
 
     def applies_to(self, resource):
         if resource.request.method not in self.supported_methods:
@@ -187,9 +138,15 @@ class BySearchFields(QueryFilter):
 
             # Get field name and operation
             (field_name, filter_op) = parts
+            field = self.fields.get(field_name)
             is_valid_operation = filter_op in self.filter_operations
-            if field_name not in self.fields or not is_valid_operation:
-                continue
+            if is_valid_operation and field:
+                # Check that field supports current operation
+                is_valid_operation = field.valid_operation(filter_op)
+
+            if not field or not is_valid_operation:
+                # Use filter name as error message
+                raise QueryFilterError(name)
 
             # Get deserialized field value
             value = self.get_field_value(field_name, value)
