@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.tag import Tag
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.tag import TagListSchema
@@ -13,3 +14,6 @@ class TagResource(ModelResource):
     model = Tag
     schema = TagSchema
     list_schema = TagListSchema
+
+
+API.register('v1', TagResource)

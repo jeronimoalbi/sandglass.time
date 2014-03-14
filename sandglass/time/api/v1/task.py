@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.task import Task
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.task import TaskListSchema
@@ -13,3 +14,6 @@ class TaskResource(ModelResource):
     model = Task
     schema = TaskSchema
     list_schema = TaskListSchema
+
+
+API.register('v1', TaskResource)

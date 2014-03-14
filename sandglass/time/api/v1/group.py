@@ -1,3 +1,4 @@
+from sandglass.time.api import API
 from sandglass.time.models.group import Group
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.schemas.group import GroupListSchema
@@ -13,3 +14,6 @@ class GroupResource(ModelResource):
     model = Group
     schema = GroupSchema
     list_schema = GroupListSchema
+
+
+API.register('v1', GroupResource)
