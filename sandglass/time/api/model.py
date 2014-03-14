@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from sandglass.time import _
 from sandglass.time.api import BaseResource
 from sandglass.time.api.errors import APIError
+from sandglass.time.filters import QueryFilterError
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.response import error_response
@@ -390,7 +391,10 @@ class ModelResource(BaseResource):
         # Apply model query filters
         query_filters = self.get_query_filters()
         if query_filters:
-            query = self.apply_model_query_filters(query_filters, query)
+            try:
+                query = self.apply_model_query_filters(query_filters, query)
+            except QueryFilterError, err:
+                raise APIError('INVALID_FILTER', details=err.message)
 
         # Add load options
         if load_options:

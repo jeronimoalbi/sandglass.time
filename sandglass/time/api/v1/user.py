@@ -1,7 +1,6 @@
 import datetime
 
 from colander import DateTime
-from colander import SchemaNode
 from colander import String
 from pyramid.exceptions import NotFound
 
@@ -10,7 +9,8 @@ from sandglass.time.api import collection_action
 from sandglass.time.api import member_action
 from sandglass.time.api.model import ModelResource
 from sandglass.time.api.model import use_schema
-from sandglass.time.filters import BySearchFields
+from sandglass.time.filters.search import BySearchFields
+from sandglass.time.filters.search import Filter
 from sandglass.time.schemas.user import UserListSchema
 from sandglass.time.schemas.user import UserSigninSchema
 from sandglass.time.schemas.user import UserSignupSchema
@@ -24,6 +24,24 @@ from sandglass.time.security import PUBLIC
 
 from .errors import APIV1Error
 
+SEARCH_FILTERS = {
+    'email': Filter(
+        String(),
+        ops=('eq', 'contains', 'starts', 'ends')),
+    'first_name': Filter(
+        String(),
+        ops=('eq', 'contains', 'starts', 'ends')),
+    'last_name': Filter(
+        String(),
+        ops=('eq', 'contains', 'starts', 'ends')),
+    'token': Filter(
+        String(),
+        ops=('eq', )),
+    'created': Filter(
+        DateTime(),
+        ops=('eq', 'gt', 'gte', 'lt', 'lte')),
+}
+
 
 class UserResource(ModelResource):
     """
@@ -36,13 +54,7 @@ class UserResource(ModelResource):
     list_schema = UserListSchema
     query_filters = (
         # Allow searching of users
-        BySearchFields(User, {
-            'email': SchemaNode(String()),
-            'first_name': SchemaNode(String()),
-            'last_name': SchemaNode(String()),
-            'token': SchemaNode(String()),
-            'created': SchemaNode(DateTime()),
-        }),
+        BySearchFields(User, SEARCH_FILTERS),
     )
 
     @use_schema(UserSigninSchema)
