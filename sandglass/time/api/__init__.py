@@ -257,6 +257,19 @@ class BaseResource(object):
         return self.pk_value is not None
 
     @property
+    def is_collection_request(self):
+        """
+        Check if current request is a collection request.
+
+        Method checks if pk_value is None. When no pk value is
+        available it means the current is a collection request.
+
+        Return a Boolean.
+
+        """
+        return not self.is_member_request
+
+    @property
     def is_related_request(self):
         """
         Check if current request is a related request.

@@ -183,15 +183,20 @@ class ModelResource(BaseResource):
         Returns a Dictionary.
 
         """
-        # Dont use query modes when include is missing
-        if 'include' not in self.request.GET:
-            return {}
-
         query_modes = {}
+        params = self.request.GET
+        include_list = params.getall('inc') + params.getall('include')
+        if not include_list:
+            return query_modes
+
         # TODO: Make query modes work with POST requests ??
-        for item in self.request.GET['include'].split(','):
-            if ':' in item:
-                (field_name, mode) = item.split(':')
+        for item in include_list:
+            if '__' in item:
+                try:
+                    (field_name, mode) = item.split('__')
+                except ValueError:
+                    # Skip invalid include values
+                    continue
             else:
                 field_name = item
                 mode = default_mode
@@ -263,11 +268,12 @@ class ModelResource(BaseResource):
         When no mode is given then `pk` is used as default.
 
         Loading of related object in the same request is specified
-        using a GET parameter called `include`.
-        It takes a comma separated list of related objects to load.
+        using a GET parameter called `include` or `inc`.
+        It takes a single related object name to load; To load more
+        than one related object use many times the include parameter.
 
         Example:
-            include=tags:full,user:pk
+            include=tags__full&inc=user__pk&include=groups__pk
 
         Return a Dictionary.
 
@@ -333,14 +339,12 @@ class ModelResource(BaseResource):
         Returns a Query.
 
         """
-        # TODO: Check that a user is valid
-        user = self.request.authenticated_user
-        for filter in query_filters:
-            # Dont apply filter if current user is admin
-            if user.is_admin and not filter.applies_to_admin:
+        resource = self
+        for filter_ in query_filters:
+            if not filter_.applies_to(resource):
                 continue
 
-            query = filter.filter_query(query, self.request, self)
+            query = filter_.filter_query(query, self.request, resource)
 
         return query
 
