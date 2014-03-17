@@ -130,6 +130,12 @@ class APIRequestDataError(Exception):
 
 
 class ResourceDescriber(object):
+    """
+    API resource describer.
+
+    Base class to describe `BaseResource` instances.
+
+    """
     def __init__(self, resource):
         self.resource = resource
 
@@ -153,7 +159,6 @@ class ResourceDescriber(object):
     def describe(self):
         data = {}
         self.describe_actions(data)
-
         return data
 
 

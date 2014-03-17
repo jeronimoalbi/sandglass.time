@@ -14,6 +14,7 @@ from sandglass.time.filters import QueryFilterError
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.resource import BaseResource
+from sandglass.time.resource import ResourceDescriber
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 
@@ -129,11 +130,33 @@ def handle_collection_rest_modes(func):
     return wrapper
 
 
+class ModelResourceDescriber(ResourceDescriber):
+    """
+    API resource describer for `ModelResource` instances.
+
+    """
+    def describe_schema(self, data):
+        schema = self.resource.schema()
+        data['schema'] = {}
+        # TODO: Add Schemas from actions that uses `use_schema` decorator
+        for child in schema.children:
+            class_name = child.typ.__class__.__name__
+            data['schema'][child.name] = class_name
+        return data
+
+    def describe(self):
+        data = super(ModelResourceDescriber, self).describe()
+        self.describe_schema(data)
+        return data
+
+
 class ModelResource(BaseResource):
     """
     Base class for REST resources that use a Model to get data.
 
     """
+    describer_cls = ModelResourceDescriber
+
     model = None
 
     # Serialization class to use for converting model
