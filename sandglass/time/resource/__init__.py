@@ -129,6 +129,34 @@ class APIRequestDataError(Exception):
     """
 
 
+class ResourceDescriber(object):
+    def __init__(self, resource):
+        self.resource = resource
+
+    def __json__(self, request):
+        return self.describe()
+
+    def describe_actions(self, data):
+        filtered_fields = ('type', 'attr_name', 'extra')
+        resource = self.resource
+        data['actions'] = {'member': [], 'collection': []}
+        for name in ('member', 'collection'):
+            for action_info in resource.get_actions_by_type(name):
+                # Remove fields that should not be visible
+                for filtered_name in filtered_fields:
+                    del action_info[filtered_name]
+
+                data['actions'][name].append(action_info)
+
+        return data
+
+    def describe(self):
+        data = {}
+        self.describe_actions(data)
+
+        return data
+
+
 class BaseResource(object):
     """
     Base class for Sandglass time API resources.
@@ -137,6 +165,9 @@ class BaseResource(object):
     # Name used as prefix for this resource URLs
     # NOTE: For REST APIs it is recommended to be in plural form
     name = None
+
+    # Class used for describing a API resources
+    describer_cls = ResourceDescriber
 
     @classmethod
     def get_route_prefix(cls):
@@ -338,6 +369,15 @@ class BaseResource(object):
             to_date = dateutil.parser.parse(to_date)
 
         return (from_date, to_date)
+
+    @collection_action(methods='GET')
+    def describe(self):
+        """
+        Get an API resource description.
+
+        """
+        describer = self.describer_cls(self)
+        return describer
 
 
 class RootModelFactory(object):
