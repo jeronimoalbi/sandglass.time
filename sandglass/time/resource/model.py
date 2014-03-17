@@ -135,6 +135,10 @@ class ModelResourceDescriber(ResourceDescriber):
     API resource describer for `ModelResource` instances.
 
     """
+    def describe_related(self, data):
+        data['related'] = self.resource.relationships.keys()
+        return data
+
     def describe_schema(self, data):
         schema = self.resource.schema()
         data['schema'] = {}
@@ -147,6 +151,7 @@ class ModelResourceDescriber(ResourceDescriber):
     def describe(self):
         data = super(ModelResourceDescriber, self).describe()
         self.describe_schema(data)
+        self.describe_related(data)
         return data
 
 
@@ -181,7 +186,7 @@ class ModelResource(BaseResource):
         related_name = super(ModelResource, self)._get_related_name()
         # Check that related name is in fact a relationship
         if related_name:
-            if related_name not in self._get_model_relationships():
+            if related_name not in self.relationships:
                 raise NotFound()
 
         return related_name
@@ -246,6 +251,16 @@ class ModelResource(BaseResource):
         query = self.model.query()
         query = query.filter(self.model.id == self.pk_value)
         return query.count() == 1
+
+    @reify
+    def relationships(self):
+        """
+        Get names for current resource model relationships.
+
+        Returns a List of Strings.
+
+        """
+        return self._get_model_relationships()
 
     @reify
     def object(self):
@@ -384,11 +399,10 @@ class ModelResource(BaseResource):
         Returns a Query.
 
         """
-        relationships = self._get_model_relationships()
         # Initialize loading options for included related fields
         load_options = []
         for field_name, mode in self.related_query_mode.items():
-            if field_name not in relationships:
+            if field_name not in self.relationships:
                 msg = "Field %s does not exist in model %s"
                 LOG.debug(msg, field_name, self.model.__class__.__name__)
                 continue
@@ -642,8 +656,7 @@ class ModelResource(BaseResource):
 
         """
         related = getattr(self.object, self.related_name)
-        model_relationships = self._get_model_relationships()
-        relationship = model_relationships[self.related_name]
+        relationship = self.relationships[self.related_name]
         # Check that relationship is using a list and not a single object
         if not relationship.uselist:
             raise APIError('OBJECT_NOT_ALLOWED')
