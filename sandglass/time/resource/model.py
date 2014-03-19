@@ -90,6 +90,9 @@ def use_schema(schema):
 
     """
     def inner_use_schema(func):
+        # Save schema info as a function object attribute
+        func.__schema__ = schema
+
         @wraps(func)
         def wrapper_use_schema(self, *args, **kwargs):
             # Save original schema before asigning the new one
@@ -139,18 +142,44 @@ class ModelResourceDescriber(ResourceDescriber):
         data['related'] = self.resource.relationships.keys()
         return data
 
-    def describe_schema(self, data):
-        schema = self.resource.schema()
+    def describe_schema(self, data, schema_cls):
+        schema = schema_cls()
         data['schema'] = {}
-        # TODO: Add Schemas from actions that uses `use_schema` decorator
         for child in schema.children:
             class_name = child.typ.__class__.__name__
-            data['schema'][child.name] = class_name
+            data['schema'][child.name] = {
+                'type': class_name,
+                'doc': child.description,
+            }
+        return data
+
+    def describe_action_schemas(self, data):
+        if 'actions' not in data:
+            return data
+
+        resource = self.resource
+        for name in ('member', 'collection'):
+            # Save list of schema actions by name
+            actions = {info['name']: info for info in data['actions'][name]}
+            # Get action schemas for current resource actions
+            for action_info in resource.get_actions_by_type(name):
+                action_name = action_info['name']
+                if action_name not in actions:
+                    continue
+
+                func = getattr(resource, action_info['attr_name'])
+                schema_cls = getattr(func, '__schema__', None)
+                if not schema_cls:
+                    continue
+
+                self.describe_schema(actions[action_name], schema_cls)
+
         return data
 
     def describe(self):
         data = super(ModelResourceDescriber, self).describe()
-        self.describe_schema(data)
+        self.describe_schema(data, self.resource.schema)
+        self.describe_action_schemas(data)
         self.describe_related(data)
         return data
 

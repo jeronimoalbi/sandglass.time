@@ -6,6 +6,7 @@ import logging
 import dateutil.parser
 
 from pyramid.decorator import reify
+from pyramid.security import Authenticated
 
 from sandglass.time.utils import route_path
 
@@ -148,11 +149,16 @@ class ResourceDescriber(object):
         data['actions'] = {'member': [], 'collection': []}
         for name in ('member', 'collection'):
             for action_info in resource.get_actions_by_type(name):
+                info = action_info.copy()
+                # Add action docstring when available
+                func = getattr(resource, info['attr_name'])
+                info['doc'] = (func.__doc__ or '').strip()
+
                 # Remove fields that should not be visible
                 for filtered_name in filtered_fields:
-                    del action_info[filtered_name]
+                    del info[filtered_name]
 
-                data['actions'][name].append(action_info)
+                data['actions'][name].append(info)
 
         return data
 
@@ -375,7 +381,9 @@ class BaseResource(object):
 
         return (from_date, to_date)
 
-    @collection_action(methods='GET')
+    # TODO: Change permission name ?
+    # TODO: Create permission during install
+    @collection_action(methods='GET', permission="time.api.describe")
     def describe(self):
         """
         Get an API resource description.

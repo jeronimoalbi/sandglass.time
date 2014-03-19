@@ -1,5 +1,13 @@
 import logging
 
+from pyramid.security import ALL_PERMISSIONS
+from pyramid.security import Allow
+from pyramid.security import Authenticated
+from pyramid.security import Deny
+from pyramid.security import Everyone
+
+from sandglass.time.security import Administrators
+
 LOG = logging.getLogger(__name__)
 
 
@@ -43,9 +51,74 @@ class ApiManager(object):
         """
         return self.registry[version].values()
 
+    def is_valid_version(self, version):
+        """
+        Check if an API version is valid.
+
+        Returns a Boolean.
+
+        """
+        return version in self.registry
+
 
 # Global API manager
 API = ApiManager(versions=('v1', ))
+
+
+class ApiDescribeResource(object):
+    """
+    Base resource to describe API resources.
+
+    """
+    # Version to describe
+    version = None
+
+    @property
+    def __acl__(self):
+        return [
+            (Allow, Authenticated, ALL_PERMISSIONS),
+            (Allow, Administrators, ALL_PERMISSIONS),
+            (Deny, Everyone, ALL_PERMISSIONS),
+        ]
+
+    def __init__(self, request):
+        if not API.is_valid_version(self.version):
+            msg = "API version {} is not valid".format(self.version)
+            raise Exception(msg)
+
+        self.request = request
+
+    def __call__(self):
+        return self.describe()
+
+    @property
+    def resources(self):
+        return API.get_resources(self.version)
+
+    def describe(self):
+        raise NotImplementedError()
+
+
+def add_api_resource_describe(config, version, resource):
+    """
+    Add support to describe API resources.
+
+    Describe can be called as `/@describe` in the API root URL.
+
+    """
+    route_name = 'api.{}.describe'.format(version)
+    config.add_route(
+        route_name,
+        '/@describe',
+        request_method='GET',
+        factory=resource,
+    )
+    config.add_view(
+        resource,
+        route_name=route_name,
+        renderer='json',
+        permission="time.api.describe",
+    )
 
 
 def include_api_versions(config):
