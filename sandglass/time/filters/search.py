@@ -1,5 +1,7 @@
 from colander import SchemaNode
+from zope import interface
 
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.filters import NULL
 from sandglass.time.filters import QueryFilter
 from sandglass.time.filters import QueryFilterError
@@ -37,6 +39,10 @@ class Filter(object):
         self.valid_ops = ops or FILTER_OPERATIONS
         self.node = SchemaNode(field_type, missing=None)
 
+    @property
+    def field_type(self):
+        return self.node.typ
+
     def valid_operation(self, operation):
         return operation in self.valid_ops
 
@@ -55,6 +61,8 @@ class BySearchFields(QueryFilter):
     Filtering using many conditions for the same field is not supported.
 
     """
+    interface.implements(IDescribable)
+
     applies_to_admin = True
 
     # Supported request methods for this filter
@@ -67,6 +75,21 @@ class BySearchFields(QueryFilter):
         super(BySearchFields, self).__init__(*args, **kwargs)
         self.fields = fields
         self.model = model
+
+    def describe(self):
+        fields_info = {}
+        for name, field in self.fields.items():
+            fields_info[name] = {
+                'type': field.field_type.__class__.__name__,
+                'operations': field.valid_ops,
+            }
+
+        return {
+            'name': "search_fields",
+            'doc': self.__doc__.strip(),
+            'fields': fields_info,
+            'methods': self.supported_methods,
+        }
 
     def applies_to(self, resource):
         if resource.request.method not in self.supported_methods:

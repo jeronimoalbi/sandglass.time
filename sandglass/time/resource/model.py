@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from sandglass.time import _
 from sandglass.time.api.error import APIError
 from sandglass.time.filters import QueryFilterError
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.resource import BaseResource
@@ -176,11 +177,24 @@ class ModelResourceDescriber(ResourceDescriber):
 
         return data
 
+    def describe_filters(self, data):
+        filters_data = []
+        if self.resource.query_filters:
+            for filter in self.resource.query_filters:
+                if IDescribable.providedBy(filter):
+                    filters_data.append(filter.describe())
+
+        if filters_data:
+            data['filters'] = filters_data
+
+        return data
+
     def describe(self):
         data = super(ModelResourceDescriber, self).describe()
         self.describe_schema(data, self.resource.schema)
         self.describe_action_schemas(data)
         self.describe_related(data)
+        self.describe_filters(data)
         return data
 
 
