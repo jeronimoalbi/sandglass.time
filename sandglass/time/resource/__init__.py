@@ -6,7 +6,9 @@ import logging
 import dateutil.parser
 
 from pyramid.decorator import reify
+from zope import interface
 
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.utils import route_path
 
 LOG = logging.getLogger(__name__)
@@ -129,14 +131,59 @@ class APIRequestDataError(Exception):
     """
 
 
+class ResourceDescriber(object):
+    """
+    API resource describer.
+
+    Base class to describe `BaseResource` instances.
+
+    """
+    interface.implements(IDescribable)
+
+    def __init__(self, resource):
+        self.resource = resource
+
+    def __json__(self, request):
+        return self.describe()
+
+    def describe_actions(self, data):
+        filtered_fields = ('type', 'attr_name', 'extra')
+        resource = self.resource
+        data['actions'] = {'member': [], 'collection': []}
+        for name in ('member', 'collection'):
+            for action_info in resource.get_actions_by_type(name):
+                info = action_info.copy()
+                # Add action docstring when available
+                func = getattr(resource, info['attr_name'])
+                info['doc'] = (func.__doc__ or '').strip()
+
+                # Remove fields that should not be visible
+                for filtered_name in filtered_fields:
+                    del info[filtered_name]
+
+                data['actions'][name].append(info)
+
+        return data
+
+    def describe(self):
+        data = {}
+        self.describe_actions(data)
+        return data
+
+
 class BaseResource(object):
     """
     Base class for Sandglass time API resources.
 
     """
+    interface.implements(IDescribable)
+
     # Name used as prefix for this resource URLs
     # NOTE: For REST APIs it is recommended to be in plural form
     name = None
+
+    # Class used for describing a API resources
+    describer_cls = ResourceDescriber
 
     @classmethod
     def get_route_prefix(cls):
@@ -338,6 +385,17 @@ class BaseResource(object):
             to_date = dateutil.parser.parse(to_date)
 
         return (from_date, to_date)
+
+    # TODO: Change permission name ?
+    # TODO: Create permission during install
+    @collection_action(methods='GET', permission="time.api.describe")
+    def describe(self):
+        """
+        Get an API resource description.
+
+        """
+        describer = self.describer_cls(self)
+        return describer
 
 
 class RootModelFactory(object):

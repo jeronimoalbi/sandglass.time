@@ -11,9 +11,11 @@ from sqlalchemy.orm import joinedload
 from sandglass.time import _
 from sandglass.time.api.error import APIError
 from sandglass.time.filters import QueryFilterError
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.resource import BaseResource
+from sandglass.time.resource import ResourceDescriber
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 
@@ -89,6 +91,9 @@ def use_schema(schema):
 
     """
     def inner_use_schema(func):
+        # Save schema info as a function object attribute
+        func.__schema__ = schema
+
         @wraps(func)
         def wrapper_use_schema(self, *args, **kwargs):
             # Save original schema before asigning the new one
@@ -129,11 +134,77 @@ def handle_collection_rest_modes(func):
     return wrapper
 
 
+class ModelResourceDescriber(ResourceDescriber):
+    """
+    API resource describer for `ModelResource` instances.
+
+    """
+    def describe_related(self, data):
+        data['related'] = self.resource.relationships.keys()
+        return data
+
+    def describe_schema(self, data, schema_cls):
+        schema = schema_cls()
+        data['schema'] = {}
+        for child in schema.children:
+            class_name = child.typ.__class__.__name__
+            data['schema'][child.name] = {
+                'type': class_name,
+                'doc': child.description,
+            }
+        return data
+
+    def describe_action_schemas(self, data):
+        if 'actions' not in data:
+            return data
+
+        resource = self.resource
+        for name in ('member', 'collection'):
+            # Save list of schema actions by name
+            actions = {info['name']: info for info in data['actions'][name]}
+            # Get action schemas for current resource actions
+            for action_info in resource.get_actions_by_type(name):
+                action_name = action_info['name']
+                if action_name not in actions:
+                    continue
+
+                func = getattr(resource, action_info['attr_name'])
+                schema_cls = getattr(func, '__schema__', None)
+                if not schema_cls:
+                    continue
+
+                self.describe_schema(actions[action_name], schema_cls)
+
+        return data
+
+    def describe_filters(self, data):
+        filters_data = []
+        if self.resource.query_filters:
+            for filter in self.resource.query_filters:
+                if IDescribable.providedBy(filter):
+                    filters_data.append(filter.describe())
+
+        if filters_data:
+            data['filters'] = filters_data
+
+        return data
+
+    def describe(self):
+        data = super(ModelResourceDescriber, self).describe()
+        self.describe_schema(data, self.resource.schema)
+        self.describe_action_schemas(data)
+        self.describe_related(data)
+        self.describe_filters(data)
+        return data
+
+
 class ModelResource(BaseResource):
     """
     Base class for REST resources that use a Model to get data.
 
     """
+    describer_cls = ModelResourceDescriber
+
     model = None
 
     # Serialization class to use for converting model
@@ -158,7 +229,7 @@ class ModelResource(BaseResource):
         related_name = super(ModelResource, self)._get_related_name()
         # Check that related name is in fact a relationship
         if related_name:
-            if related_name not in self._get_model_relationships():
+            if related_name not in self.relationships:
                 raise NotFound()
 
         return related_name
@@ -223,6 +294,16 @@ class ModelResource(BaseResource):
         query = self.model.query()
         query = query.filter(self.model.id == self.pk_value)
         return query.count() == 1
+
+    @reify
+    def relationships(self):
+        """
+        Get names for current resource model relationships.
+
+        Returns a List of Strings.
+
+        """
+        return self._get_model_relationships()
 
     @reify
     def object(self):
@@ -361,11 +442,10 @@ class ModelResource(BaseResource):
         Returns a Query.
 
         """
-        relationships = self._get_model_relationships()
         # Initialize loading options for included related fields
         load_options = []
         for field_name, mode in self.related_query_mode.items():
-            if field_name not in relationships:
+            if field_name not in self.relationships:
                 msg = "Field %s does not exist in model %s"
                 LOG.debug(msg, field_name, self.model.__class__.__name__)
                 continue
@@ -619,8 +699,7 @@ class ModelResource(BaseResource):
 
         """
         related = getattr(self.object, self.related_name)
-        model_relationships = self._get_model_relationships()
-        relationship = model_relationships[self.related_name]
+        relationship = self.relationships[self.related_name]
         # Check that relationship is using a list and not a single object
         if not relationship.uselist:
             raise APIError('OBJECT_NOT_ALLOWED')
