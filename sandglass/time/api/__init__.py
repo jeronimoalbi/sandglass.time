@@ -5,7 +5,9 @@ from pyramid.security import Allow
 from pyramid.security import Authenticated
 from pyramid.security import Deny
 from pyramid.security import Everyone
+from zope import interface
 
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.security import Administrators
 
 LOG = logging.getLogger(__name__)
@@ -70,6 +72,8 @@ class ApiDescribeResource(object):
     Base resource to describe API resources.
 
     """
+    interface.implements(IDescribable)
+
     # Version to describe
     version = None
 

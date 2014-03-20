@@ -6,8 +6,9 @@ import logging
 import dateutil.parser
 
 from pyramid.decorator import reify
-from pyramid.security import Authenticated
+from zope import interface
 
+from sandglass.time.interfaces import IDescribable
 from sandglass.time.utils import route_path
 
 LOG = logging.getLogger(__name__)
@@ -137,6 +138,8 @@ class ResourceDescriber(object):
     Base class to describe `BaseResource` instances.
 
     """
+    interface.implements(IDescribable)
+
     def __init__(self, resource):
         self.resource = resource
 
@@ -173,6 +176,8 @@ class BaseResource(object):
     Base class for Sandglass time API resources.
 
     """
+    interface.implements(IDescribable)
+
     # Name used as prefix for this resource URLs
     # NOTE: For REST APIs it is recommended to be in plural form
     name = None
