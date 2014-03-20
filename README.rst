@@ -2,10 +2,16 @@
    :alt: Continuous Integration Service
    :target: https://drone.io/bitbucket.org/sandglass/sandglass.time/latest
 
-Sandglass Time Documentation
-============================
+=======================
+Sandglass Documentation
+=======================
 
-Time tracking application.
+Sandglass is a REST API based time tracking application.
+
+It is based on the `Pyramid`_ web framework, and for ORM and data access it uses `SQLAlchemy`_.
+
+.. _Pyramid: http://www.pylonsproject.org/
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 
 Setting up after initial checkout
 ---------------------------------
@@ -19,3 +25,10 @@ Setting up after initial checkout
   $ sandglass manage create-user --admin
   $ pserve sandglass.ini
 
+********
+Frontend
+********
+
+Frontend implementation is being developed as a separate project called `sandglass-frontend`_.
+
+.. _sandglass-frontend: https://github.com/gustavpursche/sandglass-frontend
