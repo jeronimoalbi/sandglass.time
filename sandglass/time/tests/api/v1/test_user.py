@@ -4,7 +4,8 @@ from sandglass.time.api.v1.user import UserResource
 from sandglass.time.tests import fixture
 from sandglass.time.tests import FunctionalTestCase
 from sandglass.time.tests.api.v1.client_fixtures import ClientUserData
-from sandglass.time.tests.fixtures import UserData
+
+from .fixtures import UserData
 
 
 class UserResourceTest(FunctionalTestCase):
@@ -188,7 +189,7 @@ class UserResourceTest(FunctionalTestCase):
     def test_sign_in(self):
         self.require_authorization = False
 
-        user = UserData.james_william_elliot
+        user = UserData.JamesWilliamElliot
 
         # Try and log in with the testuser
         url = UserResource.get_collection_path() + "@signin"
