@@ -11,11 +11,10 @@ from sqlalchemy.orm import joinedload
 from sandglass.time import _
 from sandglass.time.api.error import APIError
 from sandglass.time.filters import QueryFilterError
-from sandglass.time.interfaces import IDescribable
+from sandglass.time.describe.resource import ModelResourceDescriber
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
 from sandglass.time.resource import BaseResource
-from sandglass.time.resource import ResourceDescriber
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 
@@ -132,70 +131,6 @@ def handle_collection_rest_modes(func):
         return result
 
     return wrapper
-
-
-class ModelResourceDescriber(ResourceDescriber):
-    """
-    API resource describer for `ModelResource` instances.
-
-    """
-    def describe_related(self, data):
-        data['related'] = self.resource.relationships.keys()
-        return data
-
-    def describe_schema(self, data, schema_cls):
-        schema = schema_cls()
-        data['schema'] = {}
-        for child in schema.children:
-            class_name = child.typ.__class__.__name__
-            data['schema'][child.name] = {
-                'type': class_name,
-                'doc': child.description,
-            }
-        return data
-
-    def describe_action_schemas(self, data):
-        if 'actions' not in data:
-            return data
-
-        resource = self.resource
-        for name in ('member', 'collection'):
-            # Save list of schema actions by name
-            actions = {info['name']: info for info in data['actions'][name]}
-            # Get action schemas for current resource actions
-            for action_info in resource.get_actions_by_type(name):
-                action_name = action_info['name']
-                if action_name not in actions:
-                    continue
-
-                func = getattr(resource, action_info['attr_name'])
-                schema_cls = getattr(func, '__schema__', None)
-                if not schema_cls:
-                    continue
-
-                self.describe_schema(actions[action_name], schema_cls)
-
-        return data
-
-    def describe_filters(self, data):
-        filters_data = []
-        if self.resource.query_filters:
-            for filter in self.resource.query_filters:
-                if IDescribable.providedBy(filter):
-                    filters_data.append(filter.describe())
-
-        if filters_data:
-            data['filters'] = filters_data
-
-        return data
-
-    def describe(self):
-        data = super(ModelResourceDescriber, self).describe()
-        self.describe_schema(data, self.resource.schema)
-        self.describe_action_schemas(data)
-        self.describe_related(data)
-        self.describe_filters(data)
-        return data
 
 
 class ModelResource(BaseResource):

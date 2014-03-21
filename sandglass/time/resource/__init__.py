@@ -8,7 +8,8 @@ import dateutil.parser
 from pyramid.decorator import reify
 from zope import interface
 
-from sandglass.time.interfaces import IDescribable
+from sandglass.time.describe.interfaces import IDescribable
+from sandglass.time.describe.resource import ResourceDescriber
 from sandglass.time.utils import route_path
 
 LOG = logging.getLogger(__name__)
@@ -129,46 +130,6 @@ class APIRequestDataError(Exception):
     JSON serialization.
 
     """
-
-
-class ResourceDescriber(object):
-    """
-    API resource describer.
-
-    Base class to describe `BaseResource` instances.
-
-    """
-    interface.implements(IDescribable)
-
-    def __init__(self, resource):
-        self.resource = resource
-
-    def __json__(self, request):
-        return self.describe()
-
-    def describe_actions(self, data):
-        filtered_fields = ('type', 'attr_name', 'extra')
-        resource = self.resource
-        data['actions'] = {'member': [], 'collection': []}
-        for name in ('member', 'collection'):
-            for action_info in resource.get_actions_by_type(name):
-                info = action_info.copy()
-                # Add action docstring when available
-                func = getattr(resource, info['attr_name'])
-                info['doc'] = (func.__doc__ or '').strip()
-
-                # Remove fields that should not be visible
-                for filtered_name in filtered_fields:
-                    del info[filtered_name]
-
-                data['actions'][name].append(info)
-
-        return data
-
-    def describe(self):
-        data = {}
-        self.describe_actions(data)
-        return data
 
 
 class BaseResource(object):

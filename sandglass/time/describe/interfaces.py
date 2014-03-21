@@ -14,6 +14,6 @@ class IDescribable(Interface):
         """
         Get meta information about current object functionality.
 
-        Returns a DIctionary.
+        Returns a Dictionary.
 
         """
