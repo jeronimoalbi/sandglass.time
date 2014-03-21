@@ -11,8 +11,8 @@ from sandglass.time.filters.search import Filter
 from sandglass.time.models.activity import Activity
 from sandglass.time.models.group import Group
 from sandglass.time.models.user import User
-from sandglass.time.resource import collection_action
-from sandglass.time.resource import member_action
+from sandglass.time.resource.action import collection_action
+from sandglass.time.resource.action import member_action
 from sandglass.time.resource.model import ModelResource
 from sandglass.time.resource.model import use_schema
 from sandglass.time.response import error_response

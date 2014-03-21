@@ -14,7 +14,7 @@ from sandglass.time.filters import QueryFilterError
 from sandglass.time.describe.resource import ModelResourceDescriber
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
-from sandglass.time.resource import BaseResource
+from sandglass.time.resource.base import BaseResource
 from sandglass.time.response import error_response
 from sandglass.time.response import info_response
 

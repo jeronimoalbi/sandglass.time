@@ -8,7 +8,6 @@ from sqlalchemy import engine_from_config
 
 from sandglass.time.api import include_api_versions
 from sandglass.time.auth.basic import setup_basic_http_auth
-from sandglass.time.directives import add_rest_resource
 from sandglass.time.models import initialize_database
 from sandglass.time.request import extend_request_object
 
@@ -46,7 +45,7 @@ def configure_application(config):
 
     """
     config.add_translation_dirs('sandglass.time:locales/')
-    config.add_directive('add_rest_resource', add_rest_resource)
+    config.include('sandglass.time.resource')
 
     json_renderer = JSONP(param_name='callback')
     json_renderer.add_adapter(datetime.datetime, json_datetime_adapter)

@@ -1,16 +1,12 @@
 # pylint: disable=W0613
 
-from functools import wraps
-
-from pyramid.httpexceptions import HTTPMethodNotAllowed
 from pyramid.path import DottedNameResolver
 
-from sandglass.time.resource import REQUEST_METHODS
-from sandglass.time.resource import REST_ROUTE_INFO
+from sandglass.time.resource.utils import allow_request_methods
 
-
-# Added REST API resources are saved here
-RESOURCE_REGISTRY = {}
+from .registry import register_resource
+from .registry import RESOURCE_REGISTRY
+from .utils import REQUEST_METHODS
 
 # Permission suffix by request method
 PERMISSION_SUFFIX = {
@@ -19,6 +15,67 @@ PERMISSION_SUFFIX = {
     'PUT': 'update',
     'DELETE': 'delete',
 }
+
+REST_ROUTE_INFO = {
+    # GET: List all items
+    # POST: Create new item(s)
+    # PUT: Update item(s)
+    # DELETE: Delete all items
+    'collection': {
+        'route_name': 'api.rest.collection',
+        'pattern': r'/{member}/',
+        'methods': REQUEST_METHODS,
+        # Note: Require `resource_action_predicate` during view attachment
+        'action': {
+            'pattern': r'/{member}/@{action}',
+            # All request methods are supported
+            'methods': REQUEST_METHODS,
+        },
+    },
+    # GET: Get a single item
+    # PUT: Update a single item
+    # DELETE: Delete a single item
+    'member': {
+        'route_name': 'api.rest.member',
+        'pattern': r'/{member}/{pk:\d+}/',
+        'methods': ('GET', 'PUT', 'DELETE'),
+        # Note: Require `resource_action_predicate` during view attachment
+        'action': {
+            'pattern': r'/{member}/{pk:\d+}/@{action}',
+            # All request methods are supported
+            'methods': REQUEST_METHODS,
+        },
+    },
+    # GET: List all related items
+    # PUT: Append related item(s)
+    # DELETE: Delete related item(s)
+    'related': {
+        'route_name': 'api.rest.related',
+        'pattern': r'/{member}/{pk:\d+}/{related_name}/',
+        'methods': ('GET', 'PUT', 'DELETE'),
+    },
+}
+
+
+class RootModelFactory(object):
+    """
+    Root factory that uses current request model class as context.
+
+    Model class is getted from current request resource.
+
+    """
+    def __init__(self):
+        self.resources = RESOURCE_REGISTRY
+
+    def __call__(self, request):
+        return self
+
+    def __getitem__(self, name):
+        if name not in self.resources:
+            return
+
+        # Use current resource model as context
+        return self.resources[name].model
 
 
 def resource_action_predicate(action_name):
@@ -34,32 +91,6 @@ def resource_action_predicate(action_name):
     return predicate
 
 
-def allow_request_methods(methods):
-    """
-    Resource method decorator to allow specific request method(s).
-
-    HTTP method not allowed is raised when request uses a method
-    that is not in the allowed methods list.
-
-    """
-    if isinstance(methods, basestring):
-        allowed_methods = [methods]
-    else:
-        allowed_methods = methods
-
-    def decorator(func):
-        @wraps(func)
-        def allow_request_methods_wrapper(context, request):
-            if request.method not in allowed_methods:
-                raise HTTPMethodNotAllowed()
-
-            return func(context, request)
-
-        return allow_request_methods_wrapper
-
-    return decorator
-
-
 def add_rest_resource(config, cls_or_dotted):
     """
     Add routes and views for a `RestResource` class.
@@ -69,7 +100,7 @@ def add_rest_resource(config, cls_or_dotted):
     resolver = DottedNameResolver()
     cls = resolver.maybe_resolve(cls_or_dotted)
     resource_name = cls.get_route_prefix()
-    RESOURCE_REGISTRY[resource_name] = cls
+    register_resource(cls)
 
     # Generate routes and attach views for current class
     for route_type, route_info in REST_ROUTE_INFO.items():
@@ -128,3 +159,36 @@ def add_rest_resource(config, cls_or_dotted):
                 renderer='json',
                 request_method=request_method,
                 permission=permission)
+
+
+def add_api_rest_routes(config):
+    """
+    Add API REST routes to a config object.
+
+    """
+    for route_info in REST_ROUTE_INFO.values():
+        name = route_info['route_name']
+        pattern = route_info['pattern']
+        methods = route_info['methods']
+        config.add_route(
+            name,
+            pattern=pattern,
+            request_method=methods,
+            factory=RootModelFactory(),
+            traverse="/{member}")
+
+        #Get action information for current route
+        action_info = route_info.get('action')
+        if not action_info:
+            continue
+
+        # Add action route when available
+        action_name = "{}_action".format(name)
+        action_pattern = action_info['pattern']
+        action_methods = action_info['methods']
+        config.add_route(
+            action_name,
+            pattern=action_pattern,
+            request_method=action_methods,
+            factory=RootModelFactory(),
+            traverse="/{member}")

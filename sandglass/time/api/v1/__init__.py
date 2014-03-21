@@ -1,6 +1,5 @@
 from sandglass.time.api import API
 from sandglass.time.api import ApiDescribeResource
-from sandglass.time.resource import add_api_rest_routes
 
 
 class ApiV1DescribeResource(ApiDescribeResource):
@@ -42,7 +41,7 @@ def includeme(config):
     config.add_resource_describe(version, ApiV1DescribeResource)
 
     # Load API REST routes for current config path
-    add_api_rest_routes(config)
+    config.add_api_rest_routes()
 
     # Attach resources to API REST routes
     for resource in API.get_resources(version):
