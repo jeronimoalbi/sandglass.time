@@ -248,7 +248,7 @@ class ModelResource(BaseResource):
 
         return obj
 
-    def _get_related_query_mode(self, default_mode='pk'):
+    def _get_related_query_mode(self, default_mode='full'):
         """
         Get a dictionary of related field name and query mode.
 
@@ -347,7 +347,7 @@ class ModelResource(BaseResource):
             - pk (only load pk values)
 
         By default no related objects are loaded.
-        When no mode is given then `pk` is used as default.
+        When no mode is given then `full` is used as default.
 
         Loading of related object in the same request is specified
         using a GET parameter called `include` or `inc`.
