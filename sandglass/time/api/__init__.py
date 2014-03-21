@@ -7,7 +7,7 @@ from pyramid.security import Deny
 from pyramid.security import Everyone
 from zope import interface
 
-from sandglass.time.interfaces import IDescribable
+from sandglass.time.describe.interfaces import IDescribable
 from sandglass.time.security import Administrators
 
 LOG = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 from colander import SchemaNode
 from zope import interface
 
-from sandglass.time.interfaces import IDescribable
+from sandglass.time.describe.interfaces import IDescribable
 from sandglass.time.filters import NULL
 from sandglass.time.filters import QueryFilter
 from sandglass.time.filters import QueryFilterError
