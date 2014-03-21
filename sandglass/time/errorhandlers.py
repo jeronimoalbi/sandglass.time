@@ -10,7 +10,7 @@ import transaction
 from pyramid.view import view_config
 
 from sandglass.time.api import error
-from sandglass.time.resource import APIRequestDataError
+from sandglass.time.resource.base import APIRequestDataError
 from sandglass.time.response import error_response
 
 LOG = logging.getLogger(__name__)
