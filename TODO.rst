@@ -1,6 +1,8 @@
 Misc
 ====
 
+ * Use http://marshmallow.readthedocs.org/ for object (de)serialization ?
+
 SQL/Models
 ==========
 
@@ -11,6 +13,7 @@ API
 ===
 
  * Implement JSON API specs http://jsonapi.org/format/
+ * Use "Content-Type: application/vnd.api+json" for API responses
  * Implement support for returning JSON with camelcase field names
 
 Tests

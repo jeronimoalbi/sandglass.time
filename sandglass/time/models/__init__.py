@@ -251,8 +251,7 @@ class BaseModel(object):
         return self
 
     def __json__(self, request):
-        data = dict(self)
-        return self.update_json_data(data)
+        return dict(self)
 
     @staticmethod
     def new_session():
@@ -364,17 +363,6 @@ class BaseModel(object):
 
         """
         return DBSESSION.object_session(self)
-
-    def update_json_data(self, obj_dict):
-        """
-        Method called by __json__ after a dict for current obj is created.
-
-        Override this method to add extra data during JSON serialization.
-
-        Return a Dictionary.
-
-        """
-        return obj_dict
 
     def next(self):
         # Skip non public properties
