@@ -1,8 +1,6 @@
 Misc
 ====
 
- * Create a function to get authenticated use info: IAuthInfo(request).user
-
 SQL/Models
 ==========
 
@@ -12,13 +10,8 @@ SQL/Models
 API
 ===
 
- * Define error codes for reponses
- * Implement support to get partial data from related items (x.e ?include=tags:full)
- * Define a standard way to use filters (from/to dates for example)
- * Modify APi resource class to be a model independent resource
+ * Implement JSON API specs http://jsonapi.org/format/
  * Implement support for returning JSON with camelcase field names
- * Add XML and JSONP formats support (use extension in URL ?)
- * Implement a Sphinx extension to auto document api resources
 
 Tests
 =====
