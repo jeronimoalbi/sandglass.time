@@ -1,4 +1,3 @@
-from sandglass.time.api import add_api_resource_describe
 from sandglass.time.api import API
 from sandglass.time.api import ApiDescribeResource
 from sandglass.time.resource import add_api_rest_routes
@@ -40,7 +39,7 @@ def includeme(config):
     version = config.route_prefix.split('/')[-1]
 
     # Add support for describing resources in current API
-    add_api_resource_describe(config, version, ApiV1DescribeResource)
+    config.add_resource_describe(version, ApiV1DescribeResource)
 
     # Load API REST routes for current config path
     add_api_rest_routes(config)

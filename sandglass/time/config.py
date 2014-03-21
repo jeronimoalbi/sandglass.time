@@ -34,6 +34,9 @@ def include_resources(config):
     Initialize `sandglass.time` application resources.
 
     """
+    # Enable resource describing support
+    config.include('sandglass.time.describe')
+    # Add all API versions to `api/`
     config.include(include_api_versions, route_prefix='api')
 
 
