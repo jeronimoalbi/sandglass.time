@@ -36,16 +36,16 @@ class ResourceSerializerProxy(object):
         self.obj = obj
 
     def __json__(self, request):
-        return self.serialize()
+        return self.serialize(request)
 
-    def serialize(self):
+    def serialize(self, request=None):
         """
         Get current object serialized.
 
         Returns a Dictionary.
 
         """
-        data = dict(self.obj)
+        data = getattr(self.obj, '__json__')(request)
         if self.resource.related_query_mode:
             data = self.load_related_data(data)
 

@@ -52,6 +52,15 @@ class User(TimestampMixin, BaseModel):
         self.generate_salt()
         super(User, self).__init__(*args, **kwargs)
 
+    def __json__(self, request):
+        data = super(User, self).__json__(request)
+        # Add an email hash (can be used for example to get user Gravatar)
+        data['email_md5'] = hashlib.md5(self.email).hexdigest()
+        # Remove salt and password from serialized data
+        data.pop('salt', None)
+        data.pop('password', None)
+        return data
+
     def get_password(self):
         return self._password
 
@@ -130,11 +139,3 @@ class User(TimestampMixin, BaseModel):
 
         """
         self.salt = utils.generate_random_hash(hash='sha1')
-
-    def update_json_data(self, data):
-        # Add an email hash (can be used for example to get user Gravatar)
-        data['email_md5'] = hashlib.md5(self.email).hexdigest()
-        # Remove salt and password from serialized data
-        data.pop('salt', None)
-        data.pop('password', None)
-        return data
