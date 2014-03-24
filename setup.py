@@ -10,10 +10,10 @@ setup(
     zip_safe=False,
     include_package_data=True,
     install_requires=[
+        'gunicorn',
         'pyramid==1.4.3',
         'pyramid_tm==0.7',
         'pyramid_mailer==0.13',
-        'waitress==0.8.8',
         'sqlalchemy==0.9.1',
         'fixture[sqlalchemy]',
         'zope.sqlalchemy',

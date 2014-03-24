@@ -1,0 +1,26 @@
+[buildout]
+parts = 
+    supervisor
+    nginx
+    supervisord.conf
+    nginx.conf
+eggs = sandglass.time
+develop = ../
+
+[supervisord.conf]
+recipe = collective.recipe.template
+input = ${buildout:directory}/templates/etc/supervisord.conf
+output = ${buildout:directory}/etc/supervisord.conf
+
+[supervisor]
+recipe = collective.recipe.supervisor
+supervisord-conf = ${buildout:directory}/etc/supervisord.conf
+
+[nginx.conf]
+recipe = collective.recipe.template
+input = ${buildout:directory}/templates/etc/nginx.conf
+output = ${buildout:directory}/etc/nginx.conf
+
+[nginx] 
+recipe = zc.recipe.cmmi 
+url = http://nginx.org/download/nginx-1.5.11.tar.gz
