@@ -14,3 +14,14 @@ coverage
 *.ini
 .coverage
 .tox
+
+buildout/.installed.cfg
+buildout/build
+buildout/buildout.cfg
+buildout/bin
+buildout/develop-eggs
+buildout/downloads
+buildout/eggs
+buildout/parts
+buildout/var
+buildout/etc

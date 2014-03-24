@@ -1,3 +1,8 @@
+[server:main]
+use = egg:gunicorn#main
+host = 127.0.0.1
+port = 8080
+
 [app:main]
 use = egg:sandglass.time
 
@@ -51,13 +56,6 @@ database.echo = false
 #
 request.rest_collection_mode = strict
 
-[server:main]
-use = egg:waitress#main
-host = 0.0.0.0
-port = 6543
-
-# Begin logging configuration
-
 [loggers]
 keys = root, time
 
@@ -84,5 +82,3 @@ formatter = generic
 
 [formatter_generic]
 format = %(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
-
-# End logging configuration
