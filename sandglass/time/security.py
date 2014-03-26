@@ -7,3 +7,7 @@ PUBLIC = NO_PERMISSION_REQUIRED
 
 # Group definition for administrators
 Administrators = u"time.Administrators"
+
+# Other group name definitions
+Users = u"time.Users"
+Managers = u"time.Managers"

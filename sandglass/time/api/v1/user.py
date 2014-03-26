@@ -20,7 +20,7 @@ from sandglass.time.schemas.user import UserListSchema
 from sandglass.time.schemas.user import UserSigninSchema
 from sandglass.time.schemas.user import UserSignupSchema
 from sandglass.time.schemas.user import UserSchema
-from sandglass.time.security import Administrators
+from sandglass.time.security import Users
 from sandglass.time.security import PUBLIC
 
 from .error import APIV1Error
@@ -54,7 +54,7 @@ class UserResource(ModelResource):
     schema = UserSchema
     list_schema = UserListSchema
     query_filters = (
-        # Allow searching of users
+        # Allow simple search of users
         BySearchFields(User, SEARCH_FILTERS),
     )
 
@@ -63,6 +63,11 @@ class UserResource(ModelResource):
     def signin(self):
         """
         Signin (login) a user.
+
+        User `email` and `password` are used to find and validate
+        signing process.
+
+        Returns a user.
 
         """
         data = self.submitted_member_data
@@ -78,11 +83,14 @@ class UserResource(ModelResource):
         """
         Create a new user.
 
+        New users are assigned to `time.Users` group.
+
+        Returns the new user.
+
         """
         # TODO: Validate user by sending a link to the email
         data = self.submitted_member_data
         if User.query().filter_by(email=data['email']).count():
-            msg = _("A user with the same E-Mail already exists")
             raise APIV1Error('USER_EMAIL_EXISTS')
 
         user = User(**data)
@@ -90,15 +98,11 @@ class UserResource(ModelResource):
         session.add(user)
         session.flush()
 
-        # TODO: Assing only non admin permissions (or a Users group ?)
-        query = Group.query(session).filter_by(name=Administrators)
-        admin_group = query.first()
-        if not admin_group:
-            # Admin group is created running `sandglass manage init-database`
-            msg = _("Administrators group does not exist")
-            return error_response(msg)
-
-        user.groups.append(admin_group)
+        # By default assign new users to Users group
+        query = Group.query(session).filter_by(name=Users)
+        group = query.first()
+        if group:
+            user.groups.append(group)
 
         return user
 
@@ -107,7 +111,7 @@ class UserResource(ModelResource):
         """
         Get a User by email or token.
 
-        Return a User or raise HTTP 404.
+        Returns a User or raise HTTP 404.
 
         """
         user = None
@@ -134,7 +138,7 @@ class UserResource(ModelResource):
         Different date range can be queried using `from` and `to`
         arguments in the request.
 
-        Return a List of Activity.
+        Returns a List of Activity.
 
         """
         if not self.is_valid_object:

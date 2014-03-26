@@ -31,6 +31,9 @@ class ManageController(controller.CementBaseController):
                 action='store_true',
                 help="user is an administrator",
             )),
+            (['-g', '--group'], dict(
+                help="add user to a group",
+            )),
         ]
 
     @controller.expose(help="insert initial application data")
@@ -81,15 +84,22 @@ class ManageController(controller.CementBaseController):
         session = user.new_session()
         session.add(user)
 
-        # When user is an admin add it to admins group
+        # Get the group name for the user
+        group_name = None
         if self.app.pargs.admin:
-            admin_group = Group.query().filter_by(name=Administrators).first()
-            if not admin_group:
-                print(_("Administrators group is not defined"))
+            # When user is an admin add it to admins group
+            group_name = Administrators
+        elif self.app.pargs.group:
+            group_name = self.app.pargs.group.decode(sys.stdin.encoding)
+
+        if group_name:
+            group = Group.query().filter_by(name=group_name).first()
+            if not group:
+                print(_("Group {} is not defined").format(group_name))
                 transaction.doom()
                 sys.exit(1)
 
-            user.groups.append(admin_group)
+            user.groups.append(group)
 
         # Print token and key after creation
         msg = _("Token: {0}\nKey: {1}").format(user.token, user.key)
