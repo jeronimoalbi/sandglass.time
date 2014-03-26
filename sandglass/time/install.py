@@ -1,12 +1,14 @@
+# pylint: disable=C0103
+
 from fixture import DataSet
 from fixture import SQLAlchemyFixture
 from fixture.style import NamedDataStyle
 
 from sandglass.time import _
+from sandglass.time import security
 from sandglass.time.models import META
 from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.models import scan_models
-from sandglass.time.security import Administrators
 
 
 def permission_data_class_factory():
@@ -111,18 +113,18 @@ class GroupData(DataSet):
 
     """
     class Admins:
-        name = Administrators
+        name = security.Administrators
         id = 1
         description = _(u"Administrators")
 
     class Users:
-        name = u"time.Users"
+        name = security.Users
         id = 2
         description = _(u"Users")
         permissions = USERS_GROUP_PERMISSIONS
 
     class Managers:
-        name = u"time.Managers"
+        name = security.Managers
         id = 3
         description = _(u"Managers")
         permissions = MANAGERS_GROUP_PERMISSIONS
