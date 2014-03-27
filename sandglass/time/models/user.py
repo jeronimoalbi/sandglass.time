@@ -139,3 +139,25 @@ class User(TimestampMixin, BaseModel):
 
         """
         self.salt = utils.generate_random_hash(hash='sha1')
+
+    @reify
+    def permissions(self):
+        """
+        Get a list of user permissions.
+
+        Returns a Set of String.
+
+        """
+        from sandglass.time.models import group
+        from sandglass.time.models.permission import Permission
+
+        field_user_id = group.user_association_table.c.user_id
+
+        # Create a query to get permission names for current user
+        query = self.current_session.query(Permission.name)
+        query = query.join(group.permission_association_table)
+        query = query.join(group.Group)
+        query = query.join(group.user_association_table)
+        query = query.filter(field_user_id == self.id)
+
+        return {result.name for result in query.all()}

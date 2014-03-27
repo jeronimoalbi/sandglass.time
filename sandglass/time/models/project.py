@@ -62,6 +62,12 @@ class Project(ActivePeriodMixin, BaseModel):
         secondary=project_association_table,
         back_populates="projects")
 
+    class Meta:
+        permissions = (
+            # Allow to change value for `is_public` field
+            'set_is_public',
+        )
+
     @declared_attr
     def __table_args__(cls):
         return (
