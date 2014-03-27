@@ -20,7 +20,7 @@ Setting up after initial checkout
 
   $ python setyp.py develop
   $ cp sandglass-tests.ini.dist sandglass-tests.ini
-  $ cp sandglass.ini.dist sandglass.ini
+  $ cp sandglass-development.ini.dist sandglass.ini
   $ sandglass manage init-database
   $ sandglass manage create-user --admin
   $ pserve sandglass.ini
