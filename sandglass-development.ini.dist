@@ -1,6 +1,5 @@
 [server:main]
-use = egg:Waitress#main
-; use = egg:gunicorn#main
+use = egg:waitress#main
 host = 127.0.0.1
 port = 8080
 
