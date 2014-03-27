@@ -1,6 +1,7 @@
 Misc
 ====
 
+ * Create a dict like object to handle permissions for each model
  * Use http://marshmallow.readthedocs.org/ for object (de)serialization ?
 
 SQL/Models

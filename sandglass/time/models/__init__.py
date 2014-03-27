@@ -167,41 +167,9 @@ class BaseModel(object):
     This is used as a base class during SQLAlchemy base model definition.
 
     """
-    @declared_attr
-    def __acl__(cls):
-        """
-        ACL (Access Control List) with permission rules for current model.
-
-        Rules apply only to Authenticated users.
-
-        ACL follows C.R.U.D. for each rule (Create, Read, Update and Delete).
-
-        Return an ACL (List).
-
-        """
-        acl = []
-        for permission_name in ('create', 'read', 'update', 'delete'):
-            permission = cls.get_permission(permission_name)
-            rule = (Allow, Authenticated, permission)
-            acl.append(rule)
-
-        # Append default ACL rules
-        acl.extend(DEFAULT_ACL)
-
-        return acl
-
-    @declared_attr
-    def __tablename__(cls):
-        # Get sandglass application module name where current model is defined
-        if not cls.__module__.startswith('sandglass.'):
-            raise Exception('Model is not defined inside a sandglass app !')
-
-        return cls.get_namespaced_name()
-
-    @declared_attr
-    def id(cls):
-        seq_name = cls.__tablename__ + "_id_seq"
-        return Column(Integer, Sequence(seq_name), primary_key=True)
+    class Meta:
+        # List of extra (non default) model permissions
+        permissions = []
 
     @classmethod
     def get_namespaced_name(cls):
@@ -233,6 +201,9 @@ class BaseModel(object):
         """
         Get a list with default permissions for this model.
 
+        Default permissions are 'create', 'read', 'update', 'delete'
+        and 'action' (a.k.a. CRUD A).
+
         Return a List of strings.
 
         """
@@ -244,55 +215,35 @@ class BaseModel(object):
 
         return permission_list
 
-    def __iter__(self):
-        self._mapper = object_mapper(self)
-        self._col_iter = iter(self._mapper.columns)
-
-        return self
-
-    def __json__(self, request):
-        return dict(self)
-
-    @staticmethod
-    def new_session():
+    @classmethod
+    def get_extra_permission_list(cls):
         """
-        Create a new Session.
+        Get a list with non default permissions for this model.
 
-        New Sessions must be finished by calling commit()
-        or rollback() session methods.
+        Return a List of strings.
 
         """
-        return DBSESSION()
+        permission_list = []
+        cls_meta = cls.Meta
+        for permission_name in cls_meta.permissions:
+            permission = cls.get_permission(permission_name)
+            permission_list.append(permission)
 
-    @mixedmethod
-    def query(obj=None, session=None):
+        return permission_list
+
+    @classmethod
+    def get_full_permission_list(cls):
         """
-        Get a query instance for current model class or instance.
+        Get a list with all permissions for this model.
 
-        Session argument is used only when method is called as class method.
-        Global session is used for class method calls without a session
-        argument.
+        List is created with default and extra permissions.
 
-        When query is called on an instance then it will be filtered by
-        the instance `id` field.
+        Return a List of strings.
 
         """
-        if isclass(obj):
-            cls = obj
-            # For class method calls use global session when none is available
-            if not session:
-                session = cls.new_session()
-
-            # Create a Query to get all records for current class
-            query = session.query(cls)
-        else:
-            # When called as instance method get class and session from object
-            cls = obj.__class__
-            session = obj.current_session
-            # Create a Query that filters records for current object
-            query = session.query(cls).filter(cls.id == obj.id)
-
-        return query
+        permission_list = cls.get_default_permission_list()
+        permission_list.extend(cls.get_extra_permission_list())
+        return permission_list
 
     @classmethod
     def has_field(cls, field_name):
@@ -355,6 +306,92 @@ class BaseModel(object):
 
         query = cls.query(session=session)
         return query.get(*args, **kw)
+
+    @staticmethod
+    def new_session():
+        """
+        Create a new Session.
+
+        New Sessions must be finished by calling commit()
+        or rollback() session methods.
+
+        """
+        return DBSESSION()
+
+    @mixedmethod
+    def query(obj=None, session=None):
+        """
+        Get a query instance for current model class or instance.
+
+        Session argument is used only when method is called as class method.
+        Global session is used for class method calls without a session
+        argument.
+
+        When query is called on an instance then it will be filtered by
+        the instance `id` field.
+
+        """
+        if isclass(obj):
+            cls = obj
+            # For class method calls use global session when none is available
+            if not session:
+                session = cls.new_session()
+
+            # Create a Query to get all records for current class
+            query = session.query(cls)
+        else:
+            # When called as instance method get class and session from object
+            cls = obj.__class__
+            session = obj.current_session
+            # Create a Query that filters records for current object
+            query = session.query(cls).filter(cls.id == obj.id)
+
+        return query
+
+    def __iter__(self):
+        self._mapper = object_mapper(self)
+        self._col_iter = iter(self._mapper.columns)
+
+        return self
+
+    def __json__(self, request):
+        return dict(self)
+
+    @declared_attr
+    def __acl__(cls):
+        """
+        ACL (Access Control List) with permission rules for current model.
+
+        Rules apply only to Authenticated users.
+
+        ACL follows C.R.U.D. for each rule (Create, Read, Update and Delete).
+
+        Return an ACL (List).
+
+        """
+        acl = []
+        for permission_name in ('create', 'read', 'update', 'delete'):
+            permission = cls.get_permission(permission_name)
+            rule = (Allow, Authenticated, permission)
+            acl.append(rule)
+
+        # Append default ACL rules
+        acl.extend(DEFAULT_ACL)
+
+        return acl
+
+    @declared_attr
+    def __tablename__(cls):
+        # Get sandglass application module name where current model is defined
+        if not cls.__module__.startswith('sandglass.'):
+            raise Exception('Model is not defined inside a sandglass app !')
+
+        return cls.get_namespaced_name()
+
+    @declared_attr
+    def id(cls):
+        seq_name = cls.__tablename__ + "_id_seq"
+        return Column(Integer, Sequence(seq_name), primary_key=True)
 
     @property
     def current_session(self):

@@ -6,6 +6,8 @@ from colander import null
 from colander import SchemaNode
 from colander import SequenceSchema
 
+from sandglass.time import _
+
 
 class BaseModelSchema(MappingSchema):
     """
@@ -83,3 +85,35 @@ class SpaceSeparatedIntegers(object):
 
     def cstruct_children(self, node, cstruct):
         return []
+
+
+class RequirePermissions(object):
+    """
+    SchemaNode validator to check user permissions during serialization.
+
+    Validator check that current logged in user has one or more permissions
+    for a given schema field.
+
+    """
+    invalid_msg = _("No permission to change {field_name} value")
+
+    def __init__(self, *permissions):
+        self.permissions = set(permissions)
+
+    def __call__(self, node, value):
+        request = node.bindings.get('request')
+        if not request:
+            raise Exception("Validator is not bound to a request")
+
+        error_message = self.invalid_msg.format(field_name=node.name)
+        user = request.authenticated_user
+        if user:
+            # Admin users are allowed to change any field
+            if user.is_admin:
+                return
+
+            # Check that user user has right permissions for this field
+            if self.permissions.issubset(user.permissions):
+                return
+
+        raise Invalid(node, error_message)

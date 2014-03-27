@@ -308,6 +308,7 @@ class ModelResource(BaseResource):
 
         """
         schema = self.schema()
+        schema = schema.bind(request=self.request)
         return schema.deserialize(self.request_data)
 
     @reify
@@ -336,6 +337,7 @@ class ModelResource(BaseResource):
                 raise APIError('COLLECTION_EXPECTED')
 
             list_schema = self.list_schema()
+            list_schema = list_schema.bind(request=self.request)
             return list_schema.deserialize(self.request_data)
 
     def get_query_filters(self):

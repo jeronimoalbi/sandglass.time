@@ -11,11 +11,11 @@ from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.models import scan_models
 
 
-def permission_data_class_factory():
+def model_permission_data_class_factory(cls_name):
     """
-    Create a new PermissionData class.
+    Create DataSet class with all registered models permissions.
 
-    Returns a PermissionData class definition.
+    Returns a DataSet class.
 
     """
     if not MODEL_REGISTRY:
@@ -39,21 +39,22 @@ def permission_data_class_factory():
         # Get permissions for current model and create classes
         # for each permission. Each class will be assigned to
         # the new "DataSet" class being created.
-        for permission in model.get_default_permission_list():
-            cls_name = permission
+        for permission in model.get_full_permission_list():
+            inner_cls_name = permission
             fields = {
                 'id': current_id,
                 'name': str(permission),
+                # TODO: Add description for permissions
                 'description': u'',
             }
-            attrs[cls_name] = type(cls_name, (), fields)
+            attrs[inner_cls_name] = type(inner_cls_name, (), fields)
             current_id += 1
 
-    return type('PermissionData', (DataSet, ), attrs)
+    return type(cls_name, (DataSet, ), attrs)
 
 
 # Dataset with all model permissions.
-PermissionData = permission_data_class_factory()
+PermissionData = model_permission_data_class_factory('PermissionData')
 
 
 def permission_list(model_name, flags):
@@ -103,7 +104,9 @@ MANAGERS_GROUP_PERMISSIONS = (
     permission_list('group', 'cuda') +
     permission_list('permission', 'ua') +
     permission_list('client', 'cud') +
-    permission_list('user', 'cud')
+    permission_list('user', 'cud') +
+    # TODO: Implement a better way of getting permission strings
+    [PermissionData.time_project_set_is_public]
 )
 
 

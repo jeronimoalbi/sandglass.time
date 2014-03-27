@@ -7,6 +7,7 @@ from colander import String
 from colander import SequenceSchema
 
 from sandglass.time.schemas import BaseModelSchema
+from sandglass.time.schemas import RequirePermissions
 
 
 class ProjectSchema(BaseModelSchema):
@@ -27,6 +28,7 @@ class ProjectSchema(BaseModelSchema):
         Integer())
     is_public = SchemaNode(
         Boolean(),
+        validator=RequirePermissions('time_project_set_is_public'),
         missing=drop)
 
 
