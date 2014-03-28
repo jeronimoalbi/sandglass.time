@@ -36,6 +36,8 @@ from sqlalchemy.types import VARCHAR
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from sandglass.time.security import Administrators
+from sandglass.time.security import PERMISSION
+from sandglass.time.utils import get_app_namespace
 from sandglass.time.utils import mixedmethod
 
 META = MetaData()
@@ -168,7 +170,7 @@ class BaseModel(object):
 
     """
     class Meta:
-        # List of extra (non default) model permissions
+        # List of extra (non CRUDA) model permissions
         permissions = []
 
     @classmethod
@@ -182,8 +184,8 @@ class BaseModel(object):
         Return a String.
 
         """
-        parts = cls.__module__.split('.')
-        return "{0}_{1}".format(parts[1], cls.__name__.lower())
+        app_name = get_app_namespace(cls)
+        return "{0}_{1}".format(app_name, cls.__name__.lower())
 
     @classmethod
     def get_permission(cls, permission_name):
@@ -193,8 +195,7 @@ class BaseModel(object):
         Return a String.
 
         """
-        prefix = cls.get_namespaced_name()
-        return "{0}_{1}".format(prefix, permission_name)
+        return PERMISSION.get(cls, permission_name)
 
     @classmethod
     def get_default_permission_list(cls):
@@ -202,18 +203,12 @@ class BaseModel(object):
         Get a list with default permissions for this model.
 
         Default permissions are 'create', 'read', 'update', 'delete'
-        and 'action' (a.k.a. CRUD A).
+        and 'action' (a.k.a. CRUDA).
 
         Return a List of strings.
 
         """
-        default_names_list = ('create', 'read', 'update', 'delete', 'action')
-        permission_list = []
-        for permission_name in default_names_list:
-            permission = cls.get_permission(permission_name)
-            permission_list.append(permission)
-
-        return permission_list
+        return PERMISSION.cruda(cls)
 
     @classmethod
     def get_extra_permission_list(cls):
@@ -364,14 +359,13 @@ class BaseModel(object):
 
         Rules apply only to Authenticated users.
 
-        ACL follows C.R.U.D. for each rule (Create, Read, Update and Delete).
+        ACL follows CRUD for each rule (Create, Read, Update and Delete).
 
-        Return an ACL (List).
+        Returns an ACL.
 
         """
         acl = []
-        for permission_name in ('create', 'read', 'update', 'delete'):
-            permission = cls.get_permission(permission_name)
+        for permission in PERMISSION.cruda(cls, flags='crud'):
             rule = (Allow, Authenticated, permission)
             acl.append(rule)
 

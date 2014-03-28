@@ -5,12 +5,13 @@ import hashlib
 import os
 import re
 
+from inspect import isclass
+
 import pyramid.url
 
 from colander import EMAIL_RE
 from pyramid.testing import DummyRequest
 from pyramid.threadlocal import get_current_registry
-
 
 # Regexps for underscore/camelcase convertions
 CAMELCASE_RE = re.compile("(.)([A-Z]{1})")
@@ -167,3 +168,34 @@ def generate_hash(value, hash='sha1'):
     """
     sha_obj = getattr(hashlib, hash)(value)
     return sha_obj.hexdigest()
+
+
+def get_app_namespace(context):
+    """
+    Get appplication name for a context.
+
+    Sandglass applications are organized under a `sandglass`
+    prefix. So all applications module names follow the format::
+
+        sandglass.APP_NAME
+
+    This method returns the `APP_NAME` extracted from the module
+    where given context object/class is defined.
+    When context is a string it is used as sandglass module name.
+
+    Return a String.
+
+    """
+    if isinstance(context, basestring):
+        module_name = context
+    else:
+        cls = (context if isclass(context) else context.__class__)
+        module_name = cls.__module__
+
+    parts = module_name.lower().split('.')
+    if len(parts) < 2 or parts[0] != 'sandglass':
+        msg = "Context '{ctx}' module '{mod}' is not 'sandglass' namespaced"
+        raise Exception(msg.format(ctx=context, mod=module_name))
+
+    # Get the second element in module path
+    return parts[1]
