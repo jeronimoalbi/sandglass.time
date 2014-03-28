@@ -8,6 +8,7 @@ from zope import interface
 
 from sandglass.time.describe.interfaces import IDescribable
 from sandglass.time.describe.resource import ResourceDescriber
+from sandglass.time.security import PERMISSION
 from sandglass.time.utils import route_path
 
 from .action import collection_action
@@ -242,9 +243,10 @@ class BaseResource(object):
 
         return (from_date, to_date)
 
-    # TODO: Change permission name ?
-    # TODO: Create permission during install
-    @collection_action(methods='GET', permission="time.api.describe")
+    @collection_action(
+        methods='GET',
+        # TODO: Create permission during install
+        permission=PERMISSION.get('api', 'describe', context=__name__))
     def describe(self):
         """
         Get an API resource description.
