@@ -1,3 +1,6 @@
+from sandglass.time.security import PERMISSION
+
+
 def add_resource_describe(config, version, resource):
     """
     Add support to describe API resources.
@@ -16,5 +19,5 @@ def add_resource_describe(config, version, resource):
         resource,
         route_name=route_name,
         renderer='json',
-        permission="time.api.describe",
+        permission=PERMISSION.get('api', 'describe', context=__name__),
     )

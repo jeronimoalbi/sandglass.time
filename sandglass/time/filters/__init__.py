@@ -27,9 +27,12 @@ class QueryFilter(object):
         Returns a Boolean.
 
         """
-        # TODO: Check that a user is valid
         user = resource.request.authenticated_user
-        return user.is_admin and self.applies_to_admin
+        if user and user.is_admin:
+            return self.applies_to_admin
+
+        # Filter applies to all non admin users by default
+        return True
 
     def filter_query(self, query, request, resource):
         """

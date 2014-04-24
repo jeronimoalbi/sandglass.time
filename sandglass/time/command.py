@@ -3,6 +3,7 @@ import os
 import sys
 
 from ConfigParser import SafeConfigParser
+from functools import wraps
 
 from cement.core import controller
 from cement.core import hook
@@ -78,10 +79,28 @@ class SandglassCliApp(foundation.CementApp):
             value = getpass.getpass(text)
 
         if value:
-            # TODO: Use current terminal encoding
-            value = unicode(value, 'utf8')
+            value = unicode(value, sys.stdin.encoding)
 
         return value or default
+
+
+def database_command(func):
+    """
+    Command method decorator to setup Pyramid/database context before run.
+
+    Methods that need to have Pyramid initialized before they run has to be
+    wrapped with this decorator.
+
+    """
+    @wraps(func)
+    def func_wrapper(self, *args, **kwargs):
+        # Load config before running command
+        config_file = self.app.pargs.config
+        self.app.init_pylons_config(config_file)
+        # Run the command
+        return func(self, *args, **kwargs)
+
+    return func_wrapper
 
 
 def post_argument_parsing_hook(app):
@@ -99,9 +118,6 @@ def post_argument_parsing_hook(app):
     else:
         msg = _("Using config file {}").format(config_file)
         app.log.debug(msg)
-
-    # TODO: Load Pylons related config only when command needs database
-    app.init_pylons_config(config_file)
 
 
 def main():

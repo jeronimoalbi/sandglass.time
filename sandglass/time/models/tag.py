@@ -1,9 +1,15 @@
+try:
+    from enum import Enum
+except ImportError:
+    # Use fallback package for python < 3.4
+    from flufl.enum import Enum
+
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
-from sqlalchemy.types import Enum
+from sqlalchemy.types import Enum as DbEnum
 from sqlalchemy.types import Integer
 from sqlalchemy.types import UnicodeText
 
@@ -11,15 +17,16 @@ from sandglass.time.models import BaseModel
 from sandglass.time.models import create_index
 
 
-# Tags used by the system
-TAG_TYPE_SYSTEM = u'system'
-# Tags used by the accounting users
-TAG_TYPE_ACCOUNTING = u'accounting'
-# Tags used by employees
-TAG_TYPE_ACTIVITY = u'activity'
+class TAG(Enum):
+    # Tags used by the system
+    system = u'system'
+    # Tags used by the accounting users
+    accounting = u'accounting'
+    # Tags used by employees
+    activity = u'activity'
 
 # Supported types of tags
-TAG_TYPES = (TAG_TYPE_SYSTEM, TAG_TYPE_ACCOUNTING, TAG_TYPE_ACTIVITY)
+TAG_TYPES = [item.value for item in TAG]
 
 
 class Tag(BaseModel):
@@ -33,8 +40,8 @@ class Tag(BaseModel):
     description = Column(
         UnicodeText())
     tag_type = Column(
-        Enum(*TAG_TYPES, native_enum=False),
-        default=TAG_TYPE_ACTIVITY,
+        DbEnum(*TAG_TYPES, native_enum=False),
+        default=TAG.activity.value,
         nullable=False)
     original_id = Column(
         Integer,

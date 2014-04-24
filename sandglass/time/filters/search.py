@@ -1,33 +1,172 @@
+import logging
+
 from colander import SchemaNode
 from zope import interface
 
+from sandglass.time import _
 from sandglass.time.describe.interfaces import IDescribable
 from sandglass.time.filters import NULL
 from sandglass.time.filters import QueryFilter
 from sandglass.time.filters import QueryFilterError
 
-# List of filter operations
-FILTER_OPERATIONS = (
+LOG = logging.getLogger(__name__)
+
+# Global error/warning messages
+LOG_MESSAGES = {
+    'value_is_not_string': _("Filter value %s is not a string"),
+    'value_is_not_list': _("Filter value %s is not a list"),
+}
+
+
+def _apply_operation_eq(query, field, value):
+    """
+    Apply "is equal" operation to a query field.
+
+    """
+    return query.filter(field == value)
+
+
+def _apply_operation_neq(query, field, value):
+    """
+    Apply "is not equal" operation to a query field.
+
+    """
+    return query.filter(field != value)
+
+
+def _apply_operation_in(query, field, value):
+    """
+    Apply "value(s) in list" operation to a query field.
+
+    """
+    if isinstance(value, list):
+        return query.filter(field.in_(value))
+    else:
+        LOG.warning(LOG_MESSAGES['value_is_not_list'], value)
+        return query
+
+
+def _apply_operation_nin(query, field, value):
+    """
+    Apply "value(s) not in list" operation to a query field.
+
+    """
+    if isinstance(value, list):
+        return query.filter(~field.in_(value))
+    else:
+        LOG.warning(LOG_MESSAGES['value_is_not_list'], value)
+        return query
+
+
+def _apply_operation_gt(query, field, value):
+    """
+    Apply "greater than" operation to a query field.
+
+    """
+    return query.filter(field > value)
+
+
+def _apply_operation_gte(query, field, value):
+    """
+    Apply "greater than or equal" operation to a query field.
+
+    """
+    return query.filter(field >= value)
+
+
+def _apply_operation_lt(query, field, value):
+    """
+    Apply "lower than" operation to a query field.
+
+    """
+    return query.filter(field < value)
+
+
+def _apply_operation_lte(query, field, value):
+    """
+    Apply "lower than or equal" operation to a query field.
+
+    """
+    return query.filter(field <= value)
+
+
+def _apply_operation_contains(query, field, value):
+    """
+    Apply "string contains" operation to a query field.
+
+    """
+    if isinstance(value, basestring):
+        value = u"%{}%".format(value)
+        query = query.filter(field.like(value))
+    else:
+        LOG.warning(LOG_MESSAGES['value_is_not_string'], value)
+        return query
+
+
+def _apply_operation_starts(query, field, value):
+    """
+    Apply "string starts with" operation to a query field.
+
+    """
+    if isinstance(value, basestring):
+        value = u"{}%".format(value)
+        query = query.filter(field.like(value))
+    else:
+        LOG.warning(LOG_MESSAGES['value_is_not_string'], value)
+        return query
+
+
+def _apply_operation_ends(query, field, value):
+    """
+    Apply "string ends with" operation to a query field.
+
+    """
+    if isinstance(value, basestring):
+        value = u"%{}".format(value)
+        query = query.filter(field.like(value))
+    else:
+        LOG.warning(LOG_MESSAGES['value_is_not_string'], value)
+        return query
+
+
+def _apply_operation_null(query, field, value):
+    """
+    Apply "is null" operation to a query field.
+
+    """
+    return query.filter(field == NULL)
+
+
+def _apply_operation_notnull(query, field, value):
+    """
+    Apply "is not null" operation to a query field.
+
+    """
+    return query.filter(field != NULL)
+
+
+# Query filter operations
+FILTER_OPERATIONS = {
     # Equal / not equal
-    'eq',
-    'neq',
+    'eq': _apply_operation_eq,
+    'neq': _apply_operation_neq,
     # In / not in
-    'in',
-    'nin',
+    'in': _apply_operation_in,
+    'nin': _apply_operation_nin,
     # Greater than / equal
-    'gt',
-    'gte',
+    'gt': _apply_operation_gt,
+    'gte': _apply_operation_gte,
     # Lower than / equal
-    'lt',
-    'lte',
+    'lt': _apply_operation_lt,
+    'lte': _apply_operation_lte,
     # Contains (%like%)
-    'contains',
-    'starts',
-    'ends',
+    'contains': _apply_operation_contains,
+    'starts': _apply_operation_starts,
+    'ends': _apply_operation_ends,
     # Is null / not null
-    'null',
-    'notnull',
-)
+    'null': _apply_operation_null,
+    'notnull': _apply_operation_notnull,
+}
 
 
 class Filter(object):
@@ -35,8 +174,10 @@ class Filter(object):
     Base class for search field filter fields.
 
     """
+    interface.implements(IDescribable)
+
     def __init__(self, field_type, ops=None):
-        self.valid_ops = ops or FILTER_OPERATIONS
+        self.valid_ops = ops or FILTER_OPERATIONS.keys()
         self.node = SchemaNode(field_type, missing=None)
 
     @property
@@ -48,6 +189,21 @@ class Filter(object):
 
     def deserialize(self, raw_value):
         return self.node.deserialize(raw_value)
+
+    def describe(self):
+        type_cls = self.field_type.__class__
+        operation_list = []
+        for operation in self.valid_ops:
+            info = {
+                'name': operation,
+                'doc': FILTER_OPERATIONS[operation].__doc__,
+            }
+            operation_list.append(info)
+
+        return {
+            'type': type_cls.__name__,
+            'operations': operation_list,
+        }
 
 
 class BySearchFields(QueryFilter):
@@ -79,10 +235,7 @@ class BySearchFields(QueryFilter):
     def describe(self):
         fields_info = {}
         for name, field in self.fields.items():
-            fields_info[name] = {
-                'type': field.field_type.__class__.__name__,
-                'operations': field.valid_ops,
-            }
+            fields_info[name] = field.describe()
 
         return {
             'name': "search_fields",
@@ -113,39 +266,14 @@ class BySearchFields(QueryFilter):
         return field.deserialize(raw_value)
 
     def apply_operation(self, query, field_name, filter_op, value):
+        # When filter operation is not supported return query without filter
+        if filter_op not in self.filter_operations:
+            return query
+
         field_list = self.model.get_attributes_by_name(field_name)
         field = field_list[0]
-        if filter_op == 'eq':
-            query = query.filter(field == value)
-        elif filter_op == 'neq':
-            query = query.filter(field != value)
-        elif filter_op == 'in' and isinstance(value, list):
-            query = query.filter(field.in_(value))
-        elif filter_op == 'nin' and isinstance(value, list):
-            query = query.filter(~field.in_(value))
-        elif filter_op == 'gt':
-            query = query.filter(field > value)
-        elif filter_op == 'gte':
-            query = query.filter(field >= value)
-        elif filter_op == 'lt':
-            query = query.filter(field < value)
-        elif filter_op == 'lte':
-            query = query.filter(field <= value)
-        elif filter_op == 'contains' and isinstance(value, basestring):
-            value = u"%{}%".format(value)
-            query = query.filter(field.like(value))
-        elif filter_op == 'starts' and isinstance(value, basestring):
-            value = u"{}%".format(value)
-            query = query.filter(field.like(value))
-        elif filter_op == 'ends' and isinstance(value, basestring):
-            value = u"%{}".format(value)
-            query = query.filter(field.like(value))
-        elif filter_op == 'null':
-            query = query.filter(field == NULL)
-        elif filter_op == 'notnull':
-            query = query.filter(field != NULL)
-
-        return query
+        apply_filter_func = self.filter_operations[filter_op]
+        return apply_filter_func(query, field, value)
 
     def filter_query(self, query, request, resource):
         # Look for filter values in all arguments

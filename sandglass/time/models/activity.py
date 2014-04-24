@@ -13,6 +13,7 @@ from sandglass.time.models import BaseModel
 from sandglass.time.models import META
 
 
+# TODO: Use Enum instead of globals
 # Activity codes
 ACTIVITY_UNASSIGNED = 'unassigned'
 ACTIVITY_WORKING = 'working'

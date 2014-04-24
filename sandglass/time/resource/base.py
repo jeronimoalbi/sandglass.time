@@ -245,8 +245,7 @@ class BaseResource(object):
 
     @collection_action(
         methods='GET',
-        # TODO: Create permission during install
-        permission=PERMISSION.get('api', 'describe', context=__name__))
+        permission=PERMISSION.get('api', 'describe'))
     def describe(self):
         """
         Get an API resource description.

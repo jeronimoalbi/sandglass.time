@@ -21,7 +21,6 @@ def error_response(message, data=None):
     Return a Response.
 
     """
-    # TODO: Define error codes for the API and use them in response body
     error_info = {
         'message': message,
         'error': (data if data is not None else True),
