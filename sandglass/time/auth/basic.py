@@ -10,7 +10,7 @@ def handle_basic_auth_challenge(request):
     """
     Handle HTTPForbidden errors for HTTP Basic Auth.
 
-    Return a response to challenge remote "browser" for a
+    Returns a response to challenge remote "browser" for a
     user name and password.
 
     """
@@ -27,7 +27,7 @@ def auth_callback(username, password, request):
     """
     HTTP standard basic authentication protocol callback.
 
-    Return None if the user doesn't exist or a sequence of principal
+    Returns None if the user doesn't exist or a sequence of principal
     identifiers (possibly empty) if the user does exist.
 
     """

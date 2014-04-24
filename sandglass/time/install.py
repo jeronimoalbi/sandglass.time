@@ -9,11 +9,15 @@ from sandglass.time import security
 from sandglass.time.models import META
 from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.models import scan_models
+from sandglass.time.security import PERMISSION
 
 
-def model_permission_data_class_factory(cls_name):
+def model_permission_data_class_factory(cls_name, extra_permissions=None):
     """
     Create DataSet class with all registered models permissions.
+
+    Extra permission names can be given as a list using `extra_permissions`
+    argument.
 
     Returns a DataSet class.
 
@@ -39,12 +43,18 @@ def model_permission_data_class_factory(cls_name):
         # Get permissions for current model and create classes
         # for each permission. Each class will be assigned to
         # the new "DataSet" class being created.
-        for permission in model.get_full_permission_list():
+        # When extra permissions are given add them also after
+        # model permissions.
+        permission_list = model.get_full_permission_list()
+        if extra_permissions:
+            permission_list.extend(extra_permissions)
+
+        for permission in permission_list:
             inner_cls_name = permission
             fields = {
                 'id': current_id,
                 'name': str(permission),
-                # TODO: Add description for permissions
+                # TODO: Add a description for permissions
                 'description': u'',
             }
             attrs[inner_cls_name] = type(inner_cls_name, (), fields)
@@ -54,33 +64,38 @@ def model_permission_data_class_factory(cls_name):
 
 
 # Dataset with all model permissions.
-PermissionData = model_permission_data_class_factory('PermissionData')
+PermissionData = model_permission_data_class_factory(
+    'PermissionData',
+    extra_permissions=(
+        PERMISSION.get('api', 'describe'),
+    )
+)
 
 
-def permission_list(model_name, flags):
+def get_permission(model_name, permission_name):
+    """
+    Get a permission for a model.
+
+    AttributeError is raised when PermissionData does not have
+    the permission defined as attribute.
+
+    Returns a permission.
+
+    """
+    perm = PERMISSION.get(model_name, permission_name)
+    return getattr(PermissionData, perm)
+
+
+def get_permission_list(model_name, flags):
     """
     Get a list of permissions for a model.
 
     Returns a List of permissions.
 
     """
-    prefix = 'time_{}_'.format(model_name.lower())
     permissions = []
-    for flag in flags.lower():
-        if flag == 'c':
-            suffix = 'create'
-        elif flag == 'r':
-            suffix = 'read'
-        elif flag == 'u':
-            suffix = 'update'
-        elif flag == 'd':
-            suffix = 'delete'
-        elif flag == 'a':
-            suffix = 'action'
-        else:
-            continue
-
-        permission = getattr(PermissionData, prefix + suffix, None)
+    for perm in PERMISSION.cruda(model_name, flags=flags):
+        permission = getattr(PermissionData, perm, None)
         if permission and (permission not in permissions):
             permissions.append(permission)
 
@@ -88,25 +103,27 @@ def permission_list(model_name, flags):
 
 
 USERS_GROUP_PERMISSIONS = (
-    permission_list('tag', 'cruda') +
-    permission_list('group', 'r') +
-    permission_list('permission', 'r') +
-    permission_list('project', 'cruda') +
-    permission_list('task', 'cruda') +
-    permission_list('client', 'ra') +
-    permission_list('user', 'ra') +
-    permission_list('activity', 'cruda')
+    get_permission_list('tag', 'cruda') +
+    get_permission_list('group', 'r') +
+    get_permission_list('permission', 'r') +
+    get_permission_list('project', 'cruda') +
+    get_permission_list('task', 'cruda') +
+    get_permission_list('client', 'ra') +
+    get_permission_list('user', 'ra') +
+    get_permission_list('activity', 'cruda') +
+    # Add non CRUDA permission(s)
+    [get_permission('api', 'describe')]
 )
 
 
 MANAGERS_GROUP_PERMISSIONS = (
     USERS_GROUP_PERMISSIONS +
-    permission_list('group', 'cuda') +
-    permission_list('permission', 'ua') +
-    permission_list('client', 'cud') +
-    permission_list('user', 'cud') +
-    # TODO: Implement a better way of getting permission strings
-    [PermissionData.time_project_set_is_public]
+    get_permission_list('group', 'cuda') +
+    get_permission_list('permission', 'ua') +
+    get_permission_list('client', 'cud') +
+    get_permission_list('user', 'cud') +
+    # Add non CRUDA permission(s)
+    [get_permission('project', 'set_is_public')]
 )
 
 

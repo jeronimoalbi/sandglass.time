@@ -19,6 +19,8 @@ setup(
         'fixture[sqlalchemy]',
         'zope.sqlalchemy',
         'zope.component==4.1.0',
+        # Enum support for python < 3.4
+        'flufl.enum',
         # Forms/data handling
         'colander',
         # Translations extraction support

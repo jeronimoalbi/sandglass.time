@@ -24,7 +24,7 @@ def get_settings():
 
     Application settings are customized in the ".ini" file.
 
-    Return a Dictionary.
+    Returns a Dictionary.
 
     """
     return get_current_registry().settings
@@ -34,7 +34,7 @@ def is_valid_email(email):
     """
     Check if a string is a valid email.
 
-    Return a Boolean.
+    Returns a Boolean.
 
     """
     return re.match(EMAIL_RE, email) is not None
@@ -44,7 +44,7 @@ def camelcase_to_underscore(name):
     """
     Convert camelcase names to underscore.
 
-    Return a String.
+    Returns a String.
 
     """
     return CAMELCASE_RE.sub(r'\1_\2', name).lower()
@@ -54,14 +54,14 @@ def underscore_to_camelcase(name):
     """
     Convert underscore names to camelcase.
 
-    Return a String.
+    Returns a String.
 
     """
     def replace_fn(match):
         """
         Upercase first char after "_".
 
-        Return a char.
+        Returns a char.
 
         """
         return match.group(1).upper()
@@ -77,7 +77,7 @@ def camelcase_dict(obj):
     """
     Create a new dictionary with camelcase keys using the given one.
 
-    Return a Dictionary.
+    Returns a Dictionary.
 
     """
     u2c = underscore_to_camelcase
@@ -88,7 +88,7 @@ def underscore_dict(obj):
     """
     Create a new dictionary with underscore keys using the given one.
 
-    Return a Dictionary.
+    Returns a Dictionary.
 
     """
     c2u = camelcase_to_underscore
@@ -124,7 +124,7 @@ def route_path(route_name, request=None, **kwargs):
 
     A `DummyRequest` is used when no request is given.
 
-    Return a String.
+    Returns a String.
 
     """
     if not request:
@@ -142,7 +142,7 @@ def generate_random_hash(salt='', hash='sha1'):
     Other hash can be specified. If so all supported hash
     algorithms are listed in `hashlib.algorithms`.
 
-    Return a String.
+    Returns a String.
 
     """
     if hash not in hashlib.algorithms:
@@ -163,7 +163,7 @@ def generate_hash(value, hash='sha1'):
     Other hash can be specified. If so all supported hash
     algorithms are listed in `hashlib.algorithms`.
 
-    Return a String.
+    Returns a String.
 
     """
     sha_obj = getattr(hashlib, hash)(value)
@@ -183,7 +183,7 @@ def get_app_namespace(context):
     where given context object/class is defined.
     When context is a string it is used as sandglass module name.
 
-    Return a String.
+    Returns a String.
 
     """
     if isinstance(context, basestring):
