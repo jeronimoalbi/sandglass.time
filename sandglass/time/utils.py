@@ -6,6 +6,7 @@ import os
 import re
 
 from inspect import isclass
+from inspect import ismodule
 
 import pyramid.url
 
@@ -37,7 +38,10 @@ def is_valid_email(email):
     Returns a Boolean.
 
     """
-    return re.match(EMAIL_RE, email) is not None
+    try:
+        return re.match(EMAIL_RE, email) is not None
+    except TypeError:
+        return False
 
 
 def camelcase_to_underscore(name):
@@ -47,6 +51,9 @@ def camelcase_to_underscore(name):
     Returns a String.
 
     """
+    if not name:
+        return name
+
     return CAMELCASE_RE.sub(r'\1_\2', name).lower()
 
 
@@ -188,6 +195,8 @@ def get_app_namespace(context):
     """
     if isinstance(context, basestring):
         module_name = context
+    elif ismodule(context):
+        module_name = context.__name__
     else:
         cls = (context if isclass(context) else context.__class__)
         module_name = cls.__module__

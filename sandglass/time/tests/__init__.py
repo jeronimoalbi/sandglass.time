@@ -200,6 +200,23 @@ class BaseTestCase(unittest.TestCase):
     def teardown_default_data(self):
         del self.default_fixture_data
 
+    def setup_pyramid_testing(self, request=None):
+        """
+        Setup/initialize Pyramid testing environment support.
+
+        """
+        if not request:
+            request = testing.DummyRequest()
+        config = testing.setUp(settings=self.settings, request=request)
+        config.include('sandglass.time.config')
+
+    def teardown_pyramid_testing(self):
+        """
+        Teardown/cleanup Pyramid testing environment.
+
+        """
+        testing.tearDown()
+
 
 class UnitTestCase(BaseTestCase):
     """
@@ -213,10 +230,7 @@ class UnitTestCase(BaseTestCase):
     """
     def setUp(self):
         super(UnitTestCase, self).setUp()
-        # Initialize Pyramid testing environment support
-        request = testing.DummyRequest()
-        config = testing.setUp(settings=self.settings, request=request)
-        config.include('sandglass.time.config')
+        self.setup_pyramid_testing()
         self.setup_default_data()
 
     def tearDown(self):
@@ -224,8 +238,7 @@ class UnitTestCase(BaseTestCase):
         # and to start next test with a clean database
         models.clear_tables()
         self.teardown_default_data()
-        # Cleanup Pyramid testing environment
-        testing.tearDown()
+        self.teardown_pyramid_testing()
         super(UnitTestCase, self).tearDown()
 
 
@@ -257,17 +270,37 @@ class FunctionalTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(FunctionalTestCase, cls).setUpClass()
-        # Initialize Pyramid testing environment support
         cls.request = testing.DummyRequest()
-        cls.config = testing.setUp(settings=cls.settings, request=cls.request)
-        cls.config.include('sandglass.time.config')
+        cls.config = cls.setup_pyramid_testing(request=cls.request)
         cls.wsgi_app = cls.config.make_wsgi_app()
 
     @classmethod
     def tearDownClass(cls):
-        # Cleanup Pyramid testing environment
-        testing.tearDown()
+        cls.teardown_pyramid_testing()
         super(FunctionalTestCase, cls).tearDownClass()
+
+    @classmethod
+    def setup_pyramid_testing(cls, request=None):
+        """
+        Setup/initialize Pyramid testing environment support.
+
+        Returns a Pyramid config object.
+
+        """
+        if not request:
+            request = testing.DummyRequest()
+
+        config = testing.setUp(settings=cls.settings, request=request)
+        config.include('sandglass.time.config')
+        return config
+
+    @classmethod
+    def teardown_pyramid_testing(cls):
+        """
+        Teardown/cleanup Pyramid testing environment.
+
+        """
+        testing.tearDown()
 
     def setUp(self):
         self.setup_default_data()
