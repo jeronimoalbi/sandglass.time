@@ -6,10 +6,12 @@ Extending the request objects with utility functions.
 """
 import logging
 
+from pyramid.events import NewRequest
 from pyramid.security import authenticated_userid
 from sqlalchemy.orm import joinedload
 
 from sandglass.time.models.user import User
+from sandglass.time.resource.utils import REQUEST_METHODS
 from sandglass.time.utils import get_settings
 
 LOG = logging.getLogger(__name__)
@@ -83,11 +85,37 @@ def authenticated_user(request):
     return user
 
 
+def add_cors_headers_response_callback(event):
+    """
+    Event callback to add C.O.R.S. HTTP headers to each response.
+
+    """
+    def cors_headers_callback(request, response):
+        if request.matched_route is None:
+            return
+
+        request_methods = REQUEST_METHODS + ('OPTIONS', )
+        response.headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': ', '.join(request_methods),
+            # TODO: Implement support for custom CORS headers
+            'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '1728000',
+        })
+
+    event.request.add_response_callback(cors_headers_callback)
+
+
 def extend_request_object(config):
     """
     Add extra methods to request objects.
 
     """
+    settings = config.registry.settings
+    if settings.get('response.enable_cors_headers', 'false') == 'true':
+        config.add_subscriber(add_cors_headers_response_callback, NewRequest)
+
     config.add_request_method(callable=is_member, reify=True)
     config.add_request_method(callable=is_collection, reify=True)
     config.add_request_method(callable=rest_collection_mode, reify=True)
