@@ -26,7 +26,7 @@ def error_response(message, data=None):
         'error': (data if data is not None else True),
     }
     body = json.dumps(error_info)
-    return Response(body=body, status_code=500)
+    return Response(body=body, status_code=400)
 
 
 def info_response(message, data=None):

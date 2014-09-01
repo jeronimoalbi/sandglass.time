@@ -56,6 +56,12 @@ database.echo = false
 #
 request.rest_collection_mode = strict
 
+# Enable C.O.R.S. HTTP headers
+#
+# This options adds extra HTTP headers to allow
+# cross domain requests to javascript applications.
+response.enable_cors_headers = true
+
 [loggers]
 keys = root, time
 
