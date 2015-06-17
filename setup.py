@@ -1,6 +1,14 @@
 from setuptools import find_packages
 from setuptools import setup
 
+TESTS_REQUIRE = [
+    'pytest',
+    'ipdb',
+    'ipython',
+    'flake8',
+    'pylint',
+    'tox',
+]
 
 setup(
     name='sandglass.time',
@@ -52,4 +60,5 @@ setup(
         ],
     },
     test_suite='sandglass.time.tests',
+    tests_require=TESTS_REQUIRE,
 )
