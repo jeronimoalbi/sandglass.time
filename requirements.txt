@@ -1,10 +1,11 @@
+pytest
 ipython
 ipdb
 pep8
 flake8
 pylint
-nose
-nose-selecttests
+pylama
+pylama_pylint
 coverage
 WebTest
 PasteDeploy
