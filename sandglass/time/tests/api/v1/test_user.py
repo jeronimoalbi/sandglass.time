@@ -256,7 +256,7 @@ class UserResourceTest(FunctionalTestCase):
 
         response = self.delete_json(url, expect_errors=True)
         # assert response is error
-        self.assertEqual(response.status_int, 500)
+        self.assertEqual(response.status_int, 400)
 
     @fixture(UserData)
     def test_user_data_field(self):

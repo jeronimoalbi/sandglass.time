@@ -199,4 +199,4 @@ class ClientResourceTest(FunctionalTestCase):
 
         response = self.delete_json(url, expect_errors=True)
         # assert response is error
-        self.assertEqual(response.status_int, 500)
+        self.assertEqual(response.status_int, 400)

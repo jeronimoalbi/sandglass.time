@@ -25,7 +25,7 @@ class ModelResourceTest(FunctionalTestCase):
         # Try to delete a group using an integer
         groups_url = ProjectResource.get_related_path(project.id, 'groups')
         response = self.delete_json(groups_url, 1)
-        self.assertEqual(response.status_int, 500)
+        self.assertEqual(response.status_int, 400)
         self.assertTrue(isinstance(response.json_body, dict))
         # An error with VALIDATION_ERROR houls be returned
         self.assertTrue('error' in response.json_body)
@@ -155,7 +155,7 @@ class ModelResourceTest(FunctionalTestCase):
         # Try to delete a group using an integer
         groups_url = ProjectResource.get_related_path(project.id, 'groups')
         response = self.put_json(groups_url, 1)
-        self.assertEqual(response.status_int, 500)
+        self.assertEqual(response.status_int, 400)
         self.assertTrue(isinstance(response.json_body, dict))
         # An error with VALIDATION_ERROR houls be returned
         self.assertTrue('error' in response.json_body)

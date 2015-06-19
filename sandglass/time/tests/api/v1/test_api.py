@@ -61,7 +61,7 @@ class ApiTest(FunctionalTestCase):
 
         # Mode strict should fail when no collection is sent
         response = self.post_json(url, user, headers=headers)
-        self.assertEqual(response.status_int, 500)
+        self.assertEqual(response.status_int, 400)
         response_data = response.json_body
         self.assertTrue('error' in response_data)
         self.assertTrue('code' in response_data['error'])
