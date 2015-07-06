@@ -1,26 +1,24 @@
 from fixture import DataSet
 
-from sandglass.time.tests import BaseFixture
-
 
 class GroupData(DataSet):
     """
     User groups data fixture.
 
     """
-    class Manager(BaseFixture):
+    class Manager(object):
         name = u"Managers"
         description = u"Group of managers"
 
-    class Employee(BaseFixture):
+    class Employee(object):
         name = u"Employee"
         description = u"Group of employees"
 
-    class Developer(BaseFixture):
+    class Developer(object):
         name = u"Developer"
         description = u"Group of developers"
 
-    class Other(BaseFixture):
+    class Other(object):
         name = u"Other"
         description = u"Group of others"
 
@@ -30,40 +28,40 @@ class UserData(DataSet):
     User data fixture.
 
     """
-    class DrWho(BaseFixture):
+    class DrWho(object):
         first_name = u"Dr"
         last_name = u"Who"
         email = u"timeywimey@wienfluss.net"
         password = "1234"
         groups = [GroupData.Employee, GroupData.Developer]
 
-    class JamesWilliamElliot(BaseFixture):
+    class JamesWilliamElliot(object):
         email = u"humpdydumpdy@wienfluss.net"
         first_name = u"James William"
         last_name = u"Elliot"
         password = "1234"
         groups = [GroupData.Manager]
 
-    class RickCastle(BaseFixture):
+    class RickCastle(object):
         email = u"ruggedlyhandsome@wienfluss.net"
         first_name = u"Rick"
         last_name = u"Castle"
         password = "1234"
         groups = [GroupData.Developer]
 
-    class TheTardis(BaseFixture):
+    class TheTardis(object):
         email = u"wibblywobbly@wienfluss.net"
         first_name = u"The"
         last_name = u"Tardis"
         password = "1234"
 
-    class DrJekyll(BaseFixture):
+    class DrJekyll(object):
         email = u"strangecase@wienfluss.net"
         first_name = u"Dr."
         last_name = u"Jekyll"
         password = "1234"
 
-    class ShepherdBook(BaseFixture):
+    class ShepherdBook(object):
         email = u"specialhell@serenity.org"
         first_name = u"Shepherd"
         last_name = u"Book"
@@ -75,22 +73,22 @@ class ClientData(DataSet):
     Client data fixture.
 
     """
-    class SherlockHolmes(BaseFixture):
+    class SherlockHolmes(object):
         name = u'Sherlock Holmes'
 
-    class MycroftHolmes(BaseFixture):
+    class MycroftHolmes(object):
         name = u'Mycroft Holmes'
 
-    class JohnWatson(BaseFixture):
+    class JohnWatson(object):
         name = u'Dr. John Watson'
 
-    class GregLestrade(BaseFixture):
+    class GregLestrade(object):
         name = u'DI Greg Lestrade'
 
-    class JamesMoriarty(BaseFixture):
+    class JamesMoriarty(object):
         name = u'James Moriarty'
 
-    class CharlesMagnussen(BaseFixture):
+    class CharlesMagnussen(object):
         name = u'Charles Augustus Magnussen'
 
 
@@ -99,13 +97,13 @@ class ProjectData(DataSet):
     Project data fixture.
 
     """
-    class BaskervilleHound(BaseFixture):
+    class BaskervilleHound(object):
         id = 1
         name = u"The Hound Of Baskerville"
         client = ClientData.MycroftHolmes
         user = UserData.ShepherdBook
 
-    class PublicProject(BaseFixture):
+    class PublicProject(object):
         id = 2
         name = u"The Public Project"
         is_public = True
@@ -113,7 +111,7 @@ class ProjectData(DataSet):
         user = UserData.ShepherdBook
         groups = [GroupData.Employee, GroupData.Developer, GroupData.Other]
 
-    class PrivateProject(BaseFixture):
+    class PrivateProject(object):
         id = 3
         name = u"The Private Project"
         is_public = False
@@ -127,24 +125,24 @@ class TaskData(DataSet):
     Task data fixture.
 
     """
-    class Backend(BaseFixture):
+    class Backend(object):
         name = u"Backend"
         project = ProjectData.PublicProject
         user = UserData.ShepherdBook
 
-    class Templating(BaseFixture):
+    class Templating(object):
         name = u"Templating"
         user = UserData.ShepherdBook
 
     Templating.parent = Backend
     Templating.project = Templating.parent.project
 
-    class Meeting(BaseFixture):
+    class Meeting(object):
         name = u"Meeting"
         project = ProjectData.PublicProject
         user = UserData.ShepherdBook
 
-    class PrivateTask(BaseFixture):
+    class PrivateTask(object):
         name = u"Task for a private project"
         project = ProjectData.PrivateProject
         user = UserData.ShepherdBook

@@ -11,7 +11,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'gunicorn',
-        'pyramid==1.4.3',
+        'pyramid==1.5',
         'pyramid_tm==0.7',
         'pyramid_mailer==0.13',
         'sqlalchemy==0.9.1',

@@ -101,7 +101,8 @@ class BaseResource(object):
             route_name,
             member=member,
             pk=pk,
-            related_name=related_name)
+            related_name=related_name,
+        )
 
     @classmethod
     def get_actions_by_type(cls, action_type):
@@ -191,6 +192,8 @@ class BaseResource(object):
         """
         Get JSON data from current request body.
 
+        Returns a python representation of the JSON.
+
         """
         try:
             return self.request.json_body
@@ -245,7 +248,8 @@ class BaseResource(object):
 
     @collection_action(
         methods='GET',
-        permission=PERMISSION.get('api', 'describe'))
+        permission=PERMISSION.get('api', 'describe'),
+    )
     def describe(self):
         """
         Get an API resource description.

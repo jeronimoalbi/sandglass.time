@@ -31,8 +31,13 @@ def member_action(name=None, permission=None, methods=None):
 
     """
     def inner_member_action(func):
-        return add_action_info(func, name=name, type='member',
-                               permission=permission, methods=methods)
+        return add_action_info(
+            func,
+            name=name,
+            type='member',
+            permission=permission,
+            methods=methods,
+        )
 
     return inner_member_action
 
@@ -45,8 +50,13 @@ def collection_action(name=None, permission=None, methods=None):
 
     """
     def inner_collection_action(func):
-        return add_action_info(func, name=name, type='collection',
-                               permission=permission, methods=methods)
+        return add_action_info(
+            func,
+            name=name,
+            type='collection',
+            permission=permission,
+            methods=methods,
+        )
 
     return inner_collection_action
 
@@ -59,7 +69,11 @@ def action(name=None, permission=None, methods=None):
 
     """
     def inner_action(func):
-        return add_action_info(func, name=name, permission=permission,
-                               methods=methods)
+        return add_action_info(
+            func,
+            name=name,
+            permission=permission,
+            methods=methods,
+        )
 
     return inner_action
