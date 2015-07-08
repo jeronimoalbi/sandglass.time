@@ -6,7 +6,6 @@ from sandglass.time.api.v1.user import UserResource
 
 from fixtures import UserData
 
-
 USER_DATA = [
     {
         'first_name': u"Dr. Jurij",
@@ -27,13 +26,12 @@ USER_DATA = [
 ]
 
 
-def test_create_single_user(request_helper, default_data):
-    # Create first Test User
+def test_user_create_single(request_helper, default_data):
+    # Create a user
     url = UserResource.get_collection_path()
-
     data = USER_DATA[0]
     response = request_helper.post_json(url, [data])
-    # All post to collection returns a collection
+    # All post to collection should returns a collection
     assert isinstance(response.json_body, list) is True
     # User updated information is returned a single item in a list
     user_data = response.json[0]
@@ -42,169 +40,138 @@ def test_create_single_user(request_helper, default_data):
     # Get newly created user based on ID
     url = UserResource.get_member_path(created_id)
     response = request_helper.get_json(url)
-
-    # assert response is ok
     assert response.status == '200 OK'
 
-    # Assert all data was written properly
+    # Check that user data is right
     new_user = response.json
     assert new_user['first_name'] == data['first_name']
     assert new_user['last_name'] == data['last_name']
     assert new_user['email'] == data['email']
 
-    # Cleanup - delete created user
-    url = UserResource.get_member_path(created_id)
-    response = request_helper.delete_json(url)
-    # assert response is ok
-    assert response.status == '200 OK'
 
+def test_user_update_single(request_helper, default_data, fixture):
+    fixture.data(UserData).setup()
 
-def test_update_single_user(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
-    # Get random user from DB
-    url = UserResource.get_collection_path()
-    response = request_helper.get_json(url)
-    old_user = response.json[len(response.json) / 2]
-    update_id = old_user['id']
-
-    # Change it to Humphrey Bogart
-    url = UserResource.get_member_path(update_id)
+    # Get user data
     data = dict(USER_DATA[2])
-    data['id'] = update_id
+
+    # Get a random user
+    url = UserResource.get_collection_path()
+    response = request_helper.get_json(url)
+    index = len(response.json) / 2
+    user = response.json[index]
+    assert user['first_name'] != data['first_name']
+    assert user['last_name'] != data['last_name']
+    assert user['email'] != data['email']
+
+    # Update user data
+    url = UserResource.get_member_path(user['id'])
+    data['id'] = user['id']
     response = request_helper.put_json(url, data)
-
-    # assert response is ok
     assert response.status == '200 OK'
 
-    # Assert equal/different
-    new_user = response.json
-    assert new_user['first_name'] == data['first_name']
-    assert new_user['last_name'] == data['last_name']
-    assert new_user['email'] == data['email']
-
-    assert old_user['first_name'] != new_user['first_name']
-    assert old_user['last_name'] != new_user['last_name']
-    assert old_user['email'] != new_user['email']
+    # Check that data was updated
+    updated_user = response.json
+    assert updated_user['first_name'] == data['first_name']
+    assert updated_user['last_name'] == data['last_name']
+    assert updated_user['email'] == data['email']
 
 
-def test_get_user(request_helper, default_data, fixture):
+def test_user_get(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
-    # Get random user from DB
+    # Get a random user
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_user = response.json[(len(response.json) / 2) - 1]
-    get_id = old_user['id']
+    index = len(response.json) / 2
+    user = response.json[index - 1]
 
-    # Get that user again, this time via it's PK
-    url = UserResource.get_member_path(get_id)
+    # get user using primary key
+    url = UserResource.get_member_path(user['id'])
     response = request_helper.get_json(url)
-
-    # assert response is ok
     assert response.status == '200 OK'
 
-    get_user = response.json
+    # Check that user is the same for both cases
+    same_user = response.json
+    assert user['first_name'] == same_user['first_name']
+    assert user['last_name'] == same_user['last_name']
+    assert user['email'] == same_user['email']
 
-    # Assert all is the same
-    assert old_user['first_name'] == get_user['first_name']
-    assert old_user['last_name'] == get_user['last_name']
-    assert old_user['email'] == get_user['email']
 
-
-def test_delete_single_user(request_helper, default_data, fixture):
+def test_user_delete_single(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
-    # Get random user from DB
+    # Get a random user
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_user = response.json[(len(response.json) / 2) + 1]
-    get_id = old_user['id']
+    index = len(response.json) / 2
+    user = response.json[index + 1]
 
-    # Delete that user again, this time via it's PK
-    url = UserResource.get_member_path(get_id)
+    # Delete user using primary key
+    url = UserResource.get_member_path(user['id'])
     response = request_helper.delete_json(url)
-
-    # assert it went ok
     assert response.status == '200 OK'
 
-    # try getting it again, make sure it's gone
+    # Check that user does not exist
     with pytest.raises(NotFound):
-        request_helper.get_json(url, status=404)
+        request_helper.get_json(url)
 
 
-def test_create_multiple_users(request_helper, default_data):
-    # Check that only the one testuser exist
+def test_user_create_multiple(request_helper, default_data):
+    # Check that only the one exist
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
     assert len(response.json) == 1
-    assert response.json[0]['first_name'] == 'Admin'
-    assert response.json[0]['last_name'] == 'User'
 
-    # Create three users at the same time
+    # Create three users
     response = request_helper.post_json(url, USER_DATA)
-
-    # assert response is ok
     assert response.status == '200 OK'
     assert len(response.json) == 3
 
-    # assert now only four users exist
+    # Only 4 users should exist
     response_get = request_helper.get_json(url)
     assert len(response_get.json) == 4
 
-    # Cleanup the custom created users
-    for user in response.json:
-        url = UserResource.get_member_path(user['id'])
 
-        response_delete = request_helper.delete_json(url)
-        # assert it went ok
-        assert response_delete.status == '200 OK'
-
-
-def test_update_multiple_users(request_helper, default_data, fixture):
+def test_user_update_multiple(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
-    # Get two random users from DB
+    # Get two random users from database
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_user_1 = response.json[(len(response.json) / 2)]
-    old_user_2 = response.json[(len(response.json) / 2) + 1]
-    update_ids = [old_user_1['id'], old_user_2['id']]
+    index = len(response.json) / 2
+    old_user_1 = response.json[index]
+    old_user_2 = response.json[index + 1]
 
-    # Change them to Humphrey Bogart and Max Adler
-    #url = UserResource.get_member_path(update_id)
+    # Use other users data to update old users
     new_user_1 = dict(USER_DATA[0])
+    new_user_1['id'] = old_user_1['id']
     new_user_2 = dict(USER_DATA[1])
+    new_user_2['id'] = old_user_2['id']
+
     data = [new_user_1, new_user_2]
-    data[0]['id'] = update_ids[0]
-    data[1]['id'] = update_ids[1]
     response = request_helper.put_json(url, data)
-
-    # assert response is ok
     assert response.status == '200 OK'
-
-    # Assert two were updated
+    # Check that 2 users were updated
     assert response.json_body['info']['count'] == 2
 
-    url = UserResource.get_member_path(update_ids[0])
-    response_user = request_helper.get_json(url).json
+    url = UserResource.get_member_path(old_user_1['id'])
+    user = request_helper.get_json(url).json
+    assert user['first_name'] == new_user_1['first_name']
+    assert user['last_name'] == new_user_1['last_name']
+    assert user['email'] == new_user_1['email']
 
-    assert response_user['first_name'] == new_user_1['first_name']
-    assert response_user['last_name'] == new_user_1['last_name']
-    assert response_user['email'] == new_user_1['email']
-
-    url = UserResource.get_member_path(update_ids[1])
-    response_user = request_helper.get_json(url).json
-    assert response_user['first_name'] == new_user_2['first_name']
-    assert response_user['last_name'] == new_user_2['last_name']
-    assert response_user['email'] == new_user_2['email']
+    url = UserResource.get_member_path(old_user_2['id'])
+    user = request_helper.get_json(url).json
+    assert user['first_name'] == new_user_2['first_name']
+    assert user['last_name'] == new_user_2['last_name']
+    assert user['email'] == new_user_2['email']
 
 
-def test_signin(request_helper, default_data, fixture):
+def test_user_signin(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
@@ -212,77 +179,75 @@ def test_signin(request_helper, default_data, fixture):
 
     user = UserData.JamesWilliamElliot
     signin_data = {'email': user.email, 'password': user.password}
-
-    # Try and log in with the testuser
+    # Signin using current user data
     url = UserResource.get_collection_path() + "@signin"
     response = request_helper.post_json(url, signin_data, expect_errors=True)
-
-    # assert response is ok
     assert response.status == '200 OK'
 
     assert 'token' in response.json
     assert 'key' in response.json
-
     assert response.json['token'] is not None
     assert response.json['key'] is not None
 
-    request_helper.require_authorization = True
 
-
-def test_signup(request_helper, default_data, fixture):
+def test_user_signup(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
     request_helper.require_authorization = False
 
-    # Try and sign up with the testuser
+    # Signup a user
     url = UserResource.get_collection_path() + "@signup"
     response = request_helper.post_json(url, USER_DATA[2])
-
-    # assert response is ok
     assert response.status == '200 OK'
 
     assert 'token' in response.json
     assert 'key' in response.json
-
     assert response.json['token'] is not None
     assert response.json['key'] is not None
 
-    request_helper.require_authorization = True
 
-
-def test_delete_multiple_users(request_helper, default_data, fixture):
+def test_user_delete_multiple(request_helper, default_data, fixture):
     data = fixture.data(UserData)
     data.setup()
 
-    # Get two random users from DB
+    # Get number of users
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_user_1 = response.json[(len(response.json) / 2)]
-    old_user_2 = response.json[(len(response.json) / 2) + 1]
+    assert response.status == '200 OK'
+    user_count = len(response.json)
+
+    # Get two random users from database
+    index = len(response.json) / 2
+    old_user_1 = response.json[index]
+    old_user_2 = response.json[index + 1]
+
+    # Delete 2 users
     data = [old_user_1, old_user_2]
-    delete_ids = [old_user_1['id'], old_user_2['id']]
-
     response = request_helper.delete_json(url, data)
-
-    # assert response is ok
     assert response.status == '200 OK'
     assert response.json_body['info']['count'] == 2
 
-    # assert they are actually deleted
-    # try getting it again, make sure it's gone
-    with pytest.raises(NotFound):
-        for pk_value in delete_ids:
-            url = UserResource.get_member_path(pk_value)
-            request_helper.get_json(url, status=404)
+    # Check that both users were deleted
+    deleted_ids = [old_user_1['id'], old_user_2['id']]
+    url = UserResource.get_collection_path()
+    response = request_helper.get_json(url, params={'id': deleted_ids})
+    assert response.status == '200 OK'
+    # Check that no user was returned
+    assert not response.json
 
-    # Get amount of users left in DB
+    # Get number of users again
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
+    assert response.status == '200 OK'
+    # Check that there are 2 users less
+    assert (user_count - 2) == len(response.json)
 
-    response = request_helper.delete_json(url, expect_errors=True)
-    # assert response is error
+    # Calls to delete without JSON data should fail
+    response = request_helper.delete_json(url)
     assert response.status_int == 400
+    assert 'error' in response.json
+    assert response.json['error'].get('code') == 'INVALID_JSON_DATA'
 
 
 def test_user_data_field(request_helper, default_data, fixture):

@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from sandglass.time import _
 from sandglass.time.api.error import APIError
 from sandglass.time.filters import QueryFilterError
+from sandglass.time.filters.model import CollectionByPrimaryKey
 from sandglass.time.describe.resource import ModelResourceDescriber
 from sandglass.time.models import BaseModel
 from sandglass.time.models import transactional
@@ -150,9 +151,6 @@ class ModelResource(BaseResource):
     schema = None
     list_schema = None
 
-    # N-Tuple of QueryFilter to apply to current model query
-    query_filters = None
-
     # Modes used to load related member data
     related_query_modes = ('pk', 'full')
 
@@ -217,6 +215,17 @@ class ModelResource(BaseResource):
             query_modes[field_name] = mode
 
         return query_modes
+
+    @classmethod
+    def get_query_filters(cls):
+        """
+        Get query filters for current resource.
+
+        Return an N-Tuple of QueryFilter.
+
+        """
+        # Add support to filter by ID to all model resources by default
+        return (CollectionByPrimaryKey(cls.model), )
 
     @reify
     def is_valid_object(self):
@@ -339,15 +348,6 @@ class ModelResource(BaseResource):
             list_schema = self.list_schema()
             list_schema = list_schema.bind(request=self.request)
             return list_schema.deserialize(self.request_data)
-
-    def get_query_filters(self):
-        """
-        Get query filters for current resource.
-
-        Return an N-Tuple of QueryFilter.
-
-        """
-        return self.query_filters
 
     def apply_model_query_filters(self, query_filters, query):
         """
@@ -473,7 +473,7 @@ class ModelResource(BaseResource):
         msg = _("Object(s) updated successfully")
         # TODO: Check support for rowcount
         # http://docs.sqlalchemy.org/en/latest/core/connections.html
-        #                             #sqlalchemy.engine.ResultProxy.rowcount
+        # sqlalchemy.engine.ResultProxy.rowcount
         return info_response(msg, data={'count': count})
 
     def get_collection(self):

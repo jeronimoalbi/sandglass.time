@@ -198,6 +198,8 @@ class BaseResource(object):
         try:
             return self.request.json_body
         except ValueError:
+            # Exception is also raised when "Content Type"
+            # is not "application/json".
             LOG.exception('Invalid JSON in request body')
             raise APIRequestDataError()
 

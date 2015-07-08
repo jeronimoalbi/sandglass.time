@@ -9,7 +9,7 @@ class Response(response.Response):
     Custom sandglass API response.
 
     """
-    content_type = 'application/json'
+    default_content_type = 'application/json'
 
 
 def error_response(message, data=None):

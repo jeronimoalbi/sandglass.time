@@ -25,23 +25,33 @@ from sandglass.time.security import PUBLIC
 
 from .error import APIV1Error
 
-SEARCH_FILTERS = {
-    'email': Filter(
+SEARCH_FILTERS = [
+    Filter(
+        'email',
         String(),
-        ops=('eq', 'contains', 'starts', 'ends')),
-    'first_name': Filter(
+        ops=('eq', 'contains', 'starts', 'ends'),
+    ),
+    Filter(
+        'first_name',
         String(),
-        ops=('eq', 'contains', 'starts', 'ends')),
-    'last_name': Filter(
+        ops=('eq', 'contains', 'starts', 'ends'),
+    ),
+    Filter(
+        'last_name',
         String(),
-        ops=('eq', 'contains', 'starts', 'ends')),
-    'token': Filter(
+        ops=('eq', 'contains', 'starts', 'ends'),
+    ),
+    Filter(
+        'token',
         String(),
-        ops=('eq', )),
-    'created': Filter(
+        ops=('eq', ),
+    ),
+    Filter(
+        'created',
         DateTime(),
-        ops=('eq', 'gt', 'gte', 'lt', 'lte')),
-}
+        ops=('eq', 'gt', 'gte', 'lt', 'lte'),
+    ),
+]
 
 
 class UserResource(ModelResource):
@@ -53,10 +63,12 @@ class UserResource(ModelResource):
     model = User
     schema = UserSchema
     list_schema = UserListSchema
-    query_filters = (
+
+    @classmethod
+    def get_query_filters(cls):
+        filters = super(UserResource, cls).get_query_filters()
         # Allow simple search of users
-        BySearchFields(User, SEARCH_FILTERS),
-    )
+        return filters + (BySearchFields(User, SEARCH_FILTERS), )
 
     @use_schema(UserSigninSchema)
     @collection_action(methods='POST', permission=PUBLIC)

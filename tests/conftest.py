@@ -93,6 +93,11 @@ class RequestHelper(object):
         if not headers:
             headers = {}
 
+        # Add content type, to force application request
+        # to use JSON when no body data is available.
+        if "Content-Type" not in headers:
+            headers["Content-Type"] = "application/json"
+
         # Add basig HTTP authorization information
         if self.require_authorization:
             authorization_header = self.get_authorization_header()

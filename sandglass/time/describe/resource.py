@@ -88,10 +88,10 @@ class ModelResourceDescriber(ResourceDescriber):
 
     def describe_filters(self, data):
         filters_data = []
-        if self.resource.query_filters:
-            for filter in self.resource.query_filters:
-                if IDescribable.providedBy(filter):
-                    filters_data.append(filter.describe())
+        query_filters = self.resource.get_query_filters()
+        for filter in query_filters:
+            if IDescribable.providedBy(filter):
+                filters_data.append(filter.describe())
 
         if filters_data:
             data['filters'] = filters_data

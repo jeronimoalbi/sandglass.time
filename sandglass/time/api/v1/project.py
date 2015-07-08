@@ -31,9 +31,11 @@ class ProjectResource(ModelResource):
     model = Project
     schema = ProjectSchema
     list_schema = ProjectListSchema
-    query_filters = (
-        ByUserOrPublic(),
-    )
+
+    @classmethod
+    def get_query_filters(cls):
+        filters = super(ProjectResource, cls).get_query_filters()
+        return filters + (ByUserOrPublic(), )
 
 
 API.register('v1', ProjectResource)

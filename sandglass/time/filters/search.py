@@ -1,6 +1,10 @@
 import logging
 
+import colander
+
 from colander import SchemaNode
+from pyramid.decorator import reify
+from pyramid.path import DottedNameResolver
 from zope import interface
 
 from sandglass.time import _
@@ -176,13 +180,34 @@ class Filter(object):
     """
     interface.implements(IDescribable)
 
-    def __init__(self, field_type, ops=None):
+    def __init__(self, name, field_type, ops=None, validator=None):
+        self.name = name
         self.valid_ops = ops or FILTER_OPERATIONS.keys()
-        self.node = SchemaNode(field_type, missing=None)
+        self.node = SchemaNode(
+            field_type,
+            name=name,
+            missing=None,
+            validator=validator,
+        )
 
     @property
     def field_type(self):
         return self.node.typ
+
+    @property
+    def is_sequence(self):
+        """
+        Check that current field support values as list.
+
+        List operations like "in" or "nin" require `colander.List`
+        as field type to be able to process multiple values.
+        Field type for each value can be validated individually
+        using colander validators.
+
+        Returns a Boolean.
+
+        """
+        return isinstance(self.field_type, colander.List)
 
     def valid_operation(self, operation):
         return operation in self.valid_ops
@@ -229,8 +254,14 @@ class BySearchFields(QueryFilter):
 
     def __init__(self, model, fields, *args, **kwargs):
         super(BySearchFields, self).__init__(*args, **kwargs)
-        self.fields = fields
-        self.model = model
+        self._model = model
+        self.fields = {field.name: field for field in fields}
+
+    @reify
+    def model(self):
+        # When model is not a class resolve it to be a class
+        resolver = DottedNameResolver()
+        return resolver.maybe_resolve(self._model)
 
     def describe(self):
         fields_info = {}
@@ -252,7 +283,7 @@ class BySearchFields(QueryFilter):
 
         return super(BySearchFields, self).applies_to(resource)
 
-    def get_field_value(self, field_name, raw_value):
+    def get_field_value(self, field_name, raw_values, sequence=False):
         """
         Get a deserialized value for a field.
 
@@ -263,7 +294,18 @@ class BySearchFields(QueryFilter):
             return
 
         field = self.fields[field_name]
-        return field.deserialize(raw_value)
+        if sequence:
+            if not field.is_sequence:
+                # Raise an exception when a field does
+                # not support a list of values.
+                # Field operations like "in" or "nin"
+                # require a List field type.
+                msg = "Field {} type is not List".format(field_name)
+                raise Exception(msg)
+
+            return field.deserialize(raw_values)
+        else:
+            return field.deserialize(raw_values[0])
 
     def apply_operation(self, query, field_name, filter_op, value):
         # When filter operation is not supported return query without filter
@@ -276,8 +318,10 @@ class BySearchFields(QueryFilter):
         return apply_filter_func(query, field, value)
 
     def filter_query(self, query, request, resource):
+        # Get a dict of all request argument values as lists
+        request_args = request.GET.dict_of_lists()
         # Look for filter values in all arguments
-        for name, value in request.GET.iteritems():
+        for name, value in request_args.iteritems():
             # Skip non filter arguments
             if '__' not in name:
                 continue
@@ -299,8 +343,10 @@ class BySearchFields(QueryFilter):
                 # Use filter name as error message
                 raise QueryFilterError(name)
 
+            # Some filter operations has to be treated as a sequence
+            sequence = filter_op in ('in', 'nin')
             # Get deserialized field value
-            value = self.get_field_value(field_name, value)
+            value = self.get_field_value(field_name, value, sequence=sequence)
             # Apply operation to query
             query = self.apply_operation(query, field_name, filter_op, value)
 
