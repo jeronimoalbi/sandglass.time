@@ -15,7 +15,7 @@ CLIENT_DATA = [
 ]
 
 
-def test_client_create_single(request_helper):
+def test_client_create_single(request_helper, default_data):
     url = ClientResource.get_collection_path()
     data = CLIENT_DATA[0]
     response = request_helper.post_json(url, [data])
@@ -81,45 +81,43 @@ def test_client_delete_single(request_helper, default_data, fixture):
     # Get random user from DB
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_client = response.json[(len(response.json) / 2) + 1]
-    get_id = old_client['id']
+    index = len(response.json) / 2
+    client = response.json[index + 1]
 
     # Delete that user again, this time via it's PK
-    url = ClientResource.get_member_path(get_id)
+    url = ClientResource.get_member_path(client['id'])
     response = request_helper.delete_json(url)
     assert response.status == '200 OK'
 
     # try getting it again, make sure it's gone
     with pytest.raises(NotFound):
-        request_helper.get_json(url, status=404)
+        request_helper.get_json(url)
 
 
-def test_client_create_multiple(request_helper):
-    # Check that only the one testuser exist
+def test_client_create_multiple(request_helper, default_data):
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
     assert len(response.json) == 0
 
-    # Create three clients at the same time
+    # Create three clients
     response = request_helper.post_json(url, CLIENT_DATA)
-
-    # assert response is ok
     assert response.status == '200 OK'
     assert len(response.json) == len(CLIENT_DATA)
 
-    # assert now only four clients exist
+    # Only 3 more clients should exist
     response_get = request_helper.get_json(url)
     assert len(response_get.json) == len(CLIENT_DATA)
 
 
-def test_update_multiple_users(request_helper, default_data, fixture):
+def test_client_update_multiple(request_helper, default_data, fixture):
     fixture.data(ClientData).setup()
 
     # Get two random users from DB
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_client_1 = response.json[(len(response.json) / 2)]
-    old_client_2 = response.json[(len(response.json) / 2) + 1]
+    index = len(response.json) / 2
+    old_client_1 = response.json[index]
+    old_client_2 = response.json[index + 1]
 
     # Change them to Humphrey Bogart and Max Adler
     new_client_1 = dict(CLIENT_DATA[0])
@@ -129,47 +127,56 @@ def test_update_multiple_users(request_helper, default_data, fixture):
     data = [new_client_1, new_client_2]
     response = request_helper.put_json(url, data)
     assert response.status == '200 OK'
-
-    # Assert two were updated
+    # Check that 2 were updated
     assert response.json_body['info']['count'] == 2
 
     url = ClientResource.get_member_path(old_client_1['id'])
     response_client = request_helper.get_json(url).json
-
-    assert response_client['name'] == new_client_1.name
+    assert response_client['name'] == new_client_1['name']
 
     url = ClientResource.get_member_path(old_client_2['id'])
     response_client = request_helper.get_json(url).json
-    assert response_client['name'] == new_client_2.name
+    assert response_client['name'] == new_client_2['name']
 
 
 def test_client_delete_multiple(request_helper, default_data, fixture):
     fixture.data(ClientData).setup()
 
-    # Get two random users from DB
+    # Get number of clients
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
-    old_client_1 = response.json[(len(response.json) / 2)]
-    old_client_2 = response.json[(len(response.json) / 2) + 1]
+    assert response.status == '200 OK'
+    client_count = len(response.json)
+
+    # Get two random clients
+    url = ClientResource.get_collection_path()
+    response = request_helper.get_json(url)
+    index = len(response.json) / 2
+    old_client_1 = response.json[index]
+    old_client_2 = response.json[index + 1]
+
+    # Delete 2 clients
     data = [old_client_1, old_client_2]
-    delete_ids = [old_client_1['id'], old_client_2['id']]
-
     response = request_helper.delete_json(url, data)
-
-    # assert response is ok
     assert response.status == '200 OK'
     assert response.json_body['info']['count'] == 2
 
-    # assert they are actually deleted
-    # try getting it again, make sure it's gone
-    with pytest.raises(NotFound):
-        for pk_value in delete_ids:
-            url = ClientResource.get_member_path(pk_value)
-            request_helper.get_json(url, status=404)
+    # Check that both clients were deleted
+    deleted_ids = [old_client_1['id'], old_client_2['id']]
+    response = request_helper.get_json(url, params={'id': deleted_ids})
+    assert response.status == '200 OK'
+    # Check that no client was returned
+    assert not response.json
 
-    # Get amount of users left in DB
+    # Get number of clients again
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
+    assert response.status == '200 OK'
+    # Check that there are 2 clients less
+    assert (client_count - 2) == len(response.json)
 
-    response = request_helper.delete_json(url, expect_errors=True)
+    # Calls to delete without JSON data should fail
+    response = request_helper.delete_json(url)
     assert response.status_int == 400
+    assert 'error' in response.json
+    assert response.json['error'].get('code') == 'INVALID_JSON_DATA'

@@ -120,7 +120,7 @@ def test_user_delete_single(request_helper, default_data, fixture):
 
 
 def test_user_create_multiple(request_helper, default_data):
-    # Check that only the one exist
+    # Check that only one exist
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
     assert len(response.json) == 1
@@ -208,8 +208,7 @@ def test_user_signup(request_helper, default_data, fixture):
 
 
 def test_user_delete_multiple(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
+    fixture.data(UserData).setup()
 
     # Get number of users
     url = UserResource.get_collection_path()
@@ -230,7 +229,6 @@ def test_user_delete_multiple(request_helper, default_data, fixture):
 
     # Check that both users were deleted
     deleted_ids = [old_user_1['id'], old_user_2['id']]
-    url = UserResource.get_collection_path()
     response = request_helper.get_json(url, params={'id': deleted_ids})
     assert response.status == '200 OK'
     # Check that no user was returned

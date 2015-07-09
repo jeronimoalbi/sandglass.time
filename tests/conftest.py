@@ -60,6 +60,40 @@ class AdminUserData(DataSet):
         groups = [GroupData.Admins]
 
 
+class GenericHelper(object):
+    @classmethod
+    def dataset_obj_to_dict(cls, obj):
+        """
+        Get a dictionary with class attributes.
+
+        Returns a Dictionary.
+
+        """
+        data = {}
+        for name in dir(obj):
+            if name.startswith('__') or name == '_reserved_attr':
+                continue
+
+            value = getattr(obj, name)
+            if callable(value):
+                continue
+
+            # Serialize all items inside list
+            if isinstance(value, list):
+                values = data[name] = []
+                for item in value:
+                    if isinstance(value, object):
+                        # When item is an object it means
+                        # it is a related dataset object.
+                        values.append(cls.dataset_obj_to_dict(item))
+                    else:
+                        value.append(value)
+            else:
+                data[name] = value
+
+        return data
+
+
 class RequestHelper(object):
     def __init__(self, app):
         self.app = app
@@ -174,6 +208,11 @@ def static_dir():
 
 
 @pytest.fixture(scope='session')
+def helper():
+    return GenericHelper
+
+
+@pytest.fixture(scope='session')
 def settings():
     file_name = 'sandglass-tests.ini'
     cwd_path = os.getcwd()
@@ -186,9 +225,6 @@ def settings():
 def config(request, settings):
     def teardown_config():
         META.drop_all()
-        # Clear all table data to avoid conflicts when using fixtures
-        # and to start next test with a clean database
-        #models.clear_tables()
         testing.tearDown()
 
     # Set Pyramid registry and request thread locals
@@ -216,14 +252,18 @@ def fixture(request):
 
 
 @pytest.fixture(scope='function')
-def default_data(request, fixture):
-    # Add authorization data to defaults
+def default_datasets():
     datasets = list(DEFAULT_DATASETS)
+    # Add authorization data to defaults
     datasets.append(AdminUserData)
+    return datasets
+
+
+@pytest.fixture(scope='function')
+def default_data(request, default_datasets, fixture):
     # Insert default data into database
-    data = fixture.data(*datasets)
-    data.setup()
-    return data
+    data = fixture.data(*default_datasets)
+    return data.setup()
 
 
 @pytest.fixture(scope='function')
