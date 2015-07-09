@@ -10,8 +10,11 @@ Sandglass is a REST API based time tracking application.
 
 It is based on the `Pyramid`_ web framework, and for ORM and data access it uses `SQLAlchemy`_.
 
+See `notes`_.
+
 .. _Pyramid: http://www.pylonsproject.org/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
+.. _notes: docs/source/notes.rst
 
 Setting up after initial checkout
 ---------------------------------
