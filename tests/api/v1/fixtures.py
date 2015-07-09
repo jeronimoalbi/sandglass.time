@@ -111,8 +111,15 @@ class ProjectData(DataSet):
         user = UserData.ShepherdBook
         groups = [GroupData.Employee, GroupData.Developer, GroupData.Other]
 
-    class PrivateProject(object):
+    class GrouplessPublicProject(object):
         id = 3
+        name = u"The Groupless Public Project"
+        is_public = True
+        client = ClientData.MycroftHolmes
+        user = UserData.ShepherdBook
+
+    class PrivateProject(object):
+        id = 4
         name = u"The Private Project"
         is_public = False
         client = ClientData.MycroftHolmes

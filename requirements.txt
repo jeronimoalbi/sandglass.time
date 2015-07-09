@@ -7,9 +7,9 @@ flake8
 pylint
 pylama
 pylama_pylint
-coverage
+coverage < 4.0
 WebTest
 PasteDeploy
 tox
-virtualenv>=1.11.2
+virtualenv >= 1.11.2
 waitress
