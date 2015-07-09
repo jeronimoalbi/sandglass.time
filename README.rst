@@ -1,6 +1,6 @@
-.. image:: https://drone.io/bitbucket.org/sandglass/sandglass.time/status.png
+.. image:: https://drone.io/github.com/sanglass/sandglass.time/status.png
    :alt: Continuous Integration Service
-   :target: https://drone.io/bitbucket.org/sandglass/sandglass.time/latest
+   :target: https://drone.io/github.com/sanglass/sandglass.time/latest
 
 =======================
 Sandglass Documentation
