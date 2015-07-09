@@ -2,6 +2,7 @@ import logging
 
 from functools import wraps
 
+import colander
 import transaction
 
 from pyramid.decorator import reify
@@ -544,6 +545,8 @@ class ModelResource(BaseResource):
         query = self.object.query()
         try:
             count = query.update(self.submitted_member_data)
+        except colander.Invalid:
+            raise
         except:
             LOG.exception('Error updating object during PUT request')
             transaction.doom()

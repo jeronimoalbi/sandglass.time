@@ -263,7 +263,8 @@ def default_datasets():
 def default_data(request, default_datasets, fixture):
     # Insert default data into database
     data = fixture.data(*default_datasets)
-    return data.setup()
+    data.setup()
+    return data
 
 
 @pytest.fixture(scope='function')

@@ -23,123 +23,6 @@ def test_delete_related_invalid_type(request_helper, default_data, fixture):
     assert error['code'] == 'VALIDATION_ERROR'
 
 
-def test_delete_related_by_ids(helper, fixture):
-    """
-    Test removal of a collection of related objects by submitting IDs.
-
-    """
-    default_datasets.append(ProjectData)
-    fixture.data(*default_datasets).setup()
-
-    project = ProjectData.PublicProject
-
-    # Get groups for current project
-    groups_url = ProjectResource.get_related_path(project.id, 'groups')
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    group_id_list = [group['id'] for group in response.json_body]
-    assert len(group_id_list) == 3
-
-    # Remove a single group by ID
-    delete_id_list = group_id_list[:1]
-    response = request_helper.delete_json(groups_url, delete_id_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 1
-    # Check that deleted group is not available anymore
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    assert len(response.json_body) == len(group_id_list) - 1
-    id_list = [group['id'] for group in response.json_body]
-    assert delete_id_list[0] not in id_list
-    # Try to delete an object that does not exist
-    response = request_helper.delete_json(groups_url, delete_id_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 0
-
-    # Remove the other 2 groups by ID
-    delete_id_list = group_id_list[1:]
-    response = request_helper.delete_json(groups_url, delete_id_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 2
-    # Check that deleted groups are not available anymore
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    assert len(response.json_body) == len(group_id_list) - 3
-    id_list = [group['id'] for group in response.json_body]
-    for id_value in delete_id_list:
-        assert id_value not in id_list
-
-
-def test_delete_related_by_objects(request_helper, default_data, fixture):
-    """
-    Test removal of a collection of related objects by submitting objects.
-
-    """
-    fixture.data(ProjectData).setup()
-
-    project = ProjectData.PublicProject
-
-    # Get groups for current project
-    groups_url = ProjectResource.get_related_path(project.id, 'groups')
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    group_id_list = [group['id'] for group in response.json_body]
-    assert len(group_id_list) == 3
-
-    # Remove a single group by ID
-    delete_list = [{'id': value} for value in group_id_list[:1]]
-    response = request_helper.delete_json(groups_url, delete_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 1
-    # Check that deleted group is not available anymore
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    assert len(response.json_body) == len(group_id_list) - 1
-    id_list = [group['id'] for group in response.json_body]
-    assert delete_list[0]['id'] not in id_list
-    # Try to delete an object that does not exist
-    response = request_helper.delete_json(groups_url, delete_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 0
-
-    # Remove the other 2 groups by ID
-    delete_list = [{'id': value} for value in group_id_list[1:]]
-    response = request_helper.delete_json(groups_url, delete_list)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, dict)
-    assert 'info' in response.json_body
-    info = response.json_body['info']
-    assert info.get('count') == 2
-    # Check that deleted groups are not available anymore
-    response = request_helper.get_json(groups_url)
-    assert response.status_int == 200
-    assert isinstance(response.json_body, list)
-    assert len(response.json_body) == len(group_id_list) - 3
-    id_list = [group['id'] for group in response.json_body]
-    for value in delete_list:
-        assert value['id'] not in id_list
-
-
 def test_put_related_invalid_type(request_helper, default_data, fixture):
     """
     Check that an error is returned when appending related with
@@ -279,3 +162,119 @@ def test_put_related_by_objects(request_helper, default_data, fixture):
     id_list = [group['id'] for group in response.json_body]
     for id_value in [group['id'] for group in append_list]:
         assert id_value in id_list
+
+
+def _test_delete_related_by_ids(helper, request_helper, default_data, fixture):
+    """
+    Test removal of a collection of related objects by submitting IDs.
+
+    """
+    data = fixture.data(ProjectData)
+    data.setup()
+
+    # Get groups for current project
+    project = data.ProjectData.PublicProject
+    groups_url = ProjectResource.get_related_path(project.id, 'groups')
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    group_id_list = [group['id'] for group in response.json_body]
+    assert len(group_id_list) == 3
+
+    # Remove a single group by ID
+    delete_id_list = group_id_list[:1]
+    response = request_helper.delete_json(groups_url, delete_id_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 1
+    # Check that deleted group is not available anymore
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    assert len(response.json_body) == len(group_id_list) - 1
+    id_list = [group['id'] for group in response.json_body]
+    assert delete_id_list[0] not in id_list
+    # Try to delete an object that does not exist
+    response = request_helper.delete_json(groups_url, delete_id_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 0
+
+    # Remove the other 2 groups by ID
+    delete_id_list = group_id_list[1:]
+    response = request_helper.delete_json(groups_url, delete_id_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 2
+    # Check that deleted groups are not available anymore
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    assert len(response.json_body) == len(group_id_list) - 3
+    id_list = [group['id'] for group in response.json_body]
+    for id_value in delete_id_list:
+        assert id_value not in id_list
+
+
+def _test_delete_related_by_objects(request_helper, default_data, fixture):
+    """
+    Test removal of a collection of related objects by submitting objects.
+
+    """
+    fixture.data(ProjectData).setup()
+
+    project = ProjectData.PublicProject
+
+    # Get groups for current project
+    groups_url = ProjectResource.get_related_path(project.id, 'groups')
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    group_id_list = [group['id'] for group in response.json_body]
+    assert len(group_id_list) == 3
+
+    # Remove a single group by ID
+    delete_list = [{'id': value} for value in group_id_list[:1]]
+    response = request_helper.delete_json(groups_url, delete_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 1
+    # Check that deleted group is not available anymore
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    assert len(response.json_body) == len(group_id_list) - 1
+    id_list = [group['id'] for group in response.json_body]
+    assert delete_list[0]['id'] not in id_list
+    # Try to delete an object that does not exist
+    response = request_helper.delete_json(groups_url, delete_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 0
+
+    # Remove the other 2 groups by ID
+    delete_list = [{'id': value} for value in group_id_list[1:]]
+    response = request_helper.delete_json(groups_url, delete_list)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, dict)
+    assert 'info' in response.json_body
+    info = response.json_body['info']
+    assert info.get('count') == 2
+    # Check that deleted groups are not available anymore
+    response = request_helper.get_json(groups_url)
+    assert response.status_int == 200
+    assert isinstance(response.json_body, list)
+    assert len(response.json_body) == len(group_id_list) - 3
+    id_list = [group['id'] for group in response.json_body]
+    for value in delete_list:
+        assert value['id'] not in id_list
