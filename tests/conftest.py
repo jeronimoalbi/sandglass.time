@@ -11,17 +11,20 @@ import pytest
 from fixture import SQLAlchemyFixture
 from fixture import DataSet
 from fixture.style import NamedDataStyle
+from mixer.backend.sqlalchemy import Mixer
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
 from webtest import lint
 from webtest import TestApp
 
 from sandglass.time import models
+from sandglass.time.models import DBSESSION
 from sandglass.time.models import META
 from sandglass.time.models import MODEL_REGISTRY
 from sandglass.time.install import DEFAULT_DATASETS
 from sandglass.time.install import GroupData
 
+import fixtures
 
 # Filter WebTest warnings regarding WSGI
 warnings.filterwarnings('ignore', category=lint.WSGIWarning)
@@ -252,19 +255,42 @@ def fixture(request):
 
 
 @pytest.fixture(scope='function')
+def transaction(request, config):
+    import transaction
+
+    current_transaction = transaction.begin()
+    request.addfinalizer(current_transaction.doom)
+    return current_transaction
+
+
+@pytest.fixture(scope='function')
+@pytest.mark.usefixtures('transaction')
+def session():
+    return DBSESSION()
+
+
+@pytest.fixture(scope='function')
+def default_data(config):
+    import transaction
+
+    current_transaction = transaction.begin()
+    session = DBSESSION()
+    mixer = Mixer(session=session, commit=False)
+    fixtures.create_data(mixer, session)
+    current_transaction.commit()
+
+
+@pytest.fixture(scope='function')
+def mixer(session):
+    return Mixer(session=session, commit=False)
+
+
+@pytest.fixture(scope='function')
 def default_datasets():
     datasets = list(DEFAULT_DATASETS)
     # Add authorization data to defaults
     datasets.append(AdminUserData)
     return datasets
-
-
-@pytest.fixture(scope='function')
-def default_data(request, default_datasets, fixture):
-    # Insert default data into database
-    data = fixture.data(*default_datasets)
-    data.setup()
-    return data
 
 
 @pytest.fixture(scope='function')

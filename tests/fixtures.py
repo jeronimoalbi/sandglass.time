@@ -1,73 +1,241 @@
-# pylint: disable=C0103
+from mixer.backend.sqlalchemy import mixer
 
-from fixture import DataSet
-
-from sandglass.time.tests import BaseFixture
-
-
-class UserData(DataSet):
-
-    class dr_who(BaseFixture):
-        first_name = u"Dr"
-        last_name = u"Who"
-        email = u"timeywimey@wienfluss.net"
-        password = "1234"
-
-    class james_william_elliot(BaseFixture):
-        email = u"humpdydumpdy@wienfluss.net"
-        first_name = u"James William"
-        last_name = u"Elliot"
-        password = "1234"
-
-    class rick_castle(BaseFixture):
-        email = u"ruggedlyhandsome@wienfluss.net"
-        first_name = u"Rick"
-        last_name = u"Castle"
-        password = "1234"
-
-    class the_tardis(BaseFixture):
-        email = u"wibblywobbly@wienfluss.net"
-        first_name = u"The"
-        last_name = u"Tardis"
-        password = "1234"
-
-    class dr_jekyll(BaseFixture):
-        email = u"strangecase@wienfluss.net"
-        first_name = u"Dr."
-        last_name = u"Jekyll"
-        password = "1234"
-
-    class shepherd_book(BaseFixture):
-        email = u"specialhell@serenity.org"
-        first_name = u"Shepherd"
-        last_name = u"Book"
-        password = "1234"
+from sandglass.time.models.client import Client
+from sandglass.time.models.group import Group
+from sandglass.time.models.project import Project
+from sandglass.time.models.user import User
 
 
-class ClientData(DataSet):
+@mixer.middleware('sandglass.time.models.user.User')
+def user_password_middleware(user):
+    """
+    Sets same user password for all users.
 
-    class sherlock_holmes(BaseFixture):
-        name = u'Sherlock Holmes'
+    Password = test.
 
-    class mycroft_holmes(BaseFixture):
-        name = u'Mycroft Holmes'
-
-    class john_watson(BaseFixture):
-        name = u'Dr. John Watson'
-
-    class greg_lestrade(BaseFixture):
-        name = u'DI Greg Lestrade'
-
-    class james_moriarty(BaseFixture):
-        name = u'James Moriarty'
-
-    class charles_magnussen(BaseFixture):
-        name = u'Charles Augustus Magnussen'
+    """
+    user.set_password('test')
+    return user
 
 
-class ProjectData(DataSet):
+def attach(data, session):
+    """
+    Add all data objects to a database session.
 
-    class baskerville_hound(BaseFixture):
-        name = "The Hound Of Baskerville"
-        client = ClientData.mycroft_holmes
-        user = UserData.shepherd_book
+    """
+    instances = []
+    for name in dir(data):
+        if name.startswith('_'):
+            continue
+
+        instance = getattr(data, name)
+        session.add(instance)
+        instances.append(instance)
+
+    return data
+
+
+def create_clients(blend, session):
+    class ClientData:
+        client1 = blend(
+            Client,
+            name=u'Sherlock Holmes',
+        )
+
+        client2 = blend(
+            Client,
+            name=u'Mycroft Holmes',
+        )
+
+        client3 = blend(
+            Client,
+            name=u'Dr. John Watson',
+        )
+
+        client4 = blend(
+            Client,
+            name=u'DI Greg Lestrade',
+        )
+
+        client5 = blend(
+            Client,
+            name=u'James Moriarty',
+        )
+
+        client6 = blend(
+            Client,
+            name=u'Charles Augustus Magnussen',
+        )
+
+    return attach(ClientData, session)
+
+
+def create_groups(blend, session):
+    class GroupData:
+        manager = blend(
+            Group,
+            name=u"Managers",
+            description=u"Group of managers",
+        )
+        employee = blend(
+            Group,
+            name=u"Employee",
+            description=u"Group of employees",
+        )
+        developer = blend(
+            Group,
+            name=u"Developer",
+            description=u"Group of developers",
+        )
+        other = blend(
+            Group,
+            name=u"Other",
+            description=u"Group of others",
+        )
+
+    return attach(GroupData, session)
+
+
+def create_users(blend, session):
+    query = Group.query(session=session)
+
+    class UserData:
+        dr_who = blend(
+            User,
+            first_name=u"Dr",
+            last_name=u"Who",
+            email=u"timeywimey@wienfluss.net",
+            password="1234",
+        )
+        dr_who.groups.extend(
+            query.filter(Group.name.in_([u"Employee", u"Developer"])).all()
+        )
+
+        james_william_elliot = blend(
+            User,
+            email=u"humpdydumpdy@wienfluss.net",
+            first_name=u"James William",
+            last_name=u"Elliot",
+            password="1234",
+        )
+        james_william_elliot.groups.extend(
+            query.filter(Group.name == u"Managers").all()
+        )
+
+        rick_castle = blend(
+            User,
+            email=u"ruggedlyhandsome@wienfluss.net",
+            first_name=u"Rick",
+            last_name=u"Castle",
+            password="1234",
+        )
+        rick_castle.groups.extend(
+            query.filter(Group.name == u"Developer").all()
+        )
+
+        the_tardis = blend(
+            User,
+            email=u"wibblywobbly@wienfluss.net",
+            first_name=u"The",
+            last_name=u"Tardis",
+            password="1234",
+        )
+
+        dr_jeckyll = blend(
+            User,
+            email=u"strangecase@wienfluss.net",
+            first_name=u"Dr.",
+            last_name=u"Jekyll",
+            password="1234",
+        )
+
+        shepherd_book = blend(
+            User,
+            email=u"specialhell@serenity.org",
+            first_name=u"Shepherd",
+            last_name=u"Book",
+            password="1234",
+        )
+
+    return attach(UserData, session)
+
+
+def create_projects(blend, session):
+    query = Project.query(session=session)
+
+    class ProjectData:
+        baskerville_hound = blend(
+            Project,
+            name=u"The Hound Of Baskerville",
+            client=mixer.SELECT(Client.name == u'Mycroft Holmes'),
+            user=mixer.SELECT(User.email == u"specialhell@serenity.org"),
+        )
+
+        # public_project = blend(
+        #     Project,
+        #     name=u"The Public Project",
+        #     is_public=True,
+        #     client=ClientData.MycroftHolmes,
+        #     user=UserData.ShepherdBook,
+        #     groups=[GroupData.Employee, GroupData.Developer, GroupData.Other],
+        # )
+
+        # groupless_public_project = blend(
+        #     Project,
+        #     id=3,
+        #     name=u"The Groupless Public Project",
+        #     is_public=True,
+        #     client=ClientData.MycroftHolmes,
+        #     user=UserData.ShepherdBook,
+        # )
+
+        # private_project = blend(
+        #     Project,
+        #     id=4,
+        #     name=u"The Private Project",
+        #     is_public=False,
+        #     client=ClientData.MycroftHolmes,
+        #     user=UserData.ShepherdBook,
+        #     groups=[GroupData.Manager],
+        # )
+
+    return attach(ProjectData, session)
+
+
+def create_data(mixer, session):
+    class Data:
+        clients = create_clients(mixer.blend, session)
+        groups = create_groups(mixer.blend, session)
+        users = create_users(mixer.blend, session)
+        projects = create_projects(mixer.blend, session)
+
+    return Data
+
+
+
+# class TaskData(DataSet):
+#     """
+#     Task data fixture.
+# 
+#     """
+#     class Backend(object):
+#         name = u"Backend"
+#         project = ProjectData.PublicProject
+#         user = UserData.ShepherdBook
+# 
+#     class Templating(object):
+#         name = u"Templating"
+#         user = UserData.ShepherdBook
+# 
+#     Templating.parent = Backend
+#     Templating.project = Templating.parent.project
+# 
+#     class Meeting(object):
+#         name = u"Meeting"
+#         project = ProjectData.PublicProject
+#         user = UserData.ShepherdBook
+# 
+#     class PrivateTask(object):
+#         name = u"Task for a private project"
+#         project = ProjectData.PrivateProject
+#         user = UserData.ShepherdBook

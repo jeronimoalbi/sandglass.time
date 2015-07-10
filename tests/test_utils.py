@@ -3,6 +3,11 @@ import pytest
 from sandglass.time import utils
 
 
+@pytest.mark.usefixtures('default_data')
+def test_mix(mixer):
+    import ipdb;ipdb.set_trace() 
+
+
 def test_is_valid_email():
     """
     Test email checking function `is_valid_email`.

@@ -13,3 +13,4 @@ PasteDeploy
 tox
 virtualenv >= 1.11.2
 waitress
+mixer
