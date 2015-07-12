@@ -9,7 +9,6 @@ import warnings
 import pytest
 
 from fixture import SQLAlchemyFixture
-from fixture import DataSet
 from fixture.style import NamedDataStyle
 from mixer.backend.sqlalchemy import Mixer
 from paste.deploy.loadwsgi import appconfig
@@ -20,9 +19,7 @@ from webtest import TestApp
 from sandglass.time import models
 from sandglass.time.models import DBSESSION
 from sandglass.time.models import META
-from sandglass.time.models import MODEL_REGISTRY
-from sandglass.time.install import DEFAULT_DATASETS
-from sandglass.time.install import GroupData
+from sandglass.time.install import database_insert_default_data
 
 import fixtures
 
@@ -33,34 +30,9 @@ warnings.filterwarnings('ignore', category=lint.WSGIWarning)
 # before FIXTURE_ENV is initialized
 models.scan_models('sandglass.time.models')
 
-# Init fixture to database mappings environment.
-# This registers all current Model definitions to
-# be vailable for the fixtures.
-FIXTURE_ENV = MODEL_REGISTRY
-FIXTURE_ENV.update({
-    'AdminUser': MODEL_REGISTRY['User'],
-})
-
 # API HTTP basic authorization token and key for admin test user
 AUTH_TOKEN = "058bb38b25ddefa3f20537fd8762633dd2c3472f36f9b6628662624fffc7cbc2"
 AUTH_KEY = "56f750326fe58c2266e864d4cd95c6ea2877ce9aa5da0b73ef57f2e8774433a4"
-
-
-class AdminUserData(DataSet):
-    """
-    Fixture dataset with test admin user definitions.
-
-    """
-    class Admin(object):
-        id = 1
-        first_name = u"Admin"
-        last_name = u"User"
-        email = u"admin@sandglass.net"
-        password = "1234"
-        token = AUTH_TOKEN
-        key = AUTH_KEY
-        salt = "a66a328e85e9d74da8dac441cb6f5578c530c70f"
-        groups = [GroupData.Admins]
 
 
 class GenericHelper(object):
@@ -243,18 +215,6 @@ def config(request, settings):
 
 
 @pytest.fixture(scope='function')
-def fixture(request):
-    def teardown_fixture():
-        if manager.loaded:
-            manager.unload()
-
-    style = NamedDataStyle()
-    manager = SQLAlchemyFixture(env=FIXTURE_ENV, style=style, engine=META.bind)
-    request.addfinalizer(teardown_fixture)
-    return manager
-
-
-@pytest.fixture(scope='function')
 def transaction(request, config):
     import transaction
 
@@ -269,28 +229,46 @@ def session():
     return DBSESSION()
 
 
+# @pytest.fixture(scope='function')
+# def default_datasets():
+#     datasets = list(DEFAULT_DATASETS)
+#     # Add authorization data to defaults
+#     datasets.append(AdminUserData)
+#     return datasets
+
+
 @pytest.fixture(scope='function')
 def default_data(config):
     import transaction
 
     current_transaction = transaction.begin()
     session = DBSESSION()
+    database_insert_default_data(session=session, commit=False)
+
+    admin_group_name = security.Administrators
+    admin_group = Group.query(session).filter_by(name=admin_group_name).all()
+    admin_user = User(
+        id=1,
+        first_name=u"Admin",
+        last_name=u"User",
+        email=u"admin@sandglass.net",
+        password="test",
+        token=AUTH_TOKEN,
+        key=AUTH_KEY,
+        salt="a66a328e85e9d74da8dac441cb6f5578c530c70f",
+        groups=admin_group,
+    )
+    session.add(admin_user)
+
     mixer = Mixer(session=session, commit=False)
-    fixtures.create_data(mixer, session)
+    data = fixtures.create_data(mixer, session)
     current_transaction.commit()
+    return data
 
 
 @pytest.fixture(scope='function')
 def mixer(session):
     return Mixer(session=session, commit=False)
-
-
-@pytest.fixture(scope='function')
-def default_datasets():
-    datasets = list(DEFAULT_DATASETS)
-    # Add authorization data to defaults
-    datasets.append(AdminUserData)
-    return datasets
 
 
 @pytest.fixture(scope='function')
