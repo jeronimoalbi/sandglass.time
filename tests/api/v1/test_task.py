@@ -4,9 +4,6 @@ from pyramid.exceptions import NotFound
 
 from sandglass.time.api.v1.task import TaskResource
 
-from fixtures import TaskData
-from fixtures import ProjectData
-
 TASK_DATA = [
     {
         'name': 'Task 1',
@@ -14,18 +11,20 @@ TASK_DATA = [
 ]
 
 
-def test_task_create_single(request_helper, default_data, fixture):
+def test_task_create_single(request_helper, default_data, session):
     """
     Create a single task using the API.
 
     """
-    data = fixture.data(ProjectData)
-    data.setup()
+    user = default_data.users.dr_who
+    session.add(user)
+    project = default_data.projects.public_project
+    session.add(project)
 
     task_data = {
         'name': u"Test task",
-        'user_id': data.UserData.DrWho.id,
-        'project_id': data.ProjectData.PublicProject.id,
+        'user_id': user.id,
+        'project_id': project.id,
     }
     url = TaskResource.get_collection_path()
     # Create the new task
@@ -40,13 +39,12 @@ def test_task_create_single(request_helper, default_data, fixture):
     assert isinstance(task['id'], int)
 
 
-def test_task_update_single(request_helper, default_data, fixture):
+@pytest.mark.usefixtures('default_data')
+def test_task_update_single(request_helper):
     """
     Update a single task using the API.
 
     """
-    fixture.data(TaskData).setup()
-
     task_data = dict(TASK_DATA[0])
     # Get a task
     url = TaskResource.get_collection_path()
@@ -73,13 +71,12 @@ def test_task_update_single(request_helper, default_data, fixture):
     assert updated_data['name'] == task_data['name']
 
 
-def test_task_delete_single(request_helper, default_data, fixture):
+@pytest.mark.usefixtures('default_data')
+def test_task_delete_single(request_helper):
     """
     Delete a single task using the API.
 
     """
-    fixture.data(TaskData).setup()
-
     # Get a task
     url = TaskResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -95,15 +92,15 @@ def test_task_delete_single(request_helper, default_data, fixture):
         request_helper.get_json(url)
 
 
-def test_task_with_project(request_helper, default_data, fixture):
+def test_task_with_project(request_helper, default_data, session):
     """
     Test a task with a projects.
 
     """
-    data = fixture.data(TaskData)
-    data.setup()
+    task = default_data.tasks.backend
+    session.add(task)
+    session.add(task.project)
 
-    task = data.TaskData.Backend
     url = TaskResource.get_related_path(task.id, 'project')
     # Get task project data
     response = request_helper.get_json(url)

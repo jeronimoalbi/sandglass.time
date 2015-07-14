@@ -7,7 +7,6 @@ from sandglass.time.models.task import Task
 from sandglass.time.models.user import User
 
 
-@mixer.middleware('sandglass.time.models.user.User')
 def user_password_middleware(user):
     """
     Sets same user password for all users.
@@ -242,6 +241,9 @@ def create_tasks(blend, session):
 
 
 def create_data(mixer, session):
+    middleware = mixer.middleware('sandglass.time.models.user.User')
+    middleware(user_password_middleware)
+
     class Data:
         clients = create_clients(mixer.blend, session)
         groups = create_groups(mixer.blend, session)

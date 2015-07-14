@@ -1,26 +1,17 @@
 from sandglass.time.api.v1.project import ProjectResource
 
-from fixtures import ClientData
-from fixtures import GroupData
-from fixtures import ProjectData
-from fixtures import UserData
 
-
-def test_project_create_single(helper, request_helper, default_data, fixture):
+def test_project_create_single(request_helper, default_data, session):
     """
     Test creation of a project.
 
     """
-    data = fixture.data(ClientData, UserData)
-    data.setup()
-
-    project = ProjectData.PublicProject
-    project.client_id = data.ClientData.MycroftHolmes.id
-    project.user_id = data.UserData.ShepherdBook.id
+    project = default_data.projects.public_project
+    session.add(project)
 
     url = ProjectResource.get_collection_path()
-    project_data = helper.dataset_obj_to_dict(project)
-    del project_data['groups']
+    project_data = dict(project)
+    project_data['id'] = None
     response = request_helper.post_json(url, [project_data])
     # All post to collection returns a collection
     assert isinstance(response.json_body, list)
@@ -44,20 +35,18 @@ def test_project_create_single(helper, request_helper, default_data, fixture):
         assert response.json[name] == value
 
 
-def test_project_groups(request_helper, default_data, fixture):
+def test_project_groups(request_helper, default_data, session):
     """
     Test projects grouping.
 
     """
-    data = fixture.data(GroupData, ProjectData)
-    data.setup()
-
-    project = data.ProjectData.PublicProject
+    project = default_data.projects.public_project
+    session.add(project)
     groups = project.groups
     group_id_list = [group.id for group in groups]
 
     # Get groups for a project
-    url = ProjectResource.get_related_path(project['id'], 'groups')
+    url = ProjectResource.get_related_path(project.id, 'groups')
     response = request_helper.get_json(url)
     assert response.status_int == 200
     assert isinstance(response.json_body, list)

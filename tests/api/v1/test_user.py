@@ -4,8 +4,6 @@ from pyramid.exceptions import NotFound
 
 from sandglass.time.api.v1.user import UserResource
 
-from fixtures import UserData
-
 USER_DATA = [
     {
         'first_name': u"Dr. Jurij",
@@ -26,7 +24,8 @@ USER_DATA = [
 ]
 
 
-def test_user_create_single(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_user_create_single(request_helper):
     # Create a user
     url = UserResource.get_collection_path()
     data = USER_DATA[0]
@@ -49,9 +48,8 @@ def test_user_create_single(request_helper, default_data):
     assert new_user['email'] == data['email']
 
 
-def test_user_update_single(request_helper, default_data, fixture):
-    fixture.data(UserData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_update_single(request_helper):
     # Get user data
     data = dict(USER_DATA[2])
 
@@ -77,10 +75,8 @@ def test_user_update_single(request_helper, default_data, fixture):
     assert updated_user['email'] == data['email']
 
 
-def test_user_get(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_get(request_helper):
     # Get a random user
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -99,10 +95,8 @@ def test_user_get(request_helper, default_data, fixture):
     assert user['email'] == same_user['email']
 
 
-def test_user_delete_single(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_delete_single(request_helper):
     # Get a random user
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -119,26 +113,26 @@ def test_user_delete_single(request_helper, default_data, fixture):
         request_helper.get_json(url)
 
 
-def test_user_create_multiple(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_user_create_multiple(request_helper):
     # Check that only one exist
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
-    assert len(response.json) == 1
+    user_count = len(response.json)
+    assert user_count > 0
 
     # Create three users
     response = request_helper.post_json(url, USER_DATA)
     assert response.status == '200 OK'
-    assert len(response.json) == 3
+    assert len(response.json) == len(USER_DATA)
 
-    # Only 4 users should exist
+    # Only 4 more users should exist
     response_get = request_helper.get_json(url)
-    assert len(response_get.json) == 4
+    assert len(response_get.json) == len(USER_DATA) + user_count
 
 
-def test_user_update_multiple(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_update_multiple(request_helper):
     # Get two random users from database
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -171,29 +165,25 @@ def test_user_update_multiple(request_helper, default_data, fixture):
     assert user['email'] == new_user_2['email']
 
 
-def test_user_signin(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
+def test_user_signin(request_helper, default_data, session):
     request_helper.require_authorization = False
 
-    user = UserData.JamesWilliamElliot
-    signin_data = {'email': user.email, 'password': user.password}
+    user = default_data.users.james_william_elliot
+    session.add(user)
+
+    signin_data = {'email': user.email, 'password': 'test'}
     # Signin using current user data
     url = UserResource.get_collection_path() + "@signin"
     response = request_helper.post_json(url, signin_data, expect_errors=True)
     assert response.status == '200 OK'
-
     assert 'token' in response.json
     assert 'key' in response.json
     assert response.json['token'] is not None
     assert response.json['key'] is not None
 
 
-def test_user_signup(request_helper, default_data, fixture):
-    data = fixture.data(UserData)
-    data.setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_signup(request_helper):
     request_helper.require_authorization = False
 
     # Signup a user
@@ -207,9 +197,8 @@ def test_user_signup(request_helper, default_data, fixture):
     assert response.json['key'] is not None
 
 
-def test_user_delete_multiple(request_helper, default_data, fixture):
-    fixture.data(UserData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_user_delete_multiple(request_helper):
     # Get number of users
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -248,14 +237,12 @@ def test_user_delete_multiple(request_helper, default_data, fixture):
     assert response.json['error'].get('code') == 'INVALID_JSON_DATA'
 
 
-def test_user_data_field(request_helper, default_data, fixture):
+@pytest.mark.usefixtures('default_data')
+def test_user_data_field(request_helper):
     """
     Test for user data (JSON) field.
 
     """
-    data = fixture.data(UserData)
-    data.setup()
-
     # Get the first user in list
     url = UserResource.get_collection_path()
     response = request_helper.get_json(url)

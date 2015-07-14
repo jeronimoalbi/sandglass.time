@@ -1,8 +1,6 @@
 from sandglass.time.api.v1.group import GroupResource
 from sandglass.time.api.v1.project import ProjectResource
 
-from fixtures import ProjectData
-
 TESTS_DATA = {
     'groups': [
         {'name': u"Test Group 1", 'description': u"Test Group 1"},
@@ -11,15 +9,15 @@ TESTS_DATA = {
 }
 
 
-def test_delete_related_invalid_type(request_helper, default_data, fixture):
+def test_delete_related_invalid_type(request_helper, default_data, session):
     """
     Check that an error is returned when deleting related with
     wrong request content type.
 
     """
-    fixture.data(ProjectData).setup()
+    project = default_data.projects.public_project
+    session.add(project)
 
-    project = ProjectData.PublicProject
     # Try to delete a group using an integer
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
     response = request_helper.delete_json(groups_url, 1)
@@ -31,15 +29,15 @@ def test_delete_related_invalid_type(request_helper, default_data, fixture):
     assert error['code'] == 'VALIDATION_ERROR'
 
 
-def test_put_related_invalid_type(request_helper, default_data, fixture):
+def test_put_related_invalid_type(request_helper, default_data, session):
     """
     Check that an error is returned when appending related with
     wrong request content type.
 
     """
-    fixture.data(ProjectData).setup()
+    project = default_data.projects.public_project
+    session.add(project)
 
-    project = ProjectData.PublicProject
     # Try to delete a group using an integer
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
     response = request_helper.put_json(groups_url, 1)
@@ -51,14 +49,13 @@ def test_put_related_invalid_type(request_helper, default_data, fixture):
     assert error['code'] == 'VALIDATION_ERROR'
 
 
-def test_put_related_by_ids(request_helper, default_data, fixture):
+def test_put_related_by_ids(request_helper, default_data, session):
     """
     Test appending to a collection of related objects by submitting IDs.
 
     """
-    fixture.data(ProjectData).setup()
-
-    project = ProjectData.PublicProject
+    project = default_data.projects.public_project
+    session.add(project)
 
     # Get groups for current project
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
@@ -111,15 +108,14 @@ def test_put_related_by_ids(request_helper, default_data, fixture):
         assert id_value in id_list
 
 
-def test_put_related_by_objects(request_helper, default_data, fixture):
+def test_put_related_by_objects(request_helper, default_data, session):
     """
     Test appending to a collection of related objects
     by submitting objects.
 
     """
-    fixture.data(ProjectData).setup()
-
-    project = ProjectData.PublicProject
+    project = default_data.projects.public_project
+    session.add(project)
 
     # Get groups for current project
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
@@ -172,15 +168,13 @@ def test_put_related_by_objects(request_helper, default_data, fixture):
         assert id_value in id_list
 
 
-def test_delete_related_by_ids(helper, request_helper, default_data, fixture):
+def test_delete_related_by_ids(request_helper, default_data, session):
     """
     Test removal of a collection of related objects by submitting IDs.
 
     """
-    data = fixture.data(ProjectData)
-    data.setup()
-
-    project = data.ProjectData.GrouplessPublicProject
+    project = default_data.projects.groupless_public_project
+    session.add(project)
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
     group_count = len(TESTS_DATA['groups'])
 
@@ -248,15 +242,13 @@ def test_delete_related_by_ids(helper, request_helper, default_data, fixture):
         assert id_value not in id_list
 
 
-def test_delete_related_by_objects(request_helper, default_data, fixture):
+def test_delete_related_by_objects(request_helper, default_data, session):
     """
     Test removal of a collection of related objects by submitting objects.
 
     """
-    data = fixture.data(ProjectData)
-    data.setup()
-
-    project = data.ProjectData.GrouplessPublicProject
+    project = default_data.projects.groupless_public_project
+    session.add(project)
     groups_url = ProjectResource.get_related_path(project.id, 'groups')
     group_count = len(TESTS_DATA['groups'])
 

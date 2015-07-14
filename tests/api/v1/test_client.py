@@ -4,8 +4,6 @@ from pyramid.exceptions import NotFound
 
 from sandglass.time.api.v1.client import ClientResource
 
-from fixtures import ClientData
-
 CLIENT_DATA = [
     {
         'name': 'Irene Adler',
@@ -15,7 +13,8 @@ CLIENT_DATA = [
 ]
 
 
-def test_client_create_single(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_client_create_single(request_helper):
     url = ClientResource.get_collection_path()
     data = CLIENT_DATA[0]
     response = request_helper.post_json(url, [data])
@@ -36,9 +35,8 @@ def test_client_create_single(request_helper, default_data):
     assert new_client['name'] == data['name']
 
 
-def test_client_update_single(request_helper, default_data, fixture):
-    fixture.data(ClientData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_client_update_single(request_helper):
     # Get a random client
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -58,9 +56,8 @@ def test_client_update_single(request_helper, default_data, fixture):
     assert old_client['name'] != new_client['name']
 
 
-def test_client_get(request_helper, default_data, fixture):
-    fixture.data(ClientData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_client_get(request_helper):
     # Get random client
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -75,9 +72,8 @@ def test_client_get(request_helper, default_data, fixture):
     assert client['name'] == same_client['name']
 
 
-def test_client_delete_single(request_helper, default_data, fixture):
-    fixture.data(ClientData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_client_delete_single(request_helper):
     # Get random user from DB
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -94,10 +90,12 @@ def test_client_delete_single(request_helper, default_data, fixture):
         request_helper.get_json(url)
 
 
-def test_client_create_multiple(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_client_create_multiple(request_helper):
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
-    assert len(response.json) == 0
+    client_count = len(response.json)
+    assert client_count > 0
 
     # Create three clients
     response = request_helper.post_json(url, CLIENT_DATA)
@@ -106,12 +104,11 @@ def test_client_create_multiple(request_helper, default_data):
 
     # Only 3 more clients should exist
     response_get = request_helper.get_json(url)
-    assert len(response_get.json) == len(CLIENT_DATA)
+    assert len(response_get.json) == len(CLIENT_DATA) + client_count
 
 
-def test_client_update_multiple(request_helper, default_data, fixture):
-    fixture.data(ClientData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_client_update_multiple(request_helper):
     # Get two random users from DB
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)
@@ -139,9 +136,8 @@ def test_client_update_multiple(request_helper, default_data, fixture):
     assert response_client['name'] == new_client_2['name']
 
 
-def test_client_delete_multiple(request_helper, default_data, fixture):
-    fixture.data(ClientData).setup()
-
+@pytest.mark.usefixtures('default_data')
+def test_client_delete_multiple(request_helper):
     # Get number of clients
     url = ClientResource.get_collection_path()
     response = request_helper.get_json(url)

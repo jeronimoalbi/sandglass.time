@@ -8,8 +8,6 @@ import warnings
 
 import pytest
 
-from fixture import SQLAlchemyFixture
-from fixture.style import NamedDataStyle
 from mixer.backend.sqlalchemy import Mixer
 from paste.deploy.loadwsgi import appconfig
 from pyramid import testing
@@ -17,9 +15,12 @@ from webtest import lint
 from webtest import TestApp
 
 from sandglass.time import models
+from sandglass.time import security
+from sandglass.time.install import database_insert_default_data
 from sandglass.time.models import DBSESSION
 from sandglass.time.models import META
-from sandglass.time.install import database_insert_default_data
+from sandglass.time.models.group import Group
+from sandglass.time.models.user import User
 
 import fixtures
 
@@ -33,40 +34,6 @@ models.scan_models('sandglass.time.models')
 # API HTTP basic authorization token and key for admin test user
 AUTH_TOKEN = "058bb38b25ddefa3f20537fd8762633dd2c3472f36f9b6628662624fffc7cbc2"
 AUTH_KEY = "56f750326fe58c2266e864d4cd95c6ea2877ce9aa5da0b73ef57f2e8774433a4"
-
-
-class GenericHelper(object):
-    @classmethod
-    def dataset_obj_to_dict(cls, obj):
-        """
-        Get a dictionary with class attributes.
-
-        Returns a Dictionary.
-
-        """
-        data = {}
-        for name in dir(obj):
-            if name.startswith('__') or name == '_reserved_attr':
-                continue
-
-            value = getattr(obj, name)
-            if callable(value):
-                continue
-
-            # Serialize all items inside list
-            if isinstance(value, list):
-                values = data[name] = []
-                for item in value:
-                    if isinstance(value, object):
-                        # When item is an object it means
-                        # it is a related dataset object.
-                        values.append(cls.dataset_obj_to_dict(item))
-                    else:
-                        value.append(value)
-            else:
-                data[name] = value
-
-        return data
 
 
 class RequestHelper(object):
@@ -183,11 +150,6 @@ def static_dir():
 
 
 @pytest.fixture(scope='session')
-def helper():
-    return GenericHelper
-
-
-@pytest.fixture(scope='session')
 def settings():
     file_name = 'sandglass-tests.ini'
     cwd_path = os.getcwd()
@@ -229,24 +191,19 @@ def session():
     return DBSESSION()
 
 
-# @pytest.fixture(scope='function')
-# def default_datasets():
-#     datasets = list(DEFAULT_DATASETS)
-#     # Add authorization data to defaults
-#     datasets.append(AdminUserData)
-#     return datasets
-
-
 @pytest.fixture(scope='function')
 def default_data(config):
     import transaction
 
     current_transaction = transaction.begin()
-    session = DBSESSION()
-    database_insert_default_data(session=session, commit=False)
+    dbsession = DBSESSION()
 
+    # First insert default database data
+    database_insert_default_data(session=dbsession, commit=False)
+
+    # Add an admin user for the tests
     admin_group_name = security.Administrators
-    admin_group = Group.query(session).filter_by(name=admin_group_name).all()
+    admin_group = Group.query(dbsession).filter_by(name=admin_group_name).all()
     admin_user = User(
         id=1,
         first_name=u"Admin",
@@ -258,10 +215,13 @@ def default_data(config):
         salt="a66a328e85e9d74da8dac441cb6f5578c530c70f",
         groups=admin_group,
     )
-    session.add(admin_user)
+    dbsession.add(admin_user)
 
-    mixer = Mixer(session=session, commit=False)
-    data = fixtures.create_data(mixer, session)
+    # Insert all fixtures
+    # TODO: Implement a way to insert only a set of fixtures per test ?
+    mixer = Mixer(session=dbsession, commit=False)
+    data = fixtures.create_data(mixer, dbsession)
+
     current_transaction.commit()
     return data
 

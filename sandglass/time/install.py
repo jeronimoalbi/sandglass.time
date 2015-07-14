@@ -10,6 +10,11 @@ from sandglass.time.models.group import Group
 from sandglass.time.models.permission import Permission
 from sandglass.time.security import PERMISSION
 
+# Tag is imported to avoid User mapping exception during
+# Permission creation in `PermissionManager.create_instances`.
+# TODO: Find and fix the problem with User/Tag models.
+from sandglass.time.models.tag import Tag
+
 
 class PermissionManager(object):
     def __init__(self, session):
@@ -21,31 +26,33 @@ class PermissionManager(object):
         if not MODEL_REGISTRY:
             scan_models('sandglass.time.models')
 
-        current_id = 1
+        permission_list = []
         # Iterate all registered models
         for name, model in MODEL_REGISTRY.iteritems():
             if name.startswith('_'):
                 continue
 
-            # Get permissions for current model and create classes
-            # for each permission.
-            # When extra permissions are given add them also after
-            # model permissions.
-            permission_list = model.get_full_permission_list()
-            extra_permissions = self.get_extra_permissions()
-            if extra_permissions:
-                permission_list.extend(extra_permissions)
+            # Get permissions for current model
+            permission_list.extend(model.get_full_permission_list())
 
-            for permission_name in permission_list:
-                permission = Permission(
-                    id=current_id,
-                    name=str(permission_name),
-                    # TODO: Add a description for permissions
-                    description=u'',
-                )
-                self.session.add(permission)
-                self.instances[permission_name] = permission
-                current_id += 1
+        # When extra permissions are given add them also after
+        # model permissions.
+        extra_permissions = self.get_extra_permissions()
+        if extra_permissions:
+            permission_list.extend(extra_permissions)
+
+        # Create permission instances
+        current_id = 1
+        for permission_name in permission_list:
+            permission = Permission(
+                id=current_id,
+                name=str(permission_name),
+                # TODO: Add a description for permissions
+                description=u'',
+            )
+            self.session.add(permission)
+            self.instances[permission_name] = permission
+            current_id += 1
 
     def get_extra_permissions(self):
         return (
@@ -92,7 +99,7 @@ class PermissionManager(object):
             self.get_permission_list('user', 'ra') +
             self.get_permission_list('activity', 'cruda') +
             # Add non CRUDA permission(s)
-            [self.et_permission('api', 'describe')]
+            [self.get_permission('api', 'describe')]
         )
 
     @property

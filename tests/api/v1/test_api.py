@@ -1,3 +1,5 @@
+import pytest
+
 from pyramid.testing import DummyRequest
 
 from sandglass.time.api.v1.user import UserResource
@@ -50,7 +52,8 @@ def test_get_rest_collection_mode(config):
     del settings['request.rest_collection_mode']
 
 
-def test_strict_rest_collection_mode(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_strict_rest_collection_mode(request_helper):
     headers = {'X-REST-Collection-Mode': 'strict'}
     user = USER_LIST[0]
     url = UserResource.get_collection_path()
@@ -69,7 +72,8 @@ def test_strict_rest_collection_mode(request_helper, default_data):
     assert isinstance(response.json_body, list)
 
 
-def test_permissive_rest_collection_mode(request_helper, default_data):
+@pytest.mark.usefixtures('default_data')
+def test_permissive_rest_collection_mode(request_helper):
     headers = {'X-REST-Collection-Mode': 'permissive'}
     url = UserResource.get_collection_path()
 

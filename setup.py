@@ -16,7 +16,6 @@ setup(
         'pyramid_mailer==0.13',
         'sqlalchemy==0.9.1',
         'alembic==0.6.3',
-        'fixture[sqlalchemy]',
         'zope.sqlalchemy',
         'zope.component==4.1.0',
         # Enum support for python < 3.4
