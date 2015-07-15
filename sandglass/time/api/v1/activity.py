@@ -45,15 +45,17 @@ class ActivityResource(ModelResource):
         """
         Remove tags from current activity.
 
-        JSON body is a list of integer values with
-        Tag IDs to remove.
+        JSON request body is a list of integer
+        values with Tag IDs to remove.
+
+        Returns a list with the Tags that were removed.
 
         """
         activity = self.object
         id_list_schema = IdListSchema()
         tag_id_list = id_list_schema.deserialize(self.request_data)
         removed_tag_list = []
-        for tag in activity.tags:
+        for tag in list(activity.tags):
             if tag.id not in tag_id_list:
                 continue
 

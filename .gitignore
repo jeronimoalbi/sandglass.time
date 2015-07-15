@@ -10,6 +10,7 @@ coverage
 *.EGG-INFO
 *.db
 *.ini
+*.log
 .coverage
 .tox
 

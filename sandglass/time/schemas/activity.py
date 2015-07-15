@@ -19,7 +19,8 @@ class ActivitySchema(BaseModelSchema):
     description = SchemaNode(
         String())
     start = SchemaNode(
-        DateTime())
+        DateTime(),
+        missing=drop)
     end = SchemaNode(
         DateTime(),
         missing=drop)

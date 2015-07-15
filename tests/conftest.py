@@ -4,6 +4,7 @@ import os
 os.environ['TESTING'] = 'true'
 
 import base64
+import logging
 import warnings
 
 import pytest
@@ -23,6 +24,15 @@ from sandglass.time.models.group import Group
 from sandglass.time.models.user import User
 
 import fixtures
+
+# By default send log messages to a file
+logging.root.setLevel(logging.WARNING)
+logging.root.handlers = [
+    logging.FileHandler('sandglass-tests.log', mode='w', encoding='utf8'),
+]
+logging.root.handlers[0].setFormatter(
+    logging.Formatter("%(asctime)s - [%(levelname)s] %(name)s: %(message)s")
+)
 
 # Filter WebTest warnings regarding WSGI
 warnings.filterwarnings('ignore', category=lint.WSGIWarning)

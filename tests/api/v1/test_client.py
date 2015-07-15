@@ -175,4 +175,4 @@ def test_client_delete_multiple(request_helper):
     response = request_helper.delete_json(url)
     assert response.status_int == 400
     assert 'error' in response.json
-    assert response.json['error'].get('code') == 'INVALID_JSON_DATA'
+    assert response.json['error'].get('code') == 'COLLECTION_EXPECTED'

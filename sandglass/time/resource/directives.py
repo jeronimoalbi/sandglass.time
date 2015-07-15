@@ -1,4 +1,5 @@
 # pylint: disable=W0613
+import logging
 
 from pyramid.path import DottedNameResolver
 
@@ -7,6 +8,8 @@ from sandglass.time.resource.utils import allow_request_methods
 from .registry import register_resource
 from .registry import RESOURCE_REGISTRY
 from .utils import REQUEST_METHODS
+
+LOG = logging.getLogger(__name__)
 
 # Permission suffix by request method
 PERMISSION_SUFFIX = {
@@ -86,7 +89,19 @@ def resource_action_predicate(action_name):
 
     """
     def predicate(context, request):
-        return request.matchdict.get('action') == action_name
+        current_action_name = request.matchdict.get('action')
+        if current_action_name == action_name:
+            return True
+
+        # Check for URL action name mismatch
+        if action_name == current_action_name.replace('_', '-'):
+            msg = u"Invalid action name '@{}'. Try using '@{}'.".format(
+                current_action_name,
+                action_name,
+            )
+            LOG.warning(msg)
+
+        return False
 
     return predicate
 

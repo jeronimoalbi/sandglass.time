@@ -195,6 +195,10 @@ class BaseResource(object):
         Returns a python representation of the JSON.
 
         """
+        # When request body is empty skip JSON decoding
+        if not self.request.body:
+            return
+
         try:
             return self.request.json_body
         except ValueError:
