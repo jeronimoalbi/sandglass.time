@@ -158,9 +158,8 @@ class UserResource(ModelResource):
 
         try:
             (from_date, to_date) = self.get_filter_from_to()
-        except ValueError, err:
-            data = {'message': unicode(err)}
-            return error_response(_('Invalid date format'), data=data)
+        except (TypeError, ValueError):
+            return error_response(_('Invalid date format'))
 
         # When no dates are given use current date as default
         if not from_date and not to_date:

@@ -15,6 +15,10 @@ class ByUserOrPublic(QueryFilter):
     """
     def filter_query(self, query, request, resource):
         user = request.authenticated_user
+        # When user has view private permission skip filtering
+        if user.has_permission('time.project.view_private'):
+            return query
+
         filters = or_(
             Project.user_id == user.id,
             Project.is_public == True,

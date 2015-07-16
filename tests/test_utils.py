@@ -1,6 +1,18 @@
+from datetime import datetime
+
 import pytest
 
 from sandglass.time import utils
+
+
+def test_iso_date_format():
+    """
+    Test ISO date string to python date conversion.
+
+    """
+    test_datetime = datetime(2015, 7, 16, 10, 34)
+    iso_date = test_datetime.isoformat()
+    assert datetime.strptime(iso_date, utils.ISO_DATE_FORMAT) == test_datetime
 
 
 def test_is_valid_email():

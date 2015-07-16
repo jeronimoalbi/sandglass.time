@@ -1,7 +1,7 @@
 import inspect
 import logging
 
-import dateutil.parser
+from datetime import datetime
 
 from pyramid.decorator import reify
 from zope import interface
@@ -9,6 +9,7 @@ from zope import interface
 from sandglass.time.describe.interfaces import IDescribable
 from sandglass.time.describe.resource import ResourceDescriber
 from sandglass.time.security import PERMISSION
+from sandglass.time.utils import ISO_DATE_FORMAT
 from sandglass.time.utils import route_path
 
 from .action import collection_action
@@ -243,12 +244,12 @@ class BaseResource(object):
         from_date = self.request.params.get('from')
         if from_date:
             # Convert string to date
-            from_date = dateutil.parser.parse(from_date)
+            from_date = datetime.strptime(from_date, ISO_DATE_FORMAT)
 
         to_date = self.request.params.get('to')
         if to_date:
             # Convert string to date
-            to_date = dateutil.parser.parse(to_date)
+            to_date = datetime.strptime(to_date, ISO_DATE_FORMAT)
 
         return (from_date, to_date)
 

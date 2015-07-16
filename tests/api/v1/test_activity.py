@@ -20,7 +20,7 @@ def test_activity_add_and_delete_tags(request_helper, default_data, session):
     response = request_helper.post_json(url, [activity_data])
     assert response.status == '200 OK'
     # All post to collection should returns a collection
-    assert isinstance(response.json, list) is True
+    assert isinstance(response.json, list)
     # User updated information is returned a single item in a list
     response_data = response.json[0]
     activity_id = response_data['id']

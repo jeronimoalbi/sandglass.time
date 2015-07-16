@@ -51,9 +51,10 @@ class RequestHelper(object):
         self.app = app
         # By default add HTTP auth headers for all requests
         self.require_authorization = True
+        # Use admin auth tokens by default
+        self.auth_as_admin()
 
-    @staticmethod
-    def get_authorization_header():
+    def get_authorization_header(self):
         """
         Get HTTP basic auth headers for current token and key.
 
@@ -61,10 +62,18 @@ class RequestHelper(object):
 
         """
         header = {}
-        auth_string = "{}:{}".format(AUTH_TOKEN, AUTH_KEY)
+        auth_string = "{}:{}".format(self.auth_token, self.auth_key)
         auth_string_enc = base64.b64encode(auth_string)
         header['Authorization'] = "Basic {}".format(auth_string_enc)
         return header
+
+    def auth_as_admin(self):
+        self.auth_token = AUTH_TOKEN
+        self.auth_key = AUTH_KEY
+
+    def auth_as_user(self, user):
+        self.auth_token = user.token
+        self.auth_key = user.key
 
     def update_headers(self, headers):
         """

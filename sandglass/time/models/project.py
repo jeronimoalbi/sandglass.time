@@ -66,6 +66,8 @@ class Project(ActivePeriodMixin, BaseModel):
         permissions = (
             # Allow to change value for `is_public` field
             'set_is_public',
+            # Allow to view all private projects
+            'view_private',
         )
 
     @declared_attr

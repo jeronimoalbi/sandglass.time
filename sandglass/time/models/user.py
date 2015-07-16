@@ -161,3 +161,14 @@ class User(TimestampMixin, BaseModel):
         query = query.filter(field_user_id == self.id)
 
         return {result.name for result in query.all()}
+
+    def has_permission(self, permission_name):
+        """
+        Check if current user has a given permission.
+
+        Permission name has to be give with full namespace.
+
+        Returns a boolean.
+
+        """
+        return (permission_name in self.permissions)

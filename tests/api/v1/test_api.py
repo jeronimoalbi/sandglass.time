@@ -89,3 +89,19 @@ def test_permissive_rest_collection_mode(request_helper):
     response = request_helper.post_json(url, [user], headers=headers)
     assert response.status_int == 200
     assert isinstance(response.json_body, list)
+
+
+@pytest.mark.usefixtures('default_data')
+def test_api_describe(request_helper):
+    """
+    Test API describe action for root API resource.
+
+    """
+    response = request_helper.get_json('/time/api/v1/@describe')
+    assert response.status == '200 OK'
+    assert isinstance(response.json, dict)
+    assert response.json.get('version') == 'v1'
+    # Check that response contains a list of API resources
+    assert 'resources' in response.json
+    assert isinstance(response.json['resources'], list)
+    assert len(response.json['resources'])

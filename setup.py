@@ -27,8 +27,7 @@ setup(
         'lingua',
         # Documentation support
         'Sphinx',
-        # Date/time and TZ support
-        'dateutils',
+        # Timezone support
         'pytz',
         # Command line support
         'cement',

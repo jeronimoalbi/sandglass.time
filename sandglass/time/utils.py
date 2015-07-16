@@ -18,6 +18,9 @@ from pyramid.threadlocal import get_current_registry
 CAMELCASE_RE = re.compile("(.)([A-Z]{1})")
 UNDERSCORE_RE = re.compile(r"(?:^|_)(.)")
 
+# ISO date format
+ISO_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
 
 def get_settings():
     """
