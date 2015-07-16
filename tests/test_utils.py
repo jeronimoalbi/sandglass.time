@@ -2,7 +2,24 @@ from datetime import datetime
 
 import pytest
 
+from sandglass import time
 from sandglass.time import utils
+from sandglass.time import guess_version
+
+
+def test_base(config):
+    # Check app version generation
+    version = guess_version('sandglass.time', time.__file__)
+    assert version
+    assert version == time.__version__
+    # Check version for unistalled apps
+    assert guess_version('_foo_', time.__file__) == '(not installed)'
+
+    # Check base languages
+    languages = time.get_available_languages()
+    assert 'en' in languages
+    assert 'es' in languages
+    assert 'de' in languages
 
 
 def test_iso_date_format():
