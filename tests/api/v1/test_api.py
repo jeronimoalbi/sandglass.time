@@ -2,10 +2,13 @@ import pytest
 
 from pyramid.testing import DummyRequest
 
+from sandglass.time.api import ApiDescribeResource
+from sandglass.time.api import ApiManager
+from sandglass.time.api.error import APIError
 from sandglass.time.api.v1.user import UserResource
 from sandglass.time.request import rest_collection_mode
+from sandglass.time.resource.base import BaseResource
 from sandglass.time.utils import get_settings
-
 
 USER_LIST = [
     {
@@ -21,6 +24,49 @@ USER_LIST = [
         'password': 'test',
     },
 ]
+
+
+def test_api_describe_resource_class():
+    class DescribeResource(ApiDescribeResource):
+        version = 'invalid_version'
+
+    request = DummyRequest()
+
+    # When API version does not exist an exception is raised
+    with pytest.raises(Exception):
+        DescribeResource(request)
+
+    # Otherwise resource can be created
+    DescribeResource.version = 'v1'
+    resource = DescribeResource(request)
+    with pytest.raises(NotImplementedError):
+        resource.describe()
+
+
+def test_api_manager():
+    class TestResource(BaseResource):
+        name = 'tests'
+
+    request = DummyRequest()
+    manager = ApiManager(versions=['v1', 'v1.1', 'v2'])
+    resource = TestResource(request)
+    # Check that adding a resource works
+    manager.register('v1.1', resource)
+    assert resource in manager.get_resources('v1.1')
+    # Resource should not be available for other API version
+    assert resource not in manager.get_resources('v1')
+
+    # Try to add a resource to an invalid API version
+    assert not manager.register('invalid_version', resource)
+
+
+def test_api_error():
+    message = "A message"
+    error = APIError('CODE', msg=message)
+    assert error.msg == message
+    # Check that default message is used when no message is given
+    error = APIError('CODE')
+    assert error.msg == APIError.default_msg
 
 
 def test_get_rest_collection_mode(config):
