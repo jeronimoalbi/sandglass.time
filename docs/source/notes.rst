@@ -20,7 +20,7 @@ Supported HTTP methods and resource URLs table:
   /time/api/v1/*RESOURCE_NAME*/*ID*/                                           **Get** a member object     **Update** a member object             **Delete** a member object
   /time/api/v1/*RESOURCE_NAME*/*ID*/*RELATED_NAME*/                            **List** related object(s)  **Add** related object(s) to a member  **Remove** related object(s) from a member
   =================================================  ========================  ==========================  =====================================  ==========================================
-  
+
 By default all request and responses to *collections* only allow lists to be used in request body. Even for collection operations on a single object.
 But is possible to disable this behavior and make API less restrictive.
 

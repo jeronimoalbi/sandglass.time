@@ -14,9 +14,6 @@
 
 import sys
 import os
-import cornice
-
-sys.path.insert(0, os.path.abspath(cornice.__file__))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -34,7 +31,6 @@ sys.path.insert(0, os.path.abspath(cornice.__file__))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'cornice.ext.sphinxext',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
